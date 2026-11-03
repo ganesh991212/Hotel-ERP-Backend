@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    env:
+      # Superuser only provisions roles and the database. Migrations run as hotel_owner and
+      # tests run as hotel_app (no superuser, no BYPASSRLS), exactly like production.
+      SUPER_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      PYTHON: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: |
+          ruff check app tests scripts alembic
+          ruff format --check app tests scripts alembic
+      - name: Type check
+        run: mypy app
+      - name: Provision database
+        run: scripts/dev_db.sh hotel_erp_test --reset
+      - name: Migration is reversible
+        env:
+          OWNER_DATABASE_URL: postgresql+psycopg://hotel_owner:owner-dev@127.0.0.1:5432/hotel_erp_test
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+      - name: Tests (real Postgres, non-superuser role)
+        run: pytest -q
