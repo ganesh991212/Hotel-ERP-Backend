@@ -1,7 +1,7 @@
 # Render Blueprint: PRODUCTION (not applied yet). Docs: docs/10-deployment.md (read it before changing this file).
 # Apply as a SEPARATE Blueprint (Render > Blueprints > New, Blueprint path: deploy/render.production.yaml).
-# Differences from staging: paid always-on plan, migrations as a pre-deploy step, manual deploys from the
-# `production` branch, its own Supabase project and secrets.
+# Differences from staging: paid always-on plan, migrations as a pre-deploy step, manual deploys from
+# `main`, its own Supabase project and secrets.
 #
 # No secret values in this file (the repo is public). `sync: false` = Render asks for the value when the
 # Blueprint is first applied; fill it from deploy/env.production.example.
@@ -11,7 +11,7 @@ services:
     name: hotel-erp-api-production
     runtime: docker
     repo: https://github.com/ganesh991212/Hotel-ERP-Backend
-    branch: production
+    branch: main               # main = what is (or will be) in production; manual deploys
     region: singapore          # nearest Render region to India; put Supabase in Singapore too
     plan: starter              # always on; no cold starts
     dockerfilePath: ./Dockerfile
@@ -81,7 +81,7 @@ services:
     name: hotel-erp-web-production
     runtime: static
     repo: https://github.com/ganesh991212/Hotel-ERP-Frontend
-    branch: production
+    branch: main               # main = what is (or will be) in production; manual deploys
     buildCommand: bash scripts/render-build.sh
     staticPublishPath: build/web
     autoDeploy: false

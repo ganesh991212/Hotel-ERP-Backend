@@ -10,7 +10,7 @@ services:
     name: hotel-erp-api-staging
     runtime: docker
     repo: https://github.com/ganesh991212/Hotel-ERP-Backend
-    branch: claude/magical-meitner-74zq87   # TEMPORARY: back to main once the backend main conflict is resolved
+    branch: staging            # every push to staging deploys here
     region: singapore          # nearest Render region to India; put Supabase in Singapore too
     plan: free                 # sleeps after 15 min idle; first request then takes ~1 min
     dockerfilePath: ./Dockerfile
@@ -78,7 +78,7 @@ services:
     name: hotel-erp-web-staging
     runtime: static
     repo: https://github.com/ganesh991212/Hotel-ERP-Frontend
-    branch: claude/magical-meitner-74zq87   # TEMPORARY: back to main once the backend main conflict is resolved
+    branch: staging            # every push to staging deploys here
     buildCommand: bash scripts/render-build.sh
     staticPublishPath: build/web
     autoDeploy: true

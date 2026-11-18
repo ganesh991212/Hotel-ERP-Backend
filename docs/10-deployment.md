@@ -7,7 +7,7 @@ between them (database, secrets, Firebase project, Razorpay mode, JWT secret).
 |---|---|---|
 | Purpose | Your testing and demos. Fictional data only. | Paying hotels |
 | Blueprint | `render.yaml` | `deploy/render.production.yaml` (separate Blueprint) |
-| Deploys from | `main`, automatically on every push | `production` branch, manual deploy |
+| Deploys from | `staging` branch, automatically on every push | `main` branch, manual deploy |
 | Render API plan | Free (sleeps after 15 min idle; ~1 min cold start) | Starter or higher (always on) |
 | Migrations | On boot (`RUN_RELEASE_ON_START=true`) | Pre-deploy command `scripts/release.sh` |
 | Supabase | Free project (pauses after 7 days with no traffic) | Pro project (daily backups, no pausing) |
@@ -53,7 +53,7 @@ Order matters: database first, then API, then web, then the values that depend o
    - The user is `<role>.<ref>` (e.g. `hotel_app.abcdefghijklmnopqrst`), not plain `hotel_app`.
 
 ### 2. Render Blueprint
-1. Both services deploy from the branch named in `render.yaml` (temporarily `claude/magical-meitner-74zq87`; `main` once the backend main conflict is resolved).
+1. Both services deploy from the `staging` branch of their repo.
 2. Render > New > Blueprint > connect the backend repo; Render reads `render.yaml`. Give the Render GitHub app access
    to **both** repos.
 3. Render asks for every `sync: false` value. Fill them from `deploy/env.staging.example`:
@@ -86,8 +86,16 @@ from step 2.3, update `PUBLIC_DINER_URL` and `CORS_ORIGINS` on the API and `API_
 - **Mobile builds against staging**: `flutter build apk --dart-define=API_BASE=https://<api>` (same for iOS).
 
 ## Routine deploys
-- Staging: merge to `main`. Render rebuilds both services. Migrations run on boot.
-- Production (later): after the change has been verified on staging, fast-forward `production` to the same commit
+Branch flow, the same in both repos:
+
+```
+feature branch --PR--> staging --(verified on staging)--PR--> main --manual deploy--> production
+```
+
+- `staging` and `main` are the only long-lived branches. Work happens on short-lived feature branches that are
+  deleted after merging. Never commit to `main` directly; it only receives `staging`.
+- Staging: merge a feature PR into `staging`. Render rebuilds both staging services. Migrations run on boot.
+- Production (later): after the change has been verified on staging, merge a `staging` -> `main` PR
   and press Deploy on both production services (API first, then web).
 
 **Migrations must be backward compatible** (add columns, tables, nullable fields; drop or rename only in a later
