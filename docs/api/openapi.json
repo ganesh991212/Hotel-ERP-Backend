@@ -1,0 +1,5696 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Hotel ERP API",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/api/v1/auth/login": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Login",
+    "operationId": "login_api_v1_auth_login_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LoginIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TokenOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/auth/refresh": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Refresh",
+    "description": "Rotate on every use. Reusing a used token revokes the whole family (rule 9).",
+    "operationId": "refresh_api_v1_auth_refresh_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RefreshIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TokenOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/auth/logout": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Logout",
+    "operationId": "logout_api_v1_auth_logout_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RefreshIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/me": {
+   "get": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Me",
+    "operationId": "me_api_v1_me_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Me Api V1 Me Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/me/entitlements": {
+   "get": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "My Entitlements",
+    "description": "Resolved map for the UI. The UI hides locked features; the server stays the authority.",
+    "operationId": "my_entitlements_api_v1_me_entitlements_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response My Entitlements Api V1 Me Entitlements Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/users": {
+   "get": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "List Users",
+    "operationId": "list_users_api_v1_users_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/UserOut"
+         },
+         "title": "Response List Users Api V1 Users Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "Create User",
+    "operationId": "create_user_api_v1_users_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UserIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/users/{user_id}": {
+   "patch": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "Patch User",
+    "operationId": "patch_user_api_v1_users__user_id__patch",
+    "parameters": [
+     {
+      "name": "user_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "User Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UserPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/permissions": {
+   "get": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "List Permissions",
+    "operationId": "list_permissions_api_v1_permissions_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response List Permissions Api V1 Permissions Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/roles": {
+   "get": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "List Roles",
+    "operationId": "list_roles_api_v1_roles_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/RoleOut"
+         },
+         "title": "Response List Roles Api V1 Roles Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "Create Role",
+    "operationId": "create_role_api_v1_roles_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RoleIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoleOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/roles/{role_id}/permissions": {
+   "put": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "Set Role Permissions",
+    "operationId": "set_role_permissions_api_v1_roles__role_id__permissions_put",
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RolePermsIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoleOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/platform/summary": {
+   "get": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "Summary",
+    "operationId": "summary_api_v1_platform_summary_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Summary Api V1 Platform Summary Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/platform/plans": {
+   "get": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "List Plans",
+    "operationId": "list_plans_api_v1_platform_plans_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/PlanOut"
+         },
+         "title": "Response List Plans Api V1 Platform Plans Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/platform/plans/{plan_id}": {
+   "patch": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "Patch Plan",
+    "description": "Price changes apply to new subscriptions; existing subscribers keep theirs until renewal (docs/05).",
+    "operationId": "patch_plan_api_v1_platform_plans__plan_id__patch",
+    "parameters": [
+     {
+      "name": "plan_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Plan Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PlanPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PlanOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/platform/hotels": {
+   "get": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "List Hotels",
+    "operationId": "list_hotels_api_v1_platform_hotels_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/HotelOut"
+         },
+         "title": "Response List Hotels Api V1 Platform Hotels Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "Create Hotel",
+    "operationId": "create_hotel_api_v1_platform_hotels_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/HotelIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HotelOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/platform/hotels/{hotel_id}/suspend": {
+   "post": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "Suspend",
+    "operationId": "suspend_api_v1_platform_hotels__hotel_id__suspend_post",
+    "parameters": [
+     {
+      "name": "hotel_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Hotel Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__platform__router__ReasonIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HotelOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/platform/hotels/{hotel_id}/resume": {
+   "post": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "Resume",
+    "operationId": "resume_api_v1_platform_hotels__hotel_id__resume_post",
+    "parameters": [
+     {
+      "name": "hotel_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Hotel Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__platform__router__ReasonIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HotelOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/platform/hotels/{hotel_id}/subscription": {
+   "post": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "Assign Plan",
+    "operationId": "assign_plan_api_v1_platform_hotels__hotel_id__subscription_post",
+    "parameters": [
+     {
+      "name": "hotel_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Hotel Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AssignPlanIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HotelOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/platform/hotels/{hotel_id}/overrides": {
+   "get": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "List Overrides",
+    "operationId": "list_overrides_api_v1_platform_hotels__hotel_id__overrides_get",
+    "parameters": [
+     {
+      "name": "hotel_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Hotel Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response List Overrides Api V1 Platform Hotels  Hotel Id  Overrides Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "put": {
+    "tags": [
+     "platform"
+    ],
+    "summary": "Set Override",
+    "operationId": "set_override_api_v1_platform_hotels__hotel_id__overrides_put",
+    "parameters": [
+     {
+      "name": "hotel_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Hotel Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/OverrideIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response Set Override Api V1 Platform Hotels  Hotel Id  Overrides Put"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/billing/subscription": {
+   "get": {
+    "tags": [
+     "billing"
+    ],
+    "summary": "My Subscription",
+    "operationId": "my_subscription_api_v1_billing_subscription_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response My Subscription Api V1 Billing Subscription Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/billing/subscription/checkout": {
+   "post": {
+    "tags": [
+     "billing"
+    ],
+    "summary": "Checkout",
+    "description": "Creates a Razorpay subscription and returns its hosted payment page. Activation arrives by webhook.",
+    "operationId": "checkout_api_v1_billing_subscription_checkout_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CheckoutIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Checkout Api V1 Billing Subscription Checkout Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/webhooks/razorpay": {
+   "post": {
+    "tags": [
+     "billing"
+    ],
+    "summary": "Razorpay Webhook",
+    "operationId": "razorpay_webhook_api_v1_webhooks_razorpay_post",
+    "parameters": [
+     {
+      "name": "x-razorpay-signature",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Razorpay-Signature"
+      }
+     },
+     {
+      "name": "x-razorpay-event-id",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Razorpay-Event-Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Razorpay Webhook Api V1 Webhooks Razorpay Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/settings": {
+   "get": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Get Settings ",
+    "operationId": "get_settings__api_v1_settings_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SettingsOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "put": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Put Settings",
+    "operationId": "put_settings_api_v1_settings_put",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SettingsIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SettingsOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables": {
+   "get": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "List Tables",
+    "operationId": "list_tables_api_v1_tables_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/TableOut"
+         },
+         "title": "Response List Tables Api V1 Tables Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Create Table",
+    "operationId": "create_table_api_v1_tables_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TableIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables/{table_id}": {
+   "patch": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Patch Table",
+    "operationId": "patch_table_api_v1_tables__table_id__patch",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TablePatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Delete Table",
+    "operationId": "delete_table_api_v1_tables__table_id__delete",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables/{table_id}/rotate-qr": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Rotate Qr",
+    "description": "Invalidate a leaked or defaced QR (docs/08). The old printed code stops working.",
+    "operationId": "rotate_qr_api_v1_tables__table_id__rotate_qr_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/categories": {
+   "get": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "List Categories",
+    "operationId": "list_categories_api_v1_categories_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/CategoryOut"
+         },
+         "title": "Response List Categories Api V1 Categories Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Create Category",
+    "operationId": "create_category_api_v1_categories_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__catalog__router__CategoryIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategoryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/categories/{category_id}": {
+   "put": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Update Category",
+    "operationId": "update_category_api_v1_categories__category_id__put",
+    "parameters": [
+     {
+      "name": "category_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Category Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__catalog__router__CategoryIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategoryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Delete Category",
+    "operationId": "delete_category_api_v1_categories__category_id__delete",
+    "parameters": [
+     {
+      "name": "category_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Category Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/items": {
+   "get": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "List Items",
+    "operationId": "list_items_api_v1_items_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ItemOut"
+         },
+         "title": "Response List Items Api V1 Items Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Create Item",
+    "operationId": "create_item_api_v1_items_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ItemIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ItemOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/items/{item_id}": {
+   "patch": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Patch Item",
+    "operationId": "patch_item_api_v1_items__item_id__patch",
+    "parameters": [
+     {
+      "name": "item_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Item Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ItemPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ItemOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Delete Item",
+    "operationId": "delete_item_api_v1_items__item_id__delete",
+    "parameters": [
+     {
+      "name": "item_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Item Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/items/{item_id}/availability": {
+   "post": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Set Availability",
+    "operationId": "set_availability_api_v1_items__item_id__availability_post",
+    "parameters": [
+     {
+      "name": "item_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Item Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AvailabilityIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ItemOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/quote": {
+   "post": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Quote Order",
+    "operationId": "quote_order_api_v1_orders_quote_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QuoteIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Quote Order Api V1 Orders Quote Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders": {
+   "post": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Place Order",
+    "operationId": "place_order_api_v1_orders_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/OrderIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Place Order Api V1 Orders Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "List Orders",
+    "operationId": "list_orders_api_v1_orders_get",
+    "parameters": [
+     {
+      "name": "scope",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(open|today|all)$",
+       "default": "open",
+       "title": "Scope"
+      }
+     },
+     {
+      "name": "table_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "uuid"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response List Orders Api V1 Orders Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/{order_id}": {
+   "get": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Get Order",
+    "operationId": "get_order_api_v1_orders__order_id__get",
+    "parameters": [
+     {
+      "name": "order_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Order Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Get Order Api V1 Orders  Order Id  Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/{order_id}/confirm": {
+   "post": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Confirm",
+    "operationId": "confirm_api_v1_orders__order_id__confirm_post",
+    "parameters": [
+     {
+      "name": "order_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Order Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Confirm Api V1 Orders  Order Id  Confirm Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/{order_id}/serve": {
+   "post": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Serve",
+    "operationId": "serve_api_v1_orders__order_id__serve_post",
+    "parameters": [
+     {
+      "name": "order_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Order Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Serve Api V1 Orders  Order Id  Serve Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/{order_id}/cancel": {
+   "post": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Cancel",
+    "operationId": "cancel_api_v1_orders__order_id__cancel_post",
+    "parameters": [
+     {
+      "name": "order_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Order Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__ordering__router__ReasonIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Cancel Api V1 Orders  Order Id  Cancel Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/kitchen/board": {
+   "get": {
+    "tags": [
+     "kitchen"
+    ],
+    "summary": "Board",
+    "description": "Everything a chef screen needs in one call; WebSocket events keep it fresh (5 s poll fallback).",
+    "operationId": "board_api_v1_kitchen_board_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Board Api V1 Kitchen Board Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/{order_id}/accept": {
+   "post": {
+    "tags": [
+     "kitchen"
+    ],
+    "summary": "Accept",
+    "operationId": "accept_api_v1_orders__order_id__accept_post",
+    "parameters": [
+     {
+      "name": "order_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Order Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Accept Api V1 Orders  Order Id  Accept Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/{order_id}/start": {
+   "post": {
+    "tags": [
+     "kitchen"
+    ],
+    "summary": "Start",
+    "operationId": "start_api_v1_orders__order_id__start_post",
+    "parameters": [
+     {
+      "name": "order_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Order Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Start Api V1 Orders  Order Id  Start Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/{order_id}/ready": {
+   "post": {
+    "tags": [
+     "kitchen"
+    ],
+    "summary": "Ready",
+    "operationId": "ready_api_v1_orders__order_id__ready_post",
+    "parameters": [
+     {
+      "name": "order_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Order Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Ready Api V1 Orders  Order Id  Ready Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/orders/{order_id}/reassign": {
+   "post": {
+    "tags": [
+     "kitchen"
+    ],
+    "summary": "Reassign",
+    "operationId": "reassign_api_v1_orders__order_id__reassign_post",
+    "parameters": [
+     {
+      "name": "order_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Order Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ReassignIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Reassign Api V1 Orders  Order Id  Reassign Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/kitchen/chefs/{chef_id}/shift": {
+   "put": {
+    "tags": [
+     "kitchen"
+    ],
+    "summary": "Set Shift",
+    "operationId": "set_shift_api_v1_kitchen_chefs__chef_id__shift_put",
+    "parameters": [
+     {
+      "name": "chef_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Chef Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShiftIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Set Shift Api V1 Kitchen Chefs  Chef Id  Shift Put"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/kitchen/history": {
+   "get": {
+    "tags": [
+     "kitchen"
+    ],
+    "summary": "My History",
+    "operationId": "my_history_api_v1_kitchen_history_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response My History Api V1 Kitchen History Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/d/{qr_token}": {
+   "get": {
+    "tags": [
+     "diner"
+    ],
+    "summary": "Menu",
+    "operationId": "menu_api_v1_d__qr_token__get",
+    "parameters": [
+     {
+      "name": "qr_token",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Qr Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Menu Api V1 D  Qr Token  Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/d/{qr_token}/session": {
+   "post": {
+    "tags": [
+     "diner"
+    ],
+    "summary": "Open Session",
+    "operationId": "open_session_api_v1_d__qr_token__session_post",
+    "parameters": [
+     {
+      "name": "qr_token",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Qr Token"
+      }
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Open Session Api V1 D  Qr Token  Session Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/d/{qr_token}/quote": {
+   "post": {
+    "tags": [
+     "diner"
+    ],
+    "summary": "Diner Quote",
+    "operationId": "diner_quote_api_v1_d__qr_token__quote_post",
+    "parameters": [
+     {
+      "name": "qr_token",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Qr Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DinerQuoteIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Diner Quote Api V1 D  Qr Token  Quote Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/d/orders": {
+   "post": {
+    "tags": [
+     "diner"
+    ],
+    "summary": "Diner Order",
+    "operationId": "diner_order_api_v1_d_orders_post",
+    "parameters": [
+     {
+      "name": "x-diner-token",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Diner-Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DinerOrderIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Diner Order Api V1 D Orders Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/d/orders/mine": {
+   "get": {
+    "tags": [
+     "diner"
+    ],
+    "summary": "My Orders",
+    "operationId": "my_orders_api_v1_d_orders_mine_get",
+    "parameters": [
+     {
+      "name": "x-diner-token",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Diner-Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response My Orders Api V1 D Orders Mine Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/expense-categories": {
+   "get": {
+    "tags": [
+     "expenses"
+    ],
+    "summary": "Categories",
+    "operationId": "categories_api_v1_expense_categories_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response Categories Api V1 Expense Categories Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "expenses"
+    ],
+    "summary": "Add Category",
+    "operationId": "add_category_api_v1_expense_categories_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__expenses__router__CategoryIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Add Category Api V1 Expense Categories Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/expenses": {
+   "get": {
+    "tags": [
+     "expenses"
+    ],
+    "summary": "List Expenses",
+    "operationId": "list_expenses_api_v1_expenses_get",
+    "parameters": [
+     {
+      "name": "month",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "pattern": "^\\d{4}-\\d{2}$",
+       "title": "Month"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response List Expenses Api V1 Expenses Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "expenses"
+    ],
+    "summary": "Add Expense",
+    "operationId": "add_expense_api_v1_expenses_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ExpenseIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Add Expense Api V1 Expenses Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/expenses/{expense_id}": {
+   "patch": {
+    "tags": [
+     "expenses"
+    ],
+    "summary": "Patch Expense",
+    "operationId": "patch_expense_api_v1_expenses__expense_id__patch",
+    "parameters": [
+     {
+      "name": "expense_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Expense Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ExpensePatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Patch Expense Api V1 Expenses  Expense Id  Patch"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "expenses"
+    ],
+    "summary": "Delete Expense",
+    "operationId": "delete_expense_api_v1_expenses__expense_id__delete",
+    "parameters": [
+     {
+      "name": "expense_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Expense Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/dashboard/summary": {
+   "get": {
+    "tags": [
+     "dashboard"
+    ],
+    "summary": "Summary",
+    "operationId": "summary_api_v1_dashboard_summary_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Summary Api V1 Dashboard Summary Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/health": {
+   "get": {
+    "summary": "Health",
+    "operationId": "health_health_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Health Health Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AdminIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+     },
+     "password": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 8,
+      "title": "Password"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "email",
+     "password"
+    ],
+    "title": "AdminIn"
+   },
+   "AssignPlanIn": {
+    "properties": {
+     "plan_code": {
+      "type": "string",
+      "title": "Plan Code"
+     },
+     "reason": {
+      "type": "string",
+      "maxLength": 500,
+      "minLength": 3,
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "plan_code",
+     "reason"
+    ],
+    "title": "AssignPlanIn"
+   },
+   "AvailabilityIn": {
+    "properties": {
+     "is_available": {
+      "type": "boolean",
+      "title": "Is Available"
+     }
+    },
+    "type": "object",
+    "required": [
+     "is_available"
+    ],
+    "title": "AvailabilityIn"
+   },
+   "CategoryOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "sort": {
+      "type": "integer",
+      "title": "Sort"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "sort"
+    ],
+    "title": "CategoryOut"
+   },
+   "CheckoutIn": {
+    "properties": {
+     "plan_code": {
+      "type": "string",
+      "title": "Plan Code"
+     }
+    },
+    "type": "object",
+    "required": [
+     "plan_code"
+    ],
+    "title": "CheckoutIn"
+   },
+   "DinerOrderIn": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/LineModel"
+      },
+      "type": "array",
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Items"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "client_ref": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 64
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Ref"
+     }
+    },
+    "type": "object",
+    "required": [
+     "items"
+    ],
+    "title": "DinerOrderIn"
+   },
+   "DinerQuoteIn": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/LineModel"
+      },
+      "type": "array",
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Items"
+     }
+    },
+    "type": "object",
+    "required": [
+     "items"
+    ],
+    "title": "DinerQuoteIn"
+   },
+   "ExpenseIn": {
+    "properties": {
+     "category_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Category Id"
+     },
+     "amount_minor": {
+      "type": "integer",
+      "maximum": 10000000000.0,
+      "exclusiveMinimum": 0.0,
+      "title": "Amount Minor"
+     },
+     "spent_on": {
+      "type": "string",
+      "format": "date",
+      "title": "Spent On"
+     },
+     "vendor": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 120
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Vendor"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 500
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "payment_method": {
+      "type": "string",
+      "pattern": "^(CASH|UPI|CARD|BANK)$",
+      "title": "Payment Method",
+      "default": "CASH"
+     }
+    },
+    "type": "object",
+    "required": [
+     "category_id",
+     "amount_minor",
+     "spent_on"
+    ],
+    "title": "ExpenseIn"
+   },
+   "ExpensePatch": {
+    "properties": {
+     "category_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category Id"
+     },
+     "amount_minor": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 10000000000.0,
+        "exclusiveMinimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount Minor"
+     },
+     "spent_on": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Spent On"
+     },
+     "vendor": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 120
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Vendor"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 500
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "payment_method": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^(CASH|UPI|CARD|BANK)$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payment Method"
+     }
+    },
+    "type": "object",
+    "title": "ExpensePatch"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "HotelIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 2,
+      "title": "Name"
+     },
+     "legal_name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 160
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Name"
+     },
+     "city": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "City"
+     },
+     "contact_phone": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 20
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Phone"
+     },
+     "plan_code": {
+      "type": "string",
+      "title": "Plan Code"
+     },
+     "gst_registration": {
+      "type": "string",
+      "pattern": "^(REGULAR|COMPOSITION|UNREGISTERED)$",
+      "title": "Gst Registration",
+      "default": "UNREGISTERED"
+     },
+     "gstin": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Gstin"
+     },
+     "state_code": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^\\d{2}$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "State Code"
+     },
+     "service_charge_bp": {
+      "type": "integer",
+      "maximum": 2000.0,
+      "minimum": 0.0,
+      "title": "Service Charge Bp",
+      "default": 0
+     },
+     "admin": {
+      "$ref": "#/components/schemas/AdminIn"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "plan_code",
+     "admin"
+    ],
+    "title": "HotelIn"
+   },
+   "HotelOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "city": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "City"
+     },
+     "contact_email": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Email"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "plan_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Plan Code"
+     },
+     "plan_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Plan Name"
+     },
+     "trial_ends_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Trial Ends At"
+     },
+     "current_period_end": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Current Period End"
+     },
+     "tables": {
+      "type": "integer",
+      "title": "Tables"
+     },
+     "orders_30d": {
+      "type": "integer",
+      "title": "Orders 30D"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "city",
+     "contact_email",
+     "status",
+     "plan_code",
+     "plan_name",
+     "trial_ends_at",
+     "current_period_end",
+     "tables",
+     "orders_30d",
+     "created_at"
+    ],
+    "title": "HotelOut"
+   },
+   "ItemIn": {
+    "properties": {
+     "category_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Category Id"
+     },
+     "name": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 500
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "is_veg": {
+      "type": "boolean",
+      "title": "Is Veg",
+      "default": true
+     },
+     "price_minor": {
+      "type": "integer",
+      "maximum": 100000000.0,
+      "minimum": 0.0,
+      "title": "Price Minor"
+     },
+     "tax_code": {
+      "type": "string",
+      "maxLength": 20,
+      "title": "Tax Code",
+      "default": "FOOD"
+     },
+     "est_prep_minutes": {
+      "type": "integer",
+      "maximum": 240.0,
+      "minimum": 1.0,
+      "title": "Est Prep Minutes",
+      "default": 10
+     },
+     "is_available": {
+      "type": "boolean",
+      "title": "Is Available",
+      "default": true
+     },
+     "sort": {
+      "type": "integer",
+      "title": "Sort",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "required": [
+     "category_id",
+     "name",
+     "price_minor"
+    ],
+    "title": "ItemIn"
+   },
+   "ItemOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "category_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Category Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "is_veg": {
+      "type": "boolean",
+      "title": "Is Veg"
+     },
+     "price_minor": {
+      "type": "integer",
+      "title": "Price Minor"
+     },
+     "tax_code": {
+      "type": "string",
+      "title": "Tax Code"
+     },
+     "est_prep_minutes": {
+      "type": "integer",
+      "title": "Est Prep Minutes"
+     },
+     "is_available": {
+      "type": "boolean",
+      "title": "Is Available"
+     },
+     "sort": {
+      "type": "integer",
+      "title": "Sort"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "category_id",
+     "name",
+     "description",
+     "is_veg",
+     "price_minor",
+     "tax_code",
+     "est_prep_minutes",
+     "is_available",
+     "sort"
+    ],
+    "title": "ItemOut"
+   },
+   "ItemPatch": {
+    "properties": {
+     "category_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category Id"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 120,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 500
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "is_veg": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Veg"
+     },
+     "price_minor": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 100000000.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price Minor"
+     },
+     "est_prep_minutes": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 240.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Est Prep Minutes"
+     },
+     "sort": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sort"
+     }
+    },
+    "type": "object",
+    "title": "ItemPatch"
+   },
+   "LineModel": {
+    "properties": {
+     "item_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Item Id"
+     },
+     "qty": {
+      "type": "integer",
+      "maximum": 99.0,
+      "minimum": 1.0,
+      "title": "Qty"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 200
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "item_id",
+     "qty"
+    ],
+    "title": "LineModel"
+   },
+   "LoginIn": {
+    "properties": {
+     "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+     },
+     "password": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Password"
+     }
+    },
+    "type": "object",
+    "required": [
+     "email",
+     "password"
+    ],
+    "title": "LoginIn"
+   },
+   "OrderIn": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/LineModel"
+      },
+      "type": "array",
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Items"
+     },
+     "table_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Table Id"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "client_ref": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 64
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Ref"
+     }
+    },
+    "type": "object",
+    "required": [
+     "items",
+     "table_id"
+    ],
+    "title": "OrderIn"
+   },
+   "OverrideIn": {
+    "properties": {
+     "feature_key": {
+      "type": "string",
+      "title": "Feature Key"
+     },
+     "bool_value": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Bool Value"
+     },
+     "int_limit": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Int Limit"
+     },
+     "clear": {
+      "type": "boolean",
+      "title": "Clear",
+      "default": false
+     },
+     "reason": {
+      "type": "string",
+      "maxLength": 500,
+      "minLength": 3,
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "feature_key",
+     "reason"
+    ],
+    "title": "OverrideIn"
+   },
+   "PlanOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "price_minor": {
+      "type": "integer",
+      "title": "Price Minor"
+     },
+     "interval": {
+      "type": "string",
+      "title": "Interval"
+     },
+     "is_placeholder": {
+      "type": "boolean",
+      "title": "Is Placeholder"
+     },
+     "is_active": {
+      "type": "boolean",
+      "title": "Is Active"
+     },
+     "features": {
+      "additionalProperties": {
+       "type": "boolean"
+      },
+      "type": "object",
+      "title": "Features"
+     },
+     "limits": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "type": "object",
+      "title": "Limits"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "code",
+     "name",
+     "price_minor",
+     "interval",
+     "is_placeholder",
+     "is_active",
+     "features",
+     "limits"
+    ],
+    "title": "PlanOut"
+   },
+   "PlanPatch": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "price_minor": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price Minor"
+     },
+     "is_active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Active"
+     },
+     "features": {
+      "anyOf": [
+       {
+        "additionalProperties": {
+         "type": "boolean"
+        },
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Features"
+     },
+     "limits": {
+      "anyOf": [
+       {
+        "additionalProperties": {
+         "anyOf": [
+          {
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Limits"
+     }
+    },
+    "type": "object",
+    "title": "PlanPatch"
+   },
+   "QuoteIn": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/LineModel"
+      },
+      "type": "array",
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Items"
+     }
+    },
+    "type": "object",
+    "required": [
+     "items"
+    ],
+    "title": "QuoteIn",
+    "description": "Item ids and quantities only. Prices are never accepted from the client (rule 4)."
+   },
+   "ReassignIn": {
+    "properties": {
+     "chef_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Chef Id"
+     },
+     "reason": {
+      "type": "string",
+      "maxLength": 300,
+      "minLength": 3,
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "reason"
+    ],
+    "title": "ReassignIn"
+   },
+   "RefreshIn": {
+    "properties": {
+     "refresh_token": {
+      "type": "string",
+      "title": "Refresh Token"
+     }
+    },
+    "type": "object",
+    "required": [
+     "refresh_token"
+    ],
+    "title": "RefreshIn"
+   },
+   "RoleIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "permissions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Permissions",
+      "default": []
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "RoleIn"
+   },
+   "RoleOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "is_system": {
+      "type": "boolean",
+      "title": "Is System"
+     },
+     "locked": {
+      "type": "boolean",
+      "title": "Locked"
+     },
+     "permissions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Permissions"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "code",
+     "name",
+     "is_system",
+     "locked",
+     "permissions"
+    ],
+    "title": "RoleOut"
+   },
+   "RolePermsIn": {
+    "properties": {
+     "permissions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Permissions"
+     }
+    },
+    "type": "object",
+    "required": [
+     "permissions"
+    ],
+    "title": "RolePermsIn"
+   },
+   "SettingsIn": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 120,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "kitchen_mode": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^(CHEF_ACCEPT|AUTO_ASSIGN|ADMIN_PRINT)$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Kitchen Mode"
+     },
+     "qr_confirm_required": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Qr Confirm Required"
+     },
+     "max_queue_orders": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 10.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max Queue Orders"
+     }
+    },
+    "type": "object",
+    "title": "SettingsIn"
+   },
+   "SettingsOut": {
+    "properties": {
+     "outlet_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Outlet Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "kitchen_mode": {
+      "type": "string",
+      "title": "Kitchen Mode"
+     },
+     "qr_confirm_required": {
+      "type": "boolean",
+      "title": "Qr Confirm Required"
+     },
+     "max_queue_orders": {
+      "type": "integer",
+      "title": "Max Queue Orders"
+     },
+     "available_modes": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Available Modes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "outlet_id",
+     "name",
+     "kitchen_mode",
+     "qr_confirm_required",
+     "max_queue_orders",
+     "available_modes"
+    ],
+    "title": "SettingsOut"
+   },
+   "ShiftIn": {
+    "properties": {
+     "on_shift": {
+      "type": "boolean",
+      "title": "On Shift"
+     }
+    },
+    "type": "object",
+    "required": [
+     "on_shift"
+    ],
+    "title": "ShiftIn"
+   },
+   "TableIn": {
+    "properties": {
+     "label": {
+      "type": "string",
+      "maxLength": 20,
+      "minLength": 1,
+      "title": "Label"
+     },
+     "area": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 40
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Area"
+     },
+     "seats": {
+      "type": "integer",
+      "maximum": 40.0,
+      "minimum": 1.0,
+      "title": "Seats",
+      "default": 4
+     }
+    },
+    "type": "object",
+    "required": [
+     "label"
+    ],
+    "title": "TableIn"
+   },
+   "TableOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "area": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Area"
+     },
+     "seats": {
+      "type": "integer",
+      "title": "Seats"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "qr_token": {
+      "type": "string",
+      "title": "Qr Token"
+     },
+     "qr_url": {
+      "type": "string",
+      "title": "Qr Url"
+     },
+     "open_orders": {
+      "type": "integer",
+      "title": "Open Orders",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "label",
+     "area",
+     "seats",
+     "status",
+     "qr_token",
+     "qr_url"
+    ],
+    "title": "TableOut"
+   },
+   "TablePatch": {
+    "properties": {
+     "label": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 20,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "area": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 40
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Area"
+     },
+     "seats": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 40.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Seats"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^(ACTIVE|INACTIVE)$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     }
+    },
+    "type": "object",
+    "title": "TablePatch"
+   },
+   "TokenOut": {
+    "properties": {
+     "access_token": {
+      "type": "string",
+      "title": "Access Token"
+     },
+     "refresh_token": {
+      "type": "string",
+      "title": "Refresh Token"
+     },
+     "token_type": {
+      "type": "string",
+      "title": "Token Type",
+      "default": "bearer"
+     },
+     "platform": {
+      "type": "boolean",
+      "title": "Platform"
+     }
+    },
+    "type": "object",
+    "required": [
+     "access_token",
+     "refresh_token",
+     "platform"
+    ],
+    "title": "TokenOut"
+   },
+   "UserIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+     },
+     "phone": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 20
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone"
+     },
+     "password": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 8,
+      "title": "Password"
+     },
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "email",
+     "password",
+     "role_id"
+    ],
+    "title": "UserIn"
+   },
+   "UserOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "email": {
+      "type": "string",
+      "title": "Email"
+     },
+     "phone": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "role_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Id"
+     },
+     "role_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Code"
+     },
+     "role_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Name"
+     },
+     "on_shift": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "On Shift"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "email",
+     "phone",
+     "status",
+     "role_id"
+    ],
+    "title": "UserOut"
+   },
+   "UserPatch": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 120,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "phone": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 20
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^(ACTIVE|DISABLED)$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "role_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Id"
+     }
+    },
+    "type": "object",
+    "title": "UserPatch"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   },
+   "app__catalog__router__CategoryIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "sort": {
+      "type": "integer",
+      "title": "Sort",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "CategoryIn"
+   },
+   "app__expenses__router__CategoryIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "CategoryIn"
+   },
+   "app__ordering__router__ReasonIn": {
+    "properties": {
+     "reason": {
+      "type": "string",
+      "maxLength": 300,
+      "minLength": 3,
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "reason"
+    ],
+    "title": "ReasonIn"
+   },
+   "app__platform__router__ReasonIn": {
+    "properties": {
+     "reason": {
+      "type": "string",
+      "maxLength": 500,
+      "minLength": 3,
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "reason"
+    ],
+    "title": "ReasonIn"
+   }
+  }
+ }
+}

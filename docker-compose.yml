@@ -1,0 +1,17 @@
+# Local development only. Credentials below are local throwaway values, not secrets.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hotel_erp
+    ports: ["5432:5432"]
+    volumes:
+      - ./scripts/db-roles.sql:/docker-entrypoint-initdb.d/01-roles.sql:ro
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+volumes:
+  pgdata:
