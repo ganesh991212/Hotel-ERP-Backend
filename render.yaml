@@ -1,0 +1,100 @@
+# Render Blueprint: STAGING. Docs: docs/10-deployment.md (read it before changing this file).
+# Production is a separate Blueprint (deploy/render.production.yaml) with its own services and Supabase project,
+# so a staging sync can never touch production.
+#
+# No secret values in this file (the repo is public). `sync: false` = Render asks for the value when the
+# Blueprint is first applied; fill it from deploy/env.staging.example.
+
+services:
+  - type: web
+    name: hotel-erp-api-staging
+    runtime: docker
+    repo: https://github.com/ganesh991212/Hotel-ERP-Backend
+    branch: main
+    region: singapore          # nearest Render region to India; put Supabase in Singapore too
+    plan: free                 # sleeps after 15 min idle; first request then takes ~1 min
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: RUN_RELEASE_ON_START   # free plan has no pre-deploy command, so migrate on boot (single instance)
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: PLATFORM_DATABASE_URL
+        sync: false
+      - key: MIGRATION_DATABASE_URL
+        sync: false
+      - key: DB_POOL_SIZE
+        value: "3"
+      - key: DB_MAX_OVERFLOW
+        value: "2"
+      - key: PUBLIC_DINER_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PLATFORM_ADMIN_EMAIL
+        sync: false
+      - key: PLATFORM_ADMIN_PASSWORD
+        sync: false
+      - key: POWERED_BY_NAME
+        value: Vethra
+      - key: POWERED_BY_CONTACT
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: FCM_PROJECT_ID
+        sync: false
+      - key: FCM_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: FIREBASE_WEB_APP_ID
+        sync: false
+      - key: FIREBASE_ANDROID_APP_ID
+        sync: false
+      - key: FIREBASE_IOS_APP_ID
+        sync: false
+      - key: FIREBASE_IOS_BUNDLE_ID
+        value: com.hotelerp.hotelErp
+      - key: FIREBASE_VAPID_KEY
+        sync: false
+
+  - type: web
+    name: hotel-erp-web-staging
+    runtime: static
+    repo: https://github.com/ganesh991212/Hotel-ERP-Frontend
+    branch: main
+    buildCommand: bash scripts/render-build.sh
+    staticPublishPath: build/web
+    autoDeploy: true
+    envVars:
+      - key: API_BASE           # https URL of hotel-erp-api-staging, no trailing slash
+        sync: false
+      - key: FLUTTER_VERSION
+        value: 3.50.0
+    headers:
+      # Flutter's main.dart.js is not content-hashed: always revalidate so a deploy reaches every device.
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin

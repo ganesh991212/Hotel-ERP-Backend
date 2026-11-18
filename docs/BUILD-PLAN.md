@@ -122,6 +122,15 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] Global categories set by super admin (visible to every hotel, read-only to them) plus hotel-only categories; RLS read-own-or-global, write-own
 - [ ] Receipts (image upload), recurring expenses, export
 
+## Deployment (added 2026-11-18, docs/10)
+- [x] Dockerfile, start/release scripts, CI builds the image
+- [x] Startup guard: staging/production refuse to boot with missing or local config
+- [x] Supabase roles + verification SQL, staging Blueprint (`render.yaml`), production Blueprint (not applied)
+- [x] Env references `deploy/env.staging.example`, `deploy/env.production.example`; web build script (Frontend)
+- [ ] Staging live on Render + Supabase, verification checklist passed
+- [ ] Production: domain, Supabase Pro, Blueprint applied, restore drill, uptime alert
+- [ ] Realtime fan-out via Redis or LISTEN/NOTIFY (needed before a second API instance)
+
 ## Phase 8: Rooms
 - [ ] Room types, rooms, rate plans
 - [ ] Bookings, check-in/out, folio

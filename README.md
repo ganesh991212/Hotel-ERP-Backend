@@ -40,3 +40,6 @@ Start with `docs/BUILD-PLAN.md`. It is the single tracker; nothing in it is dupl
 | `docs/07-realtime-offline-printing.md` | WebSocket, offline, KOT printing |
 | `docs/08-security-tenancy.md` | Auth, RBAC, RLS, QR abuse controls |
 | `docs/09-open-questions.md` | Decisions still needed |
+
+## Deploying
+Staging and production on Render + Supabase: see `docs/10-deployment.md` (runbook) and `deploy/env.staging.example` (every value).

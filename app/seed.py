@@ -15,7 +15,7 @@ import sys
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.core.config import get_settings
+from app.core.config import DEPLOYED, get_settings
 from app.core.security import hash_password, new_opaque_token
 from app.models import ChefProfile, DiningTable, MenuCategory, MenuItem, Outlet, Plan, Role, User
 from app.platform.provision import provision_hotel, seed_plans
@@ -43,8 +43,12 @@ async def main(demo: bool) -> None:
     async with Session() as db, db.begin():
         await seed_plans(db)
         email = os.environ.get("PLATFORM_ADMIN_EMAIL")
+        if email and not os.environ.get("PLATFORM_ADMIN_PASSWORD") and get_settings().app_env in DEPLOYED:
+            print("PLATFORM_ADMIN_EMAIL is set without PLATFORM_ADMIN_PASSWORD; skipped (no password in logs)")
+            email = None
         if email:
-            pw = os.environ.get("PLATFORM_ADMIN_PASSWORD") or secrets.token_urlsafe(10)
+            given = os.environ.get("PLATFORM_ADMIN_PASSWORD")
+            pw = given or secrets.token_urlsafe(10)
             if not (await db.execute(select(User).where(User.email == email.lower()))).scalar_one_or_none():
                 db.add(
                     User(
@@ -54,7 +58,8 @@ async def main(demo: bool) -> None:
                         is_platform_admin=True,
                     )
                 )
-                print(f"platform admin: {email} / {pw}")
+                # Never echo a password the operator supplied: deploy logs are kept and shared.
+                print(f"platform admin created: {email}" + ("" if given else f" / {pw}"))
         if demo:
             if (await db.execute(select(User).where(User.email == "admin@demo.example.com"))).first():
                 print("demo hotel exists")

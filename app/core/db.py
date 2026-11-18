@@ -8,8 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.config import get_settings
 
 _s = get_settings()
-tenant_engine = create_async_engine(_s.database_url, pool_pre_ping=True)
-platform_engine = create_async_engine(_s.platform_database_url, pool_pre_ping=True)
+_pool = {"pool_pre_ping": True, "pool_size": _s.db_pool_size, "max_overflow": _s.db_max_overflow}
+tenant_engine = create_async_engine(_s.database_url, **_pool)
+platform_engine = create_async_engine(_s.platform_database_url, **_pool)
 TenantSession = async_sessionmaker(tenant_engine, expire_on_commit=False)
 PlatformSession = async_sessionmaker(platform_engine, expire_on_commit=False)
 

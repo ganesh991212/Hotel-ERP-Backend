@@ -7,7 +7,7 @@ Super admin → Hotel (tenant, one subscription) → Outlet (restaurant, bar, ro
 ```
 Flutter apps (staff, admin, super admin, diner web)
         |  HTTPS REST + WebSocket
-FastAPI (stateless, N instances)
+FastAPI (one instance today: realtime fan-out is in-process; see docs/10 "Scaling limit")
    |-- PostgreSQL (RLS, source of truth)
    |-- Redis (pub/sub for realtime, rate limits, short locks, cache of public menu)
    |-- Worker (arq): notifications, reports, subscription renewals, ratings requests

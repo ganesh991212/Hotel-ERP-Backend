@@ -32,3 +32,13 @@ jobs:
         run: |
           JWT_SECRET=x python -c "import json, app.main as m; print(json.dumps(m.app.openapi(), indent=1))" > /tmp/openapi.json
           diff -q /tmp/openapi.json docs/api/openapi.json
+  docker:
+    # The image Render deploys. Build-only check, so a broken Dockerfile fails here and not on deploy.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t hotel-erp-api:ci .
+      - name: Image starts and refuses a deployed env without config
+        run: |
+          docker run --rm -e APP_ENV=staging hotel-erp-api:ci python -c "import app.main" && exit 1 || echo "refused as expected"
+          docker run --rm -e JWT_SECRET=x hotel-erp-api:ci python -c "import app.main; print('imports ok')"

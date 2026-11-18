@@ -8,11 +8,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # local | test | staging | production. Deployed environments refuse to start when misconfigured (see validate()).
+    app_env: str = "local"
+
     # Tenant traffic: a non-superuser role WITHOUT BYPASSRLS. RLS is enforced.
     database_url: str = "postgresql+asyncpg://hotel_app:hotel_app@localhost:5432/hotel_erp"
     # Platform traffic (super admin, pre-auth lookups): role with BYPASSRLS. Used only in platform/ and auth.
     platform_database_url: str = "postgresql+asyncpg://hotel_platform:hotel_platform@localhost:5432/hotel_erp"
     migration_database_url: str = "postgresql+asyncpg://hotel_owner:hotel_owner@localhost:5432/hotel_erp"
+    # Per engine (there are two). Keep pool_size + max_overflow, times 2, under the pooler's per-user limit.
+    db_pool_size: int = 5
+    db_max_overflow: int = 5
 
     jwt_secret: str = ""
     access_token_minutes: int = 15
@@ -58,9 +64,35 @@ class Settings(BaseSettings):
     max_qty_per_line: int = 20
 
 
+DEPLOYED = ("staging", "production")
+
+
+def validate(s: Settings) -> list[str]:
+    """Problems that must stop a deployed environment from starting. Local and test runs are never blocked."""
+    if s.app_env not in DEPLOYED:
+        return []
+    problems = []
+    if len(s.jwt_secret) < 32:
+        problems.append("JWT_SECRET must be set to at least 32 random characters")
+    if not s.public_diner_url.startswith("https://"):
+        problems.append("PUBLIC_DINER_URL must be the https web URL ending in /#/t (it is printed on table QR codes)")
+    origins = [o.strip() for o in s.cors_origins.split(",") if o.strip()]
+    if not origins or "*" in origins:
+        problems.append("CORS_ORIGINS must list the web app origin(s), not *")
+    for name in ("database_url", "platform_database_url", "migration_database_url"):
+        if "localhost" in getattr(s, name):
+            problems.append(f"{name.upper()} still points at localhost")
+    if s.app_env == "production" and s.razorpay_key_id.startswith("rzp_test_"):
+        problems.append("production is using Razorpay test keys")
+    return problems
+
+
 @lru_cache
 def get_settings() -> Settings:
     s = Settings()
+    problems = validate(s)
+    if problems:
+        raise RuntimeError(f"{s.app_env} configuration is invalid: " + "; ".join(problems))
     if not s.jwt_secret:
         warnings.warn("JWT_SECRET not set; using an ephemeral secret (tokens die on restart)", stacklevel=1)
         s.jwt_secret = secrets.token_urlsafe(48)
