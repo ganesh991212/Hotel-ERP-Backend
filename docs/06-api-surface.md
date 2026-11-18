@@ -37,6 +37,11 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 - `GET/POST /expense-categories`, `GET /expenses?month=YYYY-MM` (with summary), `POST/PATCH/DELETE /expenses`.
 - `GET /dashboard/summary`, `GET /platform/summary`, `PATCH /platform/plans/{id}`.
 - `GET /billing/subscription`, `POST /billing/subscription/checkout`, `POST /webhooks/razorpay`.
+- `GET/POST /orders/{id}/kot` (preview / print, optional `send_to_kitchen`, `paper_mm` for ESC/POS), `POST /orders/{id}/mark-ready` (paper path).
+- `POST /bills`, `GET /bills`, `GET /bills/{id}`, `POST /bills/{id}/print|settle|void`.
+- `POST/DELETE /me/devices` (push tokens).
+- `PATCH/DELETE /expense-categories/{id}` (own only); `GET/POST/PATCH /platform/expense-categories` (global).
+- Dashboard summary adds `timings` (avg + p90 per stage) and `servers`.
 - Full contract: `docs/api/openapi.json` (CI fails if it drifts).
 
 ## Realtime

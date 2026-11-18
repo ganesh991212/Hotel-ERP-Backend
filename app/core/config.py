@@ -19,7 +19,11 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     diner_session_hours: int = 3
 
-    public_diner_url: str = "http://localhost:8080/#/t"
+    # Base of printed QR links. Empty = relative "/#/t/<token>" and the client resolves it against its own
+    # origin (dev and preview). Production must set the public https URL so printed codes work anywhere.
+    public_diner_url: str = ""
+    # Dev convenience: serve the Flutter web build from the API on the same origin.
+    web_dir: str = ""
     cors_origins: str = "*"
 
     trial_days: int = 14
@@ -28,6 +32,10 @@ class Settings(BaseSettings):
     razorpay_key_id: str = ""
     razorpay_key_secret: str = ""
     razorpay_webhook_secret: str = ""
+
+    # Firebase Cloud Messaging (HTTP v1). Both empty = push is a silent no-op; realtime + in-app sound still work.
+    fcm_project_id: str = ""
+    fcm_service_account_json: str = ""  # path to the JSON file, or the JSON itself (from the secret manager)
 
     max_items_per_order: int = 50
     max_qty_per_line: int = 20

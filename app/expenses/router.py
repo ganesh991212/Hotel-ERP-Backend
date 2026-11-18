@@ -7,8 +7,8 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import extract, func, select
 
-from app.core.deps import Ctx, HotelCtx
-from app.core.errors import bad_request, conflict, not_found
+from app.core.deps import Ctx, HotelCtx, PlatformCtx
+from app.core.errors import bad_request, conflict, forbidden, not_found
 from app.models import Expense, ExpenseCategory, User
 
 router = APIRouter(tags=["expenses"])
@@ -36,20 +36,140 @@ class ExpensePatch(BaseModel):
     payment_method: str | None = Field(default=None, pattern="^(CASH|UPI|CARD|BANK)$")
 
 
+def _category_out(c: ExpenseCategory, used: int = 0) -> dict:
+    return {
+        "id": str(c.id),
+        "name": c.name,
+        "scope": "GLOBAL" if c.hotel_id is None else "HOTEL",
+        "is_active": c.is_active,
+        "used": used,
+    }
+
+
 @router.get("/expense-categories")
 async def categories(ctx: Ctx = HotelCtx("expense.view", feature="EXPENSES")) -> list[dict]:
-    rows = (await ctx.db.execute(select(ExpenseCategory).order_by(ExpenseCategory.name))).scalars()
-    return [{"id": str(c.id), "name": c.name} for c in rows]
+    """Global categories (super admin) plus this hotel's own. RLS returns exactly those two sets."""
+    used = dict((await ctx.db.execute(select(Expense.category_id, func.count()).group_by(Expense.category_id))).all())
+    rows = (
+        await ctx.db.execute(
+            select(ExpenseCategory)
+            .where(ExpenseCategory.is_active)
+            .order_by(ExpenseCategory.hotel_id.is_not(None), ExpenseCategory.name)
+        )
+    ).scalars()
+    return [_category_out(c, used.get(c.id, 0)) for c in rows]
+
+
+async def _name_taken(db, name: str, exclude: UUID | None = None) -> bool:
+    q = select(ExpenseCategory.id).where(func.lower(ExpenseCategory.name) == name.strip().lower())
+    if exclude:
+        q = q.where(ExpenseCategory.id != exclude)
+    return (await db.execute(q)).first() is not None
 
 
 @router.post("/expense-categories", status_code=201)
 async def add_category(body: CategoryIn, ctx: Ctx = HotelCtx("expense.manage", feature="EXPENSES")) -> dict:
-    if (await ctx.db.execute(select(ExpenseCategory.id).where(ExpenseCategory.name == body.name))).first():
-        raise conflict("category_exists", "This category exists")
-    c = ExpenseCategory(hotel_id=ctx.hotel_id, name=body.name)
+    """A hotel's own category; visible only to this hotel. Clashes with a global name are refused."""
+    if await _name_taken(ctx.db, body.name):
+        raise conflict("category_exists", "A category with this name already exists")
+    c = ExpenseCategory(hotel_id=ctx.hotel_id, name=body.name.strip())
     ctx.db.add(c)
     await ctx.db.flush()
-    return {"id": str(c.id), "name": c.name}
+    await ctx.audit("expense_category.create", "expense_category", c.id, after={"name": c.name})
+    return _category_out(c)
+
+
+@router.patch("/expense-categories/{category_id}")
+async def rename_category(
+    category_id: UUID, body: CategoryIn, ctx: Ctx = HotelCtx("expense.manage", feature="EXPENSES")
+) -> dict:
+    c = await ctx.db.get(ExpenseCategory, category_id)
+    if not c:
+        raise not_found("Category")
+    if c.hotel_id is None:
+        raise forbidden("global_category", "Global categories are managed by the platform")
+    if await _name_taken(ctx.db, body.name, exclude=c.id):
+        raise conflict("category_exists", "A category with this name already exists")
+    before = c.name
+    c.name = body.name.strip()
+    await ctx.audit(
+        "expense_category.rename", "expense_category", c.id, before={"name": before}, after={"name": c.name}
+    )
+    return _category_out(c)
+
+
+@router.delete("/expense-categories/{category_id}", status_code=204)
+async def delete_category(category_id: UUID, ctx: Ctx = HotelCtx("expense.manage", feature="EXPENSES")) -> None:
+    c = await ctx.db.get(ExpenseCategory, category_id)
+    if not c:
+        raise not_found("Category")
+    if c.hotel_id is None:
+        raise forbidden("global_category", "Global categories are managed by the platform")
+    if (await ctx.db.execute(select(Expense.id).where(Expense.category_id == c.id).limit(1))).first():
+        raise conflict("category_in_use", "Move this category's expenses first")
+    await ctx.audit("expense_category.delete", "expense_category", c.id, before={"name": c.name})
+    await ctx.db.delete(c)
+
+
+# ---------------------------------------------------- platform: global categories --
+
+platform = APIRouter(prefix="/platform/expense-categories", tags=["platform"])
+
+
+class GlobalCategoryPatch(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=60)
+    is_active: bool | None = None
+
+
+@platform.get("")
+async def list_global(ctx: Ctx = PlatformCtx) -> list[dict]:
+    used = dict((await ctx.db.execute(select(Expense.category_id, func.count()).group_by(Expense.category_id))).all())
+    rows = (
+        await ctx.db.execute(
+            select(ExpenseCategory).where(ExpenseCategory.hotel_id.is_(None)).order_by(ExpenseCategory.name)
+        )
+    ).scalars()
+    return [_category_out(c, used.get(c.id, 0)) for c in rows]
+
+
+@platform.post("", status_code=201)
+async def add_global(body: CategoryIn, ctx: Ctx = PlatformCtx) -> dict:
+    """Shows up for every hotel immediately. A hotel that already has its own category with this name keeps it."""
+    taken = (
+        await ctx.db.execute(
+            select(ExpenseCategory.id).where(
+                ExpenseCategory.hotel_id.is_(None), func.lower(ExpenseCategory.name) == body.name.strip().lower()
+            )
+        )
+    ).first()
+    if taken:
+        raise conflict("category_exists", "A global category with this name already exists")
+    c = ExpenseCategory(hotel_id=None, name=body.name.strip())
+    ctx.db.add(c)
+    await ctx.db.flush()
+    await ctx.audit("expense_category.global_create", "expense_category", c.id, after={"name": c.name})
+    return _category_out(c)
+
+
+@platform.patch("/{category_id}")
+async def patch_global(category_id: UUID, body: GlobalCategoryPatch, ctx: Ctx = PlatformCtx) -> dict:
+    """Deactivating hides it from new expenses; past expenses keep their category (never deleted while in use)."""
+    c = await ctx.db.get(ExpenseCategory, category_id)
+    if not c or c.hotel_id is not None:
+        raise not_found("Global category")
+    before = {"name": c.name, "is_active": c.is_active}
+    if body.name is not None:
+        c.name = body.name.strip()
+    if body.is_active is not None:
+        c.is_active = body.is_active
+    await ctx.audit(
+        "expense_category.global_update",
+        "expense_category",
+        c.id,
+        before=before,
+        after={"name": c.name, "is_active": c.is_active},
+    )
+    return _category_out(c)
 
 
 def _month(month: str) -> tuple[int, int]:
@@ -121,7 +241,8 @@ async def list_expenses(
 
 @router.post("/expenses", status_code=201)
 async def add_expense(body: ExpenseIn, ctx: Ctx = HotelCtx("expense.manage", feature="EXPENSES")) -> dict:
-    if not await ctx.db.get(ExpenseCategory, body.category_id):
+    cat = await ctx.db.get(ExpenseCategory, body.category_id)  # RLS: own or global only
+    if not cat or not cat.is_active:
         raise not_found("Category")
     e = Expense(hotel_id=ctx.hotel_id, created_by=ctx.user_id, **body.model_dump())
     ctx.db.add(e)

@@ -29,7 +29,7 @@ ORDER_STATES = ("PLACED", "CONFIRMED", "ASSIGNED", "PREPARING", "READY", "SERVED
 OPEN_STATES = ("PLACED", "CONFIRMED", "ASSIGNED", "PREPARING", "READY")
 TRANSITIONS: dict[str, set[str]] = {
     "PLACED": {"CONFIRMED", "CANCELLED"},
-    "CONFIRMED": {"ASSIGNED", "CANCELLED"},
+    "CONFIRMED": {"ASSIGNED", "PREPARING", "CANCELLED"},  # PREPARING directly = paper path (KOT printed)
     "ASSIGNED": {"PREPARING", "CONFIRMED", "CANCELLED"},
     "PREPARING": {"READY", "CONFIRMED", "CANCELLED"},
     "READY": {"SERVED"},
@@ -139,6 +139,9 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
         "service_charge_minor": o.service_charge_minor,
         "total_minor": o.total_minor,
         "est_prep_minutes": o.est_prep_minutes,
+        "on_paper": o.on_paper,
+        "kot_print_count": o.kot_print_count,
+        "bill_id": str(o.bill_id) if o.bill_id else None,
         "chef": {
             "id": str(asg[0].chef_user_id),
             "name": asg[1],
@@ -276,4 +279,42 @@ async def emit_order(db: AsyncSession, emit, o: Order, kind: str) -> dict:
     emit(outlet_channel(o.outlet_id), {"type": kind, "order": data})
     if o.table_session_id:
         emit(diner_channel(o.table_session_id), {"type": kind, "order": data})
+    await _queue_push(db, emit, o, kind, data)
     return data
+
+
+async def _queue_push(db: AsyncSession, emit, o: Order, kind: str, data: dict) -> None:
+    """Who gets a phone alert for this event (sent after commit; loud sound on mobile)."""
+    from app.notify import push
+
+    outlet = await db.get(Outlet, o.outlet_id)
+    table = (data.get("table") or {}).get("label") or "-"
+    items = ", ".join(f"{i['qty']}x {i['name']}" for i in data["items"] if i.get("status") != "CANCELLED")
+    targets: list[tuple[str, str]] = []
+    title, sound = "", push.SOUNDS["new_order"]
+    if kind == "order.created" and o.status == "PLACED":
+        targets = await push.targets_for(db, permission="order.confirm")
+        title = f"Confirm order #{o.number} - Table {table}"
+    elif kind == "order.created" and o.status == "CONFIRMED" and outlet.kitchen_mode == "CHEF_ACCEPT":
+        targets = await push.targets_for(db, chefs_on_shift=True)
+        title = f"New order #{o.number} - Table {table}"
+    elif kind == "order.created" and o.status == "CONFIRMED" and outlet.kitchen_mode == "ADMIN_PRINT":
+        targets = await push.targets_for(db, permission="kot.print")
+        title = f"Print KOT #{o.number} - Table {table}"
+    elif kind == "order.assigned" and data.get("chef"):
+        targets = await push.targets_for(db, user_ids=[UUID(data["chef"]["id"])])
+        title = f"Your next order #{o.number} - Table {table}"
+    elif kind == "order.ready":
+        targets = await push.targets_for(db, permission="order.serve")
+        title, sound = f"Ready to serve #{o.number} - Table {table}", push.SOUNDS["ready"]
+    if targets:
+        emit(
+            "push",
+            {
+                "targets": targets,
+                "title": title,
+                "body": items,
+                "sound": sound,
+                "data": {"type": kind, "order_id": str(o.id), "status": o.status},
+            },
+        )

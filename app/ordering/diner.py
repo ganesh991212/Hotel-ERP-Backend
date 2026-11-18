@@ -19,7 +19,7 @@ from app.kitchen import service as kitchen
 from app.models import DiningTable, Hotel, MenuCategory, MenuItem, Order, Outlet, TableSession
 from app.ordering.router import LineModel, _lines, ensure_order_quota
 from app.ordering.service import OPEN_STATES, Actor, create_order, emit_order, order_json, quote, totals_json
-from app.realtime.hub import hub
+from app.realtime.publish import publish_all
 
 router = APIRouter(prefix="/d", tags=["diner"])
 MAX_OPEN_ORDERS_PER_SESSION = 5
@@ -47,8 +47,7 @@ async def diner_tx(hotel_id: UUID) -> AsyncIterator[tuple]:
     events: list[tuple[str, dict]] = []
     async with tenant_session(hotel_id) as db:
         yield db, (lambda ch, ev: events.append((ch, ev)))
-    for ch, ev in events:
-        hub.publish(ch, ev)
+    publish_all(events)
 
 
 async def _qr_enabled(db, hotel_id: UUID) -> dict:

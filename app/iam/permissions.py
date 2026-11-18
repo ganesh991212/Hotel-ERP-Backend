@@ -22,6 +22,9 @@ PERMISSIONS: dict[str, str] = {
     "expense.manage": "Record and edit expenses",
     "report.view": "See sales reports",
     "settings.manage": "Change outlet settings and subscription",
+    "kot.print": "Print kitchen tickets (and hand orders to the kitchen on paper)",
+    "bill.manage": "Create, print and settle table bills",
+    "bill.void": "Void an issued bill (reason required)",
 }
 
 ALL = set(PERMISSIONS)
@@ -32,9 +35,15 @@ SYSTEM_ROLES: dict[str, tuple[str, set[str]]] = {
         "Manager",
         ALL - {"role.manage", "settings.manage"},
     ),
-    "CASHIER": ("Cashier", {"dashboard.view", "order.view", "order.create", "order.serve", "expense.view"}),
-    "WAITER": ("Server", {"order.view", "order.create", "order.confirm", "order.serve", "menu.availability"}),
-    "CHEF": ("Chef", {"order.view", "kitchen.cook", "menu.availability"}),
+    "CASHIER": (
+        "Cashier",
+        {"dashboard.view", "order.view", "order.create", "order.serve", "expense.view", "kot.print", "bill.manage"},
+    ),
+    "WAITER": (
+        "Server",
+        {"order.view", "order.create", "order.confirm", "order.serve", "menu.availability", "kot.print", "bill.manage"},
+    ),
+    "CHEF": ("Chef", {"order.view", "kitchen.cook", "menu.availability", "kot.print"}),
 }
 
 LOCKED_ROLE = "HOTEL_ADMIN"

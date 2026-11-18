@@ -10,7 +10,6 @@ from app.core.config import get_settings
 from app.core.security import hash_password, now
 from app.iam.permissions import SYSTEM_ROLES
 from app.models import (
-    ExpenseCategory,
     Hotel,
     HotelTaxProfile,
     Outlet,
@@ -24,7 +23,6 @@ from app.models import (
 )
 from app.platform.features import SEED_PLANS
 
-DEFAULT_EXPENSE_CATEGORIES = ["Groceries", "Vegetables", "Gas", "Salaries", "Rent", "Utilities", "Maintenance", "Other"]
 # Default restaurant GST rate as effective-dated config (rule 7). CA review pending (BUILD-PLAN Phase 5).
 DEFAULT_TAX_RULES = [("FOOD", 500, date(2017, 7, 1))]
 
@@ -104,8 +102,6 @@ async def provision_hotel(
             hotel_id=hotel.id, plan_id=plan.id, status="TRIAL", trial_ends_at=now() + timedelta(days=s.trial_days)
         )
     )
-    for cat in DEFAULT_EXPENSE_CATEGORIES:
-        db.add(ExpenseCategory(hotel_id=hotel.id, name=cat))
     for code, bp, start in DEFAULT_TAX_RULES:
         db.add(TaxRule(hotel_id=hotel.id, code=code, rate_bp=bp, valid_from=start))
     await db.flush()

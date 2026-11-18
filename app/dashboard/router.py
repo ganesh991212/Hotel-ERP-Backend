@@ -101,6 +101,35 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         await db.execute(select(func.count(func.distinct(Order.table_id))).where(Order.status.in_(OPEN_STATES)))
     ).scalar_one()
 
+    # Stage timings for orders created today (hotel-local). Average plus p90: the slow tail is what guests remember.
+    def minutes(start, end):
+        return func.extract("epoch", end - start) / 60
+
+    stages = {
+        "wait_for_chef": (Order.confirmed_at, Order.started_at),  # placed/confirmed -> chef starts (or KOT printed)
+        "preparation": (Order.started_at, Order.ready_at),  # cooking
+        "serving": (Order.ready_at, Order.served_at),  # ready at the pass -> on the table
+        "total": (Order.created_at, Order.served_at),  # guest's view: order -> food on table
+    }
+    timings = {}
+    for key, (start, end) in stages.items():
+        m = minutes(start, end)
+        n, avg, p90 = (await db.execute(
+            select(func.count(), func.avg(m), func.percentile_cont(0.9).within_group(m))
+            .where(is_today, start.is_not(None), end.is_not(None))
+        )).one()
+        timings[key] = {"count": int(n), "avg_minutes": round(float(avg), 1) if avg is not None else None,
+                        "p90_minutes": round(float(p90), 1) if p90 is not None else None}
+
+    servers = []
+    serve_m = minutes(Order.ready_at, Order.served_at)
+    for name, n, avg in (await db.execute(
+        select(User.name, func.count(), func.avg(serve_m)).join(User, User.id == Order.served_by_user_id)
+        .where(is_today, Order.ready_at.is_not(None), Order.served_at.is_not(None))
+        .group_by(User.name).order_by(func.avg(serve_m))
+    )).all():
+        servers.append({"name": name, "served": int(n), "avg_serve_minutes": round(float(avg), 1)})
+
     chefs = []
     for prof, user in (
         await db.execute(
@@ -169,6 +198,8 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         "tables_total": tables_total,
         "tables_busy": tables_busy,
         "chefs": chefs,
+        "timings": timings,
+        "servers": servers,
         "live_orders": [await order_json(db, o) for o in live],
         "generated_at": now().isoformat(),
     }

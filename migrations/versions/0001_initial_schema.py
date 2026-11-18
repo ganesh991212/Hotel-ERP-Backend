@@ -6,7 +6,13 @@ Revises:
 from alembic import op
 import sqlalchemy as sa
 
-from app.models import TENANT_TABLES
+# Frozen copy: migrations must not depend on the live model list (later tables get RLS in their own migration).
+TENANT_TABLES = [
+    "hotel_tax_profiles", "subscriptions", "subscription_invoices", "hotel_entitlement_overrides", "roles",
+    "role_permissions", "users", "outlets", "dining_tables", "table_sessions", "menu_categories", "menu_items",
+    "tax_rules", "orders", "order_items", "order_item_events", "chef_profiles", "assignments",
+    "expense_categories", "expenses", "audit_log",
+]
 from sqlalchemy.dialects import postgresql
 
 revision = '0001'

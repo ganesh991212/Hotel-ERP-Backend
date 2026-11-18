@@ -66,6 +66,15 @@ Order-item states: `PLACED → CONFIRMED → ASSIGNED → PREPARING → READY �
 - `subscription_invoices(id, hotel_id, subscription_id, amount_minor, status, provider_ref, period_end)` one row per Razorpay `subscription.charged`.
 - `webhook_events(id, provider, event)` idempotency ledger (platform only).
 
+## Bills, printing, push (added 2026-11-18)
+- `bills(id, hotel_id, outlet_id, table_id, fy, number, invoice_no, doc_type[TAX_INVOICE|BILL_OF_SUPPLY|BILL], status[ISSUED|PAID|VOID], subtotal_minor, tax_minor, cgst_minor, sgst_minor, service_charge_minor, total_minor, payment_method, paid_at, print_count, void_reason)`; unique `(hotel_id, fy, number)`. `bill_lines` snapshot names and prices. `orders.bill_id` links orders to their bill.
+- `print_log(kind[KOT|BILL], order_id|bill_id, copy_no, printed_by, at)`.
+- `orders`: `served_by_user_id`, `kot_print_count`, `on_paper` (handed to kitchen as a printed KOT).
+- `device_tokens(hotel_id, user_id, token unique, platform[android|ios|web])`.
+- `expense_categories.hotel_id` is nullable: NULL = global (super admin). RLS: SELECT own or global; write own only. Plus `is_active`.
+
+Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is printed and sent on paper (no chef assignment).
+
 ## Implementation notes (v1)
 - `users.role_id` (one role per user) instead of `user_outlet_roles`; tables carry `area` as text instead of an `areas` table; one menu per outlet (`menu_categories`, `menu_items`). Each is a planned extension, not a change of direction.
 

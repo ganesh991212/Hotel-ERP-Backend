@@ -66,23 +66,36 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [ ] Accept timeout (`require_accept`)
 - [x] Modes: AUTO_ASSIGN, CHEF_ACCEPT with atomic claim (accept at head starts cooking)
 - [ ] ADMIN_PRINT mode end to end (selectable, but printing below is not built)
-- [ ] Printers registry, print jobs, print station; Flutter printing package spike (07)
-- [ ] KOT rendering (58 mm and 80 mm)
+- [x] KOT printing: server builds layout blocks; Flutter renders PDF (any printer via OS dialog, 58/80 mm/A4) and the API also returns ESC/POS for network thermal printers (Android/iOS raw TCP 9100) (07)
+- [x] Paper path: printing a KOT can hand a waiting order to the kitchen on paper (leaves the chef board; staff mark ready)
+- [x] Print log for every KOT and bill print; reprints labelled REPRINT/DUPLICATE
+- [ ] Printers registry and server-side print queue for a shared print station (today: per-device printer settings)
+- [ ] USB/Bluetooth raw printing from the app (today via OS driver + print dialog)
 - [x] KDS API (`GET /kitchen/board`)
 
 ## Phase 5: Billing (03, 05)
-- [ ] Bills from orders; split, merge, discounts (permissioned)
+- [x] Bills from a table's orders; snapshot lines; CGST/SGST split; settle (cash/UPI/card); void with reason (`bill.void`)
+- [ ] Split, merge, discounts (permissioned)
 - [ ] Effective-dated tax rules; invoice type follows `hotel_tax_profile` (tax invoice / bill of supply / plain bill)
-- [ ] Sequential invoice numbers per GSTIN per financial year; immutable; credit notes
+- [x] Sequential bill numbers per hotel per financial year (`INV/26-27/00001`) under a lock; issued bills immutable
+- [ ] Credit notes instead of void for paid bills
 - [ ] CA review of default rate table and invoice formats (once, before release)
 - [ ] Payments: cash, card record, UPI via Razorpay; webhooks idempotent
 - [ ] Day close and shift close reports
+
+## Notifications (added 2026-11-18)
+- [x] FCM HTTP v1 push ported from GigBridge (async, post-commit, stale-token pruning, shared-device re-binding)
+- [x] Who gets what: new order -> chefs on shift (CHEF_ACCEPT) / KOT printers (ADMIN_PRINT) / assigned chef (AUTO); QR needing confirmation -> confirmers; ready -> servers
+- [x] Loud original alert sounds; Android channels on the alarm stream; iOS time-sensitive; in-app loud playback on realtime events (web cannot customise push sounds)
+- [ ] Firebase project + keys; verify on real Android/iOS devices; add the two .wav files to the Xcode Runner target
+- [ ] Migrate to firebase_messaging register()/onRegistered once FID delivery is verified
 
 ## Phase 6: Ratings and reports (04)
 - [ ] Rating request after serve: food and service stars, one per verified session
 - [ ] Attribution of food rating to cooking chef; 60-day decayed, smoothed score; no effect below n=10
 - [ ] Low-rating (<=2) manager review queue
 - [ ] Rating used only as a near-tie breaker within `rating_band_minutes`; per-hotel toggle, off by default
+- [x] Dashboard stage timings: wait for chef, preparation, serving, order-to-table (avg + p90); serving time per server
 - [ ] Sales, item, chef performance, table turnover reports
 
 ## Phase 7: Flutter apps (UI from reference videos)
@@ -99,6 +112,7 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 ## Expenses (added 2026-11-18)
 - [x] Expense categories (defaults seeded per hotel), expenses with vendor, payment method, date
 - [x] Monthly summary by category and day; net month on the dashboard (revenue minus expenses)
+- [x] Global categories set by super admin (visible to every hotel, read-only to them) plus hotel-only categories; RLS read-own-or-global, write-own
 - [ ] Receipts (image upload), recurring expenses, export
 
 ## Phase 8: Rooms

@@ -136,6 +136,7 @@ async def serve(order_id: UUID, ctx: Ctx = HotelCtx("order.serve")) -> dict:
     if not o:
         raise not_found("Order")
     await do_transition(ctx.db, o, "SERVED", Actor("USER", ctx.user_id))
+    o.served_by_user_id = ctx.user_id
     await emit_order(ctx.db, ctx.emit, o, "order.served")
     return await order_json(ctx.db, o)
 

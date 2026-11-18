@@ -54,5 +54,11 @@ Config: chefs Ganesh, Ravi, Sita; `max_queue_orders=3`; `rating_band_minutes=5`;
 12. **Cancel while queued.** B is cancelled; C moves up to position 2.
 13. **Concurrency.** Two orders arrive in the same millisecond with one idle chef. Under the lock the second sees the first's assignment and goes to the next-best chef.
 
+## Paper path (added 2026-11-18)
+When a chef cannot check a device, a server or manager prints the KOT with "send to kitchen". The order moves
+CONFIRMED -> PREPARING with `on_paper = true` and no assignment, so it leaves the shared board and AUTO_ASSIGN
+skips it. Staff with `order.serve` or `kitchen.manage` mark it READY (chef-assigned orders stay with their chef).
+In ADMIN_PRINT mode this is the normal flow.
+
 ## KOT content
 Table, area, time, order number, items with modifiers and notes, station, assigned chef (AUTO mode), channel (QR/Waiter).

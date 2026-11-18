@@ -298,6 +298,12 @@ class Order(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     served_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    served_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    kot_print_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    on_paper: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))  # handed to kitchen as a printed KOT
+    bill_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("bills.id", use_alter=True, name="fk_orders_bill_id"), index=True
+    )
 
 
 class OrderItem(Base):
@@ -374,11 +380,31 @@ class Assignment(Base):
 
 
 class ExpenseCategory(Base):
+    """hotel_id NULL = global category created by the super admin, visible to every hotel (read-only to them).
+    hotel_id set = that hotel's own category. RLS: read own + global, write own only."""
+
     __tablename__ = "expense_categories"
-    __table_args__ = (UniqueConstraint("hotel_id", "name"),)
+    __table_args__ = (
+        Index(
+            "uq_expense_categories_global_name",
+            text("lower(name)"),
+            unique=True,
+            postgresql_where=text("hotel_id IS NULL"),
+        ),
+        Index(
+            "uq_expense_categories_hotel_name",
+            "hotel_id",
+            text("lower(name)"),
+            unique=True,
+            postgresql_where=text("hotel_id IS NOT NULL"),
+        ),
+    )
     id: Mapped[uuid.UUID] = pk()
-    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    hotel_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("hotels.id", ondelete="CASCADE"), index=True, nullable=True
+    )
     name: Mapped[str] = mapped_column(String(60))
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
 
 class Expense(Base):
@@ -395,6 +421,79 @@ class Expense(Base):
     payment_method: Mapped[str] = mapped_column(String(10), server_default="CASH")  # CASH|UPI|CARD|BANK
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     created_at: Mapped[datetime] = created()
+
+
+class Bill(Base):
+    """Customer bill for a table. Numbered sequentially per hotel per financial year; immutable once issued.
+    Correction = VOID (audited, reason required) and re-issue; credit notes come with Phase 5."""
+
+    __tablename__ = "bills"
+    __table_args__ = (UniqueConstraint("hotel_id", "fy", "number"),)
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    outlet_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("outlets.id"))
+    table_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("dining_tables.id"))
+    fy: Mapped[str] = mapped_column(String(7))  # "2026-27"
+    number: Mapped[int] = mapped_column(Integer)
+    invoice_no: Mapped[str] = mapped_column(String(16))
+    doc_type: Mapped[str] = mapped_column(String(16))  # TAX_INVOICE | BILL_OF_SUPPLY | BILL
+    status: Mapped[str] = mapped_column(String(8), server_default="ISSUED")  # ISSUED | PAID | VOID
+    subtotal_minor: Mapped[int] = mapped_column(BigInteger)
+    tax_minor: Mapped[int] = mapped_column(BigInteger)
+    cgst_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")
+    sgst_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")
+    service_charge_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")
+    total_minor: Mapped[int] = mapped_column(BigInteger)
+    payment_method: Mapped[str | None] = mapped_column(String(8))  # CASH | UPI | CARD
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    print_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    void_reason: Mapped[str | None] = mapped_column(Text)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    created_at: Mapped[datetime] = created()
+
+
+class BillLine(Base):
+    """Snapshot of what was billed; later menu price changes never alter an issued bill."""
+
+    __tablename__ = "bill_lines"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    bill_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("bills.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(120))
+    qty: Mapped[int] = mapped_column(Integer)
+    unit_price_minor: Mapped[int] = mapped_column(BigInteger)
+    tax_rate_bp: Mapped[int] = mapped_column(Integer)
+    line_total_minor: Mapped[int] = mapped_column(BigInteger)
+
+
+class PrintLog(Base):
+    """Every KOT and bill print, including reprints (a common leakage point worth auditing)."""
+
+    __tablename__ = "print_log"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    kind: Mapped[str] = mapped_column(String(4))  # KOT | BILL
+    order_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"))
+    bill_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("bills.id", ondelete="CASCADE"))
+    copy_no: Mapped[int] = mapped_column(Integer)
+    printed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    at: Mapped[datetime] = created()
+
+
+class DeviceToken(Base):
+    """FCM registration tokens for push (ported from GigBridge's device_tokens)."""
+
+    __tablename__ = "device_tokens"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    token: Mapped[str] = mapped_column(String(400), unique=True)
+    platform: Mapped[str] = mapped_column(String(10))  # android | ios | web
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class AuditLog(Base):
@@ -431,7 +530,11 @@ TENANT_TABLES = [
     "order_item_events",
     "chef_profiles",
     "assignments",
-    "expense_categories",
+    "expense_categories",  # own policy: also reads global (hotel_id NULL) rows, see migration 0002
     "expenses",
     "audit_log",
+    "bills",
+    "bill_lines",
+    "print_log",
+    "device_tokens",
 ]

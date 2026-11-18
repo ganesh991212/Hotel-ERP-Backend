@@ -79,6 +79,11 @@ async def test_rls_every_tenant_table_isolated(client, root, hx):
         if table in ("expenses", "dining_tables", "orders", "users", "menu_items"):
             assert b_rows > 0, f"{table}: test setup should have rows for B"
     # Writing a row for another hotel is rejected by WITH CHECK.
+    # Global expense categories are readable by every hotel but writable by none.
+    async with tenant_session(uuid.UUID(a_id)) as db:
+        n_global = (await db.execute(text("select count(*) from expense_categories where hotel_id is null"))).scalar()
+        changed = (await db.execute(text("update expense_categories set name = name where hotel_id is null"))).rowcount
+        assert n_global > 0 and changed == 0
     async with tenant_session(uuid.UUID(a_id)) as db:
         with pytest.raises(Exception, match="row-level security"):
             await db.execute(text("insert into expense_categories (hotel_id, name) values (:b, 'x')"), {"b": b_id})

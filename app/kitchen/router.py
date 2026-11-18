@@ -53,6 +53,15 @@ async def board(ctx: Ctx = HotelCtx("order.view")) -> dict:
         "max_queue_orders": outlet.max_queue_orders,
         "awaiting_confirmation": [await order_json(db, o) for o in waiting if o.status == "PLACED"],
         "up_for_grabs": [await order_json(db, o) for o in waiting if o.status == "CONFIRMED"],
+        # Handed to the kitchen as printed KOTs; staff mark these ready (paper path).
+        "on_paper": [
+            await order_json(db, o)
+            for o in (
+                await db.execute(
+                    select(Order).where(Order.on_paper, Order.status == "PREPARING").order_by(Order.started_at)
+                )
+            ).scalars()
+        ],
         "chefs": chef_rows,
         "ready": [await order_json(db, o) for o in ready],
     }

@@ -37,7 +37,14 @@ Answer when convenient; each has a default so work is not blocked.
 - UI reference: a commercial mint-green dashboard template the owner shared. Its licence forbids redistributing its source, and the repos are public, so the Flutter UI reproduces the **visual language only**; no code or assets were copied.
 - Plan billing goes through **Razorpay subscriptions** (hosted payment page, webhook activation). Needs a Razorpay account and keys in the secret manager before go-live.
 
+- 2026-11-18: reuse from the owner's other apps: push (GigBridge api+app, ported with an async fix), PDF printing (CMS app invoice generator, adapted), sound player (GigBridge). Vethra (school fees) had nothing directly reusable.
+- 2026-11-18: printing supports every printer through two routes (OS print dialog PDF; raw ESC/POS to network thermal printers from the mobile app). Bills numbered per hotel per FY.
+- 2026-11-18: expense categories are global (super admin) or hotel-only.
+
 ## Still open
+- **Firebase project** for push (FCM keys on the server; google-services.json / GoogleService-Info.plist / web config in the apps).
+- **iOS sound files** must be added to the Runner target in Xcode before the custom sound plays on iPhone.
+- **Paid-bill corrections**: void is allowed with reason today; a CA should confirm whether credit notes are required.
 - **Diner page technology.** Measured Flutter web first load is 3.2 MB gzipped. Options: (a) keep Flutter web and accept ~4-8 s first load on 4G, (b) build a light HTML diner page (~100-200 KB) and keep Flutter for staff. Recommendation: (b) before launch; the API does not change.
 - **Payments provider account.** Razorpay keys, webhook URL and plan IDs.
 - Offline guarantees per device type (default in 07).

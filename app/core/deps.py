@@ -24,7 +24,7 @@ from app.models import (
 )
 from app.platform.entitlements import FeatureValue, resolve, within_limit
 from app.platform.lifecycle import effective_status
-from app.realtime.hub import hub
+from app.realtime.publish import publish_all
 
 
 @dataclass
@@ -156,8 +156,7 @@ def hotel_ctx(permission: str | None = None, feature: str | None = None) -> Call
                 ctx.require_feature(feature)
             yield ctx
         # Committed: now it is safe to tell clients.
-        for channel, event in ctx.events:
-            hub.publish(channel, event)
+        publish_all(ctx.events)
 
     return dep
 

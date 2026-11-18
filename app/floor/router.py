@@ -96,7 +96,8 @@ class TablePatch(BaseModel):
 
 
 def _qr_url(token: str) -> str:
-    return f"{get_settings().public_diner_url.rstrip('/')}/{token}"
+    base = get_settings().public_diner_url.rstrip("/")
+    return f"{base}/{token}" if base else f"/#/t/{token}"
 
 
 def _table_out(t: DiningTable, open_orders: int = 0) -> TableOut:

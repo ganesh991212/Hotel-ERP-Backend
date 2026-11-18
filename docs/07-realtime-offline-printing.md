@@ -16,7 +16,15 @@ Recommendation: build 1 and 2, design ids and events so 3 stays possible.
 ### Offline limits (be honest in sales material)
 Offline queue stops orders being lost; it does not let the kitchen see them until the waiter device syncs. Cached menu prices may be stale: the server re-prices on sync and flags conflicts. UPI needs internet; cash works. Offline is promised for the mobile apps only; Flutter Web is best-effort.
 
-## Printing
+## Printing (implemented 2026-11-18)
+- Server builds each KOT/bill once as layout blocks (`app/printing/documents.py`).
+- Flutter renders the blocks to PDF (`pdf` + `printing`, adapted from the CMS app's invoice generator) and opens the OS
+  print dialog: works with any printer that has a driver (thermal, laser, inkjet; Android print services; AirPrint).
+- The same blocks render to ESC/POS on the server (`app/printing/escpos.py`, 58/80 mm, ASCII); the Android/iOS app
+  sends them raw to a network thermal printer on TCP 9100 (per-device setting). Browsers cannot do raw sockets.
+- Regional-language text on thermal printers needs raster (image) printing; not built.
+
+## Printing (original design notes)
 Decided: hotels use their own thermal (ESC/POS) printers, over **network, USB or Bluetooth** (all three supported). Network printers print from any staff device on the same network. USB/Bluetooth printers print only from the **print station** device they are paired with. The server queues `print_jobs`; the print station (or any device for a network printer) pulls and prints, and failed jobs stay visible and retryable. Printer model and connection are recorded per outlet in the `printers` registry. A spike in Phase 4 picks the Flutter printing package.
 
 ## Devices: tablets, monitors, TVs
