@@ -249,6 +249,12 @@ The free Supabase project pauses after 7 days without traffic (Supabase > projec
 | Render API key saved with `Bearer` in it | Render API returns 401 | paste only the key (starts with `rnd_`) |
 | Staging services placed in a Render environment named "Production" | confusion once real production exists | separate **Staging** environment |
 | Backend `main` had a different, older Phase 1 codebase (PR #2) | PR conflicts | `main` now equals `staging`; PR #2 kept in history at commit `a840958`; ideas to port in `docs/11` |
+| Password `...@...` used in the URLs | host read as `0407@aws-1-...`; the API never reaches Supabase | `@` ends the password in a URL: encode it as `%40`, or use letters and digits only |
+| One password for all three roles | one leak exposes all three | three different passwords |
+| `RUN_RELEASE_ON_START` missing | `/health` OK, but no tables are ever created | add it (`true`) |
+| Passwords changed in Supabase again after Render was updated | `password authentication failed for user "hotel_owner"` | change a password in **both** places, then redeploy; never only one side |
+| Redeploy right after a password change | the migration works, then the next login fails with the *same* password | the Supabase pooler takes 1 to 3 minutes to pick up a new password; wait, then redeploy |
+| Secrets pasted into chat (a password, the Render API key) | they are stored in the chat history | rotate them; for production generate new ones and enter them only in Render/Supabase |
 
 ## Where things live
 
@@ -264,4 +270,5 @@ The free Supabase project pauses after 7 days without traffic (Supabase > projec
 
 | Date | State |
 |---|---|
-| 2026-11-18 | Supabase staging project, roles and passwords done. Web app live and pointing at the API. API live, but database URLs still held template placeholders, so no tables yet. Next: Step 4.1 values, redeploy, Step 6. |
+| 2026-11-18 | Supabase staging project, roles and passwords done. Web app live and pointing at the API. API live, but database URLs still held template placeholders, so no tables yet. |
+| 2026-11-18 19:37 UTC | **Staging working.** Database passwords rotated (letters and digits, 40 chars, one per role), Render values fixed, `RUN_RELEASE_ON_START` and health check added. Migration `0003`, 32 tables, 3 plans, 1 super admin. Checks: no hotel table without RLS, no Data API grants, `hotel_app` cannot bypass RLS. Login endpoint answers. Next: Step 6 items 5 to 8 (first login, end-to-end test). |
