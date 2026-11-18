@@ -130,7 +130,7 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [ ] Staging live on Render + Supabase, verification checklist passed
 - [ ] Production: domain, Supabase Pro, Blueprint applied, restore drill, uptime alert
 - [ ] Realtime fan-out via Redis or LISTEN/NOTIFY (needed before a second API instance)
-- [x] Branches: `staging` (auto-deploys) -> `main` (production); superseded PR #2 kept at tag `archive/phase-1-foundation`
+- [x] Branches: `staging` (auto-deploys) -> `main` (production); superseded PR #2 kept in history at commit `a840958`
 - [ ] Port the hardening items in docs/11 (login lockout and Argon2 off the event loop first)
 
 ## Phase 8: Rooms
