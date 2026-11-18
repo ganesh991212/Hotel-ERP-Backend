@@ -6,7 +6,25 @@ Multi-tenant hotel and restaurant ERP. A super admin onboards hotels and control
 - **Clients:** [Hotel-ERP-Frontend](https://github.com/ganesh991212/Hotel-ERP-Frontend), Flutter for mobile, tablet and web
 - **Market:** India (INR, UPI, GST). Dining first, rooms in a later phase.
 
-**Status:** Phase 0, design only. No application code until `docs/` is reviewed.
+**Status:** Phases 1-4 and 7 partly built (see `docs/BUILD-PLAN.md`). Billing (Phase 5), ratings and rooms not started.
+
+## Run locally
+
+```bash
+docker compose up -d                       # Postgres 16 (+ roles from scripts/db-roles.sql) and Redis
+pip install -e ".[dev]"
+cp .env.example .env                       # set JWT_SECRET
+alembic upgrade head
+PLATFORM_ADMIN_EMAIL=you@example.com PLATFORM_ADMIN_PASSWORD=change-me python -m app.seed --demo
+uvicorn app.main:app --reload             # http://localhost:8000/docs
+```
+
+Tests need the roles plus an empty `hotel_erp_test` database owned by `hotel_owner`:
+
+```bash
+psql -h localhost -U postgres -c "CREATE DATABASE hotel_erp_test OWNER hotel_owner"
+pytest -q
+```
 
 Start with `docs/BUILD-PLAN.md`. It is the single tracker; nothing in it is duplicated elsewhere.
 

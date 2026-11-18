@@ -29,8 +29,19 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 ## Reports
 `/reports/sales`, `/reports/items`, `/reports/chefs`, `/reports/tables`
 
+## Implemented additions (2026-11-18)
+- `POST /orders/quote`, `POST /d/{qr}/quote`: server-priced totals for carts (clients never compute money).
+- `GET /kitchen/board`: one call for chef screens (new, per-chef queues, ready). `POST /orders/{id}/reassign` (chef or back to board, audited). `PUT /kitchen/chefs/{id}/shift`.
+- `GET /d/orders/mine` with `X-Diner-Token`.
+- `GET /permissions`, `PUT /roles/{id}/permissions`, `POST /roles` (custom, plan-gated).
+- `GET/POST /expense-categories`, `GET /expenses?month=YYYY-MM` (with summary), `POST/PATCH/DELETE /expenses`.
+- `GET /dashboard/summary`, `GET /platform/summary`, `PATCH /platform/plans/{id}`.
+- `GET /billing/subscription`, `POST /billing/subscription/checkout`, `POST /webhooks/razorpay`.
+- Full contract: `docs/api/openapi.json` (CI fails if it drifts).
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
+Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.
 
 ## Rooms (phase 8)
 `/room-types`, `/rooms`, `/bookings`, `/bookings/{id}/check-in`, `/check-out`, `/folios/{id}`, `/housekeeping/tasks`

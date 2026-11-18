@@ -31,10 +31,18 @@ Answer when convenient; each has a default so work is not blocked.
 - GST: captured at hotel onboarding; billing follows it (03).
 - Scope: dining first, rooms phased later; India market.
 
+- Owner request 2026-11-18: **CHEF_ACCEPT (chef picks up) is the core flow**, so it is in every plan, not Pro only (05 updated). Super admin can still change it per plan or hotel.
+- Owner request 2026-11-18: **expenses** module added (03, 06, BUILD-PLAN).
+- Owner request 2026-11-18: hotel admins configure **what each role can do** (permission matrix). Editing system roles is in every plan; creating new roles needs `CUSTOM_ROLES`.
+- UI reference: a commercial mint-green dashboard template the owner shared. Its licence forbids redistributing its source, and the repos are public, so the Flutter UI reproduces the **visual language only**; no code or assets were copied.
+- Plan billing goes through **Razorpay subscriptions** (hosted payment page, webhook activation). Needs a Razorpay account and keys in the secret manager before go-live.
+
 ## Still open
+- **Diner page technology.** Measured Flutter web first load is 3.2 MB gzipped. Options: (a) keep Flutter web and accept ~4-8 s first load on 4G, (b) build a light HTML diner page (~100-200 KB) and keep Flutter for staff. Recommendation: (b) before launch; the API does not change.
+- **Payments provider account.** Razorpay keys, webhook URL and plan IDs.
 - Offline guarantees per device type (default in 07).
 - Product name.
 
 ## Inputs pending from you
-- UI reference videos (Phase 7).
-- GitHub repo for this project, then I attach it with `add_repo` to push.
+- Razorpay account (test keys first) to verify checkout and webhooks end to end.
+- Whether to buy a licence for the reference template (only relevant if you want closer fidelity; even then its source cannot go in a public repo).

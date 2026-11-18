@@ -58,5 +58,16 @@ Order-item states: `PLACED → CONFIRMED → ASSIGNED → PREPARING → READY �
 ## Rooms (phase 8)
 `room_types, rooms, rate_plans, bookings, folios, folio_lines, housekeeping_tasks`. Room-service orders reuse `orders` with `channel=ROOM` and a `booking_id`.
 
+## Expenses (added 2026-11-18)
+- `expense_categories(id, hotel_id, name)` defaults seeded at onboarding (Groceries, Vegetables, Gas, Salaries, Rent, Utilities, Maintenance, Other).
+- `expenses(id, hotel_id, outlet_id null, category_id, amount_minor, spent_on, vendor, note, payment_method[CASH|UPI|CARD|BANK], created_by)`.
+
+## Plan billing
+- `subscription_invoices(id, hotel_id, subscription_id, amount_minor, status, provider_ref, period_end)` one row per Razorpay `subscription.charged`.
+- `webhook_events(id, provider, event)` idempotency ledger (platform only).
+
+## Implementation notes (v1)
+- `users.role_id` (one role per user) instead of `user_outlet_roles`; tables carry `area` as text instead of an `areas` table; one menu per outlet (`menu_categories`, `menu_items`). Each is a planned extension, not a change of direction.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

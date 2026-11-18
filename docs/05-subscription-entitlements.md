@@ -3,7 +3,8 @@
 Super admin owns plans and can override per hotel. Hotel admins can only choose within what their plan allows.
 
 ## Feature keys
-Boolean flags: `QR_ORDERING`, `WAITER_ORDERING`, `AUTO_ROUTING`, `ADMIN_PRINT_MODE`, `CHEF_ACCEPT_MODE`, `DEVICE_DISPLAYS`, `RATINGS`, `RATING_WEIGHTED_ROUTING`, `MULTI_STATION`, `SPLIT_BILLING`, `REPORTS_ADVANCED`, `API_WEBHOOKS`, `ROOMS`, `ROOM_SERVICE`.
+Boolean flags: `QR_ORDERING`, `WAITER_ORDERING`, `AUTO_ROUTING`, `ADMIN_PRINT_MODE`, `CHEF_ACCEPT_MODE`, `EXPENSES`, `CUSTOM_ROLES`, `DEVICE_DISPLAYS`, `RATINGS`, `RATING_WEIGHTED_ROUTING`, `MULTI_STATION`, `SPLIT_BILLING`, `REPORTS_ADVANCED`, `API_WEBHOOKS`, `ROOMS`, `ROOM_SERVICE`.
+Implemented so far (`app/platform/features.py`): the first seven plus `RATINGS`, `REPORTS_ADVANCED`, `API_WEBHOOKS`, `ROOMS`.
 Numeric limits: `MAX_OUTLETS`, `MAX_TABLES`, `MAX_STAFF`, `MAX_CHEFS`, `MAX_MENU_ITEMS`, `MAX_ORDERS_PER_MONTH` (null = unlimited).
 
 ## Illustrative plans (prices not decided; set after market quotes)
@@ -12,7 +13,9 @@ Numeric limits: `MAX_OUTLETS`, `MAX_TABLES`, `MAX_STAFF`, `MAX_CHEFS`, `MAX_MENU
 | Outlets | 1 | 3 | unlimited |
 | Waiter ordering | yes | yes | yes |
 | QR ordering | no | yes | yes |
-| Kitchen modes | ADMIN_PRINT | + AUTO_ASSIGN | + CHEF_ACCEPT, stations |
+| Kitchen modes | CHEF_ACCEPT, ADMIN_PRINT | + AUTO_ASSIGN | + stations |
+| Expenses | yes | yes | yes |
+| Custom roles | no (system roles editable) | yes | yes |
 | Ratings | no | yes | + weighted routing |
 | Rooms | no | no | yes |
 

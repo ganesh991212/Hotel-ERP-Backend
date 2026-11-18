@@ -9,52 +9,66 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] Repos created (Backend, Frontend); docs live only in Backend `docs/`
 - [x] Docs revised for strict chef queue, accept mode, ratings, devices, placeholder prices
 - [ ] Owner review of docs; answer remaining items in `09-open-questions.md`
-- [ ] CI skeleton (lint, type check, pytest), docker-compose for Postgres + Redis
-- [ ] FastAPI project skeleton with health endpoint and OpenAPI export
+- [x] CI skeleton (ruff, pytest on Postgres, OpenAPI drift check), docker-compose for Postgres + Redis (type check still todo)
+- [x] FastAPI project skeleton with health endpoint and OpenAPI export (`docs/api/openapi.json`)
 
 ## Phase 1: Tenancy, auth, super admin (02, 05, 08)
-- [ ] Postgres schema: hotels, outlets, users, roles, permissions, refresh_tokens
-- [ ] RLS policies and tenant-context middleware; cross-tenant read test
-- [ ] Login, refresh rotation with reuse detection, logout
-- [ ] RBAC with default roles and custom permission sets
-- [ ] Plans, plan_features, subscriptions, per-hotel overrides
-- [ ] `require_feature` / `require_limit` dependencies with tests
-- [ ] Super admin API: create hotel, assign plan, suspend, override entitlements
-- [ ] Hotel admin API: outlets, users, roles
-- [ ] Audit log
-- [ ] Hotel onboarding captures `hotel_tax_profile` (registration type, GSTIN with checksum, state, service charge) (03)
-- [ ] Feature catalog/registry; per-hotel enablement by super admin (03, 05)
-- [ ] Seed plans with placeholder prices (`is_placeholder`), editable by super admin (05)
+- [x] Postgres schema: hotels, outlets, users, roles, permissions, refresh_tokens
+- [x] RLS policies and tenant-context middleware; cross-tenant read/update/insert test over every tenant table
+- [x] Login, refresh rotation with reuse detection, logout
+- [x] RBAC with default roles and custom permission sets (hotel admin edits a role matrix; HOTEL_ADMIN locked)
+- [x] Plans, plan_features, subscriptions, per-hotel overrides
+- [x] `require_feature` / `require_limit` dependencies with tests
+- [x] Super admin API: create hotel, assign plan, suspend, override entitlements
+- [x] Hotel admin API: users, roles (one user = one role for now)
+- [ ] Hotel admin API: multiple outlets (schema supports it; API and UI use the first outlet)
+- [x] Audit log (all admin mutations; append-only enforcement still todo)
+- [x] Hotel onboarding captures `hotel_tax_profile` (registration type, GSTIN with checksum, state, service charge) (03)
+- [x] Feature registry in code (`app/platform/features.py`); per-hotel enablement via overrides (03, 05)
+- [x] Seed plans with placeholder prices (`is_placeholder`), editable by super admin (05)
+- [x] Plan billing: Razorpay subscription checkout, signed idempotent webhooks, invoices, TRIAL/ACTIVE/PAST_DUE/SUSPENDED (05); not yet run against a live Razorpay account
+- [ ] Scheduled lifecycle job (lifecycle is computed on read today; no reminder emails)
 - [ ] Webhook endpoints and API keys per hotel, signed deliveries with retry (03)
 - [ ] Device registry and 6-digit pairing for TVs/tablets (03, 07)
 - [ ] Staff attendance and shifts
 
 ## Phase 2: Catalog and tables (03, 06)
-- [ ] Menus, categories, items, variants, modifier groups
-- [ ] Item to station mapping, prep time estimate per item
-- [ ] Availability toggle (sold out) and schedule (breakfast/dinner)
-- [ ] Areas and tables; QR token generation and rotation; printable QR sheet
+- [x] Categories and items (one menu per outlet)
+- [ ] Multiple menus, variants, modifier groups
+- [x] Prep time estimate per item
+- [ ] Item to station mapping
+- [x] Availability toggle (sold out), pushed live to staff screens
+- [ ] Availability schedule (breakfast/dinner)
+- [x] Tables with area (text); QR token generation and rotation; printable QR sheet (in-app)
 - [ ] Image upload (object storage) and CDN-friendly sizes
 
 ## Phase 3: Ordering (03, 07, 08)
-- [ ] Table sessions (open, join, close) and diner token
-- [ ] Diner read API: menu by QR token (cacheable)
-- [ ] Order create: QR channel and waiter channel; server-side pricing
-- [ ] Optional confirmation step (waiter/admin approves QR orders)
-- [ ] Order and order-item state machine with audited events
-- [ ] WebSocket channels per outlet; diner order status
-- [ ] Abuse controls: rate limits, OTP option, session expiry
+- [x] Table sessions (open, 3 h expiry) and diner token
+- [ ] Table session join/close on bill payment
+- [x] Diner read API: menu by QR token
+- [ ] Diner menu caching (ETag/CDN)
+- [x] Order create: QR channel and waiter/admin channel; server-side pricing; quote endpoints; idempotent `client_ref`
+- [x] Optional confirmation step (waiter/admin approves QR orders)
+- [x] Order and order-item state machine with audited events
+- [x] WebSocket channels per outlet and per diner session, `seq` per channel, published after commit
+- [ ] Redis fan-out for multiple API instances (hub is in-process today)
+- [x] Abuse controls: session expiry, max open orders per session, item and quantity caps
+- [ ] Abuse controls: rate limits, OTP option
 
 ## Phase 4: Kitchen (04, 07)
-- [ ] Chef profiles, stations, shifts, max_queue_orders
-- [ ] Chef queue: strict order, only head startable, HOLD, admin reorder/reassign (04)
-- [ ] Routing engine (pure function) with all 13 worked examples as tests (04)
-- [ ] Per-outlet lock; unassigned queue; re-run on READY/shift/cancel
-- [ ] Accept timeout and off-shift redistribution
-- [ ] Modes: AUTO_ASSIGN (+ require_accept), CHEF_ACCEPT with atomic claim, ADMIN_PRINT
+- [x] Chef profiles, on-shift flag, max_queue_orders
+- [ ] Stations and shift schedules
+- [x] Chef queue: strict order, only head startable, admin reassign/return to board (04)
+- [ ] HOLD and admin reorder (example 10)
+- [x] Routing engine (pure function); examples 1-9, 11-13 covered by pure or API tests (04)
+- [x] Per-outlet advisory lock; unassigned queue; re-run on READY/shift/cancel
+- [x] Off-shift redistribution
+- [ ] Accept timeout (`require_accept`)
+- [x] Modes: AUTO_ASSIGN, CHEF_ACCEPT with atomic claim (accept at head starts cooking)
+- [ ] ADMIN_PRINT mode end to end (selectable, but printing below is not built)
 - [ ] Printers registry, print jobs, print station; Flutter printing package spike (07)
 - [ ] KOT rendering (58 mm and 80 mm)
-- [ ] KDS API
+- [x] KDS API (`GET /kitchen/board`)
 
 ## Phase 5: Billing (03, 05)
 - [ ] Bills from orders; split, merge, discounts (permissioned)
@@ -72,11 +86,20 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [ ] Sales, item, chef performance, table turnover reports
 
 ## Phase 7: Flutter apps (UI from reference videos)
-- [ ] Design tokens and component library
-- [ ] Staff app (waiter, chef KDS, cashier)
-- [ ] Admin web (menus, tables, staff, reports)
-- [ ] Super admin web (hotels, plans)
-- [ ] Diner web (lean build; spike size first)
+- [x] Design tokens (light + dark) and component library
+- [x] Staff app: waiter floor, chef kitchen board (cashier waits on billing)
+- [x] Admin web: dashboard, menus, tables/QR, team and role matrix, expenses, settings, plan checkout
+- [x] Super admin web: overview, hotels, plans, overrides
+- [x] Diner web in Flutter (menu, cart, live tracker)
+- [x] Diner size spike: 3.2 MB gzipped first load (1.08 MB JS + 2.08 MB CanvasKit). Misses the 3 s on 4G target; see 09
+- [ ] Telugu and Hindi translations (ARB keys exist, English only)
+- [ ] Offline waiter queue and local KDS cache (07)
+- [ ] Widget and golden tests
+
+## Expenses (added 2026-11-18)
+- [x] Expense categories (defaults seeded per hotel), expenses with vendor, payment method, date
+- [x] Monthly summary by category and day; net month on the dashboard (revenue minus expenses)
+- [ ] Receipts (image upload), recurring expenses, export
 
 ## Phase 8: Rooms
 - [ ] Room types, rooms, rate plans

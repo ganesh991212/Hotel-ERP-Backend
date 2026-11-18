@@ -123,9 +123,7 @@ async def main(demo: bool) -> None:
                                 est_prep_minutes=mins,
                             )
                         )
-                print(
-                    "demo hotel: admin@, ravi@, sita@, kiran@demo.example.com / " + pw
-                )
+                print("demo hotel: admin@, ravi@, sita@, kiran@demo.example.com / " + pw)
     await engine.dispose()
 
 

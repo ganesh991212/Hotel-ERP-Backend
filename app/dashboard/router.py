@@ -29,7 +29,8 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
     hotel = await db.get(Hotel, ctx.hotel_id)
     tz = hotel.timezone
     local = func.timezone(tz, Order.created_at)
-    today = (await db.execute(select(cast(func.timezone(tz, func.now()), Date)))).scalar_one()
+    local_now = (await db.execute(select(func.timezone(tz, func.now())))).scalar_one()
+    today = local_now.date()
     is_today = cast(local, Date) == today
     billable = Order.status != "CANCELLED"
 
@@ -133,7 +134,7 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
                 "name": user.name,
                 "on_shift": prof.on_shift,
                 "completed_today": done[0],
-                "avg_minutes": round(done[1], 1) if done[1] is not None else None,
+                "avg_minutes": round(float(done[1]), 1) if done[1] is not None else None,
                 "queue": qlen,
             }
         )
@@ -145,11 +146,12 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
     )
     return {
         "date": today.isoformat(),
+        "now_hour": local_now.hour,  # hotel-local hour; clients must not use the device clock
         "hotel": {"name": hotel.name},
-        "orders_today": count_today,
+        "orders_today": int(count_today),
         "revenue_today_minor": int(revenue_today),
         "avg_ticket_minor": int(revenue_today) // count_today if count_today else 0,
-        "avg_prep_minutes": round(avg_prep, 1) if avg_prep is not None else None,
+        "avg_prep_minutes": round(float(avg_prep), 1) if avg_prep is not None else None,
         "by_status": {k: int(v) for k, v in by_status.items()},
         "by_channel": by_channel,
         "hourly": [{"hour": h, "orders": int(hourly.get(h, 0))} for h in range(24)],

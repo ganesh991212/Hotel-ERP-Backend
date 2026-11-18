@@ -143,6 +143,11 @@ async def test_qr_order_to_chef_to_served(client, hx):
     dash = (await client.get(f"{API}/dashboard/summary", headers=h(hx["admin"]))).json()
     assert dash["orders_today"] >= 1 and dash["revenue_today_minor"] >= order["total_minor"]
     assert any(i["name"] == "Biryani" for i in dash["top_items"])
+    # Postgres SUM/AVG return numeric; the API must still emit JSON numbers, not strings.
+    assert isinstance(dash["avg_prep_minutes"], float)
+    for key in ("revenue_today_minor", "revenue_month_minor", "expenses_month_minor", "net_month_minor"):
+        assert isinstance(dash[key], int), key
+    assert all(isinstance(c["avg_minutes"], (float, type(None))) for c in dash["chefs"])
     hub.unsubscribe(dch, diner_q)
 
 
