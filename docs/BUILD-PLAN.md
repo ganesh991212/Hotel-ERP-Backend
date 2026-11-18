@@ -9,25 +9,30 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] Repos created (Backend, Frontend); docs live only in Backend `docs/`
 - [x] Docs revised for strict chef queue, accept mode, ratings, devices, placeholder prices
 - [ ] Owner review of docs; answer remaining items in `09-open-questions.md`
-- [ ] CI skeleton (lint, type check, pytest), docker-compose for Postgres + Redis
-- [ ] FastAPI project skeleton with health endpoint and OpenAPI export
+- [x] CI (lint, format, mypy strict, migration down/up, pytest on real Postgres as the app role). Local DB via `scripts/dev_db.sh` instead of docker-compose; Redis not needed until Phase 3
+- [x] FastAPI project skeleton with `/health`, `/ready` and OpenAPI at `/openapi.json`
 
 ## Phase 1: Tenancy, auth, super admin (02, 05, 08)
-- [ ] Postgres schema: hotels, outlets, users, roles, permissions, refresh_tokens
-- [ ] RLS policies and tenant-context middleware; cross-tenant read test
-- [ ] Login, refresh rotation with reuse detection, logout
-- [ ] RBAC with default roles and custom permission sets
-- [ ] Plans, plan_features, subscriptions, per-hotel overrides
-- [ ] `require_feature` / `require_limit` dependencies with tests
-- [ ] Super admin API: create hotel, assign plan, suspend, override entitlements
-- [ ] Hotel admin API: outlets, users, roles
-- [ ] Audit log
-- [ ] Hotel onboarding captures `hotel_tax_profile` (registration type, GSTIN with checksum, state, service charge) (03)
-- [ ] Feature catalog/registry; per-hotel enablement by super admin (03, 05)
-- [ ] Seed plans with placeholder prices (`is_placeholder`), editable by super admin (05)
+- [x] Postgres schema: hotels, outlets, users, roles, memberships, auth sessions, refresh-token chain, invites (`alembic/versions/0001_foundation.py`)
+- [x] RLS (ENABLE + FORCE + WITH CHECK) and per-transaction hotel context; catalogue test that every `hotel_id` table is covered; cross-hotel API tests
+- [x] Login (email or phone), lockout, refresh rotation with real reuse detection and race grace, logout, immediate revocation
+- [x] RBAC: 5 system roles, custom roles, per-request permission check, no-escalation and last-admin guards
+- [x] Plans, plan features, subscriptions (price snapshot), per-hotel overrides
+- [x] `require_feature` dependency and `enforce_limit` (advisory-locked) with concurrency tests
+- [x] Super admin API: onboard hotel (atomic), plans and prices, subscription change, suspend/resume, overrides, platform audit
+- [x] Hotel admin API: profile, outlets (plan-gated kitchen settings), staff invites, roles
+- [x] Audit log (hotel and platform, append-only at grant level, PII scrubbed)
+- [x] Hotel onboarding captures `hotel_tax_profile` (registration type, GSTIN with checksum, state, service charge) (03)
+- [x] Feature catalog; per-hotel overrides by super admin (03, 05)
+- [x] Seed plans with placeholder prices (`is_placeholder`), editable by super admin (05)
+
+## Phase 1b: Platform extras (moved out of Phase 1; nothing in Phases 2-3 depends on them)
 - [ ] Webhook endpoints and API keys per hotel, signed deliveries with retry (03)
 - [ ] Device registry and 6-digit pairing for TVs/tablets (03, 07)
-- [ ] Staff attendance and shifts
+- [ ] Staff attendance and shifts (needed by Phase 4 on-shift flag)
+- [ ] Super admin MFA (TOTP) before production
+- [ ] Background job: subscription period end -> past_due -> suspended (with grace)
+- [ ] Cleanup job: used/expired refresh tokens and invites
 
 ## Phase 2: Catalog and tables (03, 06)
 - [ ] Menus, categories, items, variants, modifier groups

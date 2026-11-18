@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hotel-erp-backend"
+version = "0.1.0"
+description = "Hotel ERP API: multi-tenant hotel and restaurant platform (FastAPI)."
+requires-python = ">=3.12"
+
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "email-validator>=2.2",
+  # Pinned below 2.1: its typing of `session.execute(text(...))` makes every
+  # scalar lookup look like None under strict mypy (lesson carried over from
+  # vethra_api, TD-025 there).
+  "sqlalchemy[asyncio]>=2.0.36,<2.1",
+  "asyncpg>=0.30",
+  "alembic>=1.14",
+  # The app runs async on asyncpg; Alembic and scripts run sync on psycopg.
+  "psycopg[binary]>=3.2",
+  "orjson>=3.10",
+  # Argon2id, not bcrypt: bcrypt silently truncates passwords at 72 bytes.
+  "argon2-cffi>=23.1",
+  "pyjwt>=2.9",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "httpx>=0.27",
+  "mypy>=1.13",
+  "ruff>=0.8",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "S", "RUF"]
+# E501: the formatter owns line length; only SQL string literals can exceed it.
+ignore = ["S101", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests build SQL from hard-coded table names only, and use fixed fake secrets.
+"tests/*" = ["S105", "S106", "S608"]
+"alembic/*" = ["S608"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["alembic.*"]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# One event loop for the whole run, so the connection pool is shared across tests
+# (asyncpg connections are bound to the loop that created them).
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+markers = [
+  "isolation: cross-tenant isolation tests, required before merge (CLAUDE.md rule 2)",
+]
