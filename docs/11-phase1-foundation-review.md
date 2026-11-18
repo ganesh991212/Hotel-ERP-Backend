@@ -2,7 +2,7 @@
 
 PR #2 (`claude/phase-1-foundation`) was a second, independent Phase 1 backend. It was merged into `main` while
 this codebase was being built, then superseded because the frontend targets this codebase. Its code is kept at
-commit **`a840958`** (`git show a840958:<path>`; it is the second parent of the merge that superseded it).
+commit **`a840958`** (`git show a840958:<path>`; reachable through the merge that superseded it).
 
 Checked against this codebase on 2026-11-18. Each item: port, or decide not to, then tick.
 
