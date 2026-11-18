@@ -53,7 +53,7 @@ Order matters: database first, then API, then web, then the values that depend o
    - The user is `<role>.<ref>` (e.g. `hotel_app.abcdefghijklmnopqrst`), not plain `hotel_app`.
 
 ### 2. Render Blueprint
-1. Merge the backend and frontend PRs into `main` (both services deploy from `main`).
+1. Both services deploy from the branch named in `render.yaml` (temporarily `claude/magical-meitner-74zq87`; `main` once the backend main conflict is resolved).
 2. Render > New > Blueprint > connect the backend repo; Render reads `render.yaml`. Give the Render GitHub app access
    to **both** repos.
 3. Render asks for every `sync: false` value. Fill them from `deploy/env.staging.example`:
