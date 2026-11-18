@@ -114,20 +114,30 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
     timings = {}
     for key, (start, end) in stages.items():
         m = minutes(start, end)
-        n, avg, p90 = (await db.execute(
-            select(func.count(), func.avg(m), func.percentile_cont(0.9).within_group(m))
-            .where(is_today, start.is_not(None), end.is_not(None))
-        )).one()
-        timings[key] = {"count": int(n), "avg_minutes": round(float(avg), 1) if avg is not None else None,
-                        "p90_minutes": round(float(p90), 1) if p90 is not None else None}
+        n, avg, p90 = (
+            await db.execute(
+                select(func.count(), func.avg(m), func.percentile_cont(0.9).within_group(m)).where(
+                    is_today, start.is_not(None), end.is_not(None)
+                )
+            )
+        ).one()
+        timings[key] = {
+            "count": int(n),
+            "avg_minutes": round(float(avg), 1) if avg is not None else None,
+            "p90_minutes": round(float(p90), 1) if p90 is not None else None,
+        }
 
     servers = []
     serve_m = minutes(Order.ready_at, Order.served_at)
-    for name, n, avg in (await db.execute(
-        select(User.name, func.count(), func.avg(serve_m)).join(User, User.id == Order.served_by_user_id)
-        .where(is_today, Order.ready_at.is_not(None), Order.served_at.is_not(None))
-        .group_by(User.name).order_by(func.avg(serve_m))
-    )).all():
+    for name, n, avg in (
+        await db.execute(
+            select(User.name, func.count(), func.avg(serve_m))
+            .join(User, User.id == Order.served_by_user_id)
+            .where(is_today, Order.ready_at.is_not(None), Order.served_at.is_not(None))
+            .group_by(User.name)
+            .order_by(func.avg(serve_m))
+        )
+    ).all():
         servers.append({"name": name, "served": int(n), "avg_serve_minutes": round(float(avg), 1)})
 
     chefs = []

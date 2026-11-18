@@ -69,6 +69,7 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] KOT printing: server builds layout blocks; Flutter renders PDF (any printer via OS dialog, 58/80 mm/A4) and the API also returns ESC/POS for network thermal printers (Android/iOS raw TCP 9100) (07)
 - [x] Paper path: printing a KOT can hand a waiting order to the kitchen on paper (leaves the chef board; staff mark ready)
 - [x] Print log for every KOT and bill print; reprints labelled REPRINT/DUPLICATE
+- [x] Table QR printing: one table or all; A4 card sheet or roll tickets; native ESC/POS QR on thermal printers
 - [ ] Printers registry and server-side print queue for a shared print station (today: per-device printer settings)
 - [ ] USB/Bluetooth raw printing from the app (today via OS driver + print dialog)
 - [x] KDS API (`GET /kitchen/board`)
@@ -87,7 +88,10 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] FCM HTTP v1 push ported from GigBridge (async, post-commit, stale-token pruning, shared-device re-binding)
 - [x] Who gets what: new order -> chefs on shift (CHEF_ACCEPT) / KOT printers (ADMIN_PRINT) / assigned chef (AUTO); QR needing confirmation -> confirmers; ready -> servers
 - [x] Loud original alert sounds; Android channels on the alarm stream; iOS time-sensitive; in-app loud playback on realtime events (web cannot customise push sounds)
-- [ ] Firebase project + keys; verify on real Android/iOS devices; add the two .wav files to the Xcode Runner target
+- [x] Firebase configured only in the server .env; apps fetch public config from `GET /push/config`; static web service worker
+- [x] iOS alert sounds registered in the Runner target (pbxproj)
+- [x] Browser: Enable alerts prompt (unlock sound + notification permission); loud sound while the tab is open
+- [ ] Firebase project + keys in .env; verify on real Android/iOS devices
 - [ ] Migrate to firebase_messaging register()/onRegistered once FID delivery is verified
 
 ## Phase 6: Ratings and reports (04)
@@ -105,7 +109,8 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] Super admin web: overview, hotels, plans, overrides
 - [x] Diner web in Flutter (menu, cart, live tracker)
 - [x] Diner size spike: 3.2 MB gzipped first load (1.08 MB JS + 2.08 MB CanvasKit). Misses the 3 s on 4G target; see 09
-- [ ] Telugu and Hindi translations (ARB keys exist, English only)
+- [x] Telugu and Hindi UI (first-draft translations; native review pending), per-device language switch, on-demand Noto fonts, localised dates; prints stay English
+- [x] Bottom navigation dock (all screen sizes; scrolls on phones)
 - [ ] Offline waiter queue and local KDS cache (07)
 - [ ] Widget and golden tests
 

@@ -41,7 +41,11 @@ Answer when convenient; each has a default so work is not blocked.
 - 2026-11-18: printing supports every printer through two routes (OS print dialog PDF; raw ESC/POS to network thermal printers from the mobile app). Bills numbered per hotel per FY.
 - 2026-11-18: expense categories are global (super admin) or hotel-only.
 
+- 2026-11-18: UI languages English/Telugu/Hindi with per-device switch; every print stays English. Navigation moved to a bottom dock.
+- 2026-11-18: push is configured only in the backend .env (public Firebase app ids are served to the apps).
+
 ## Still open
+- **Native review** of the Telugu and Hindi strings (first draft).
 - **Firebase project** for push (FCM keys on the server; google-services.json / GoogleService-Info.plist / web config in the apps).
 - **iOS sound files** must be added to the Runner target in Xcode before the custom sound plays on iPhone.
 - **Paid-bill corrections**: void is allowed with reason today; a CA should confirm whether credit notes are required.

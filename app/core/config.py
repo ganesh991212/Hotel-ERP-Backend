@@ -36,6 +36,19 @@ class Settings(BaseSettings):
     # Firebase Cloud Messaging (HTTP v1). Both empty = push is a silent no-op; realtime + in-app sound still work.
     fcm_project_id: str = ""
     fcm_service_account_json: str = ""  # path to the JSON file, or the JSON itself (from the secret manager)
+    # Public Firebase app identifiers, served to the apps at runtime so .env is the only place push is configured.
+    # These are not secrets (Firebase ships them inside every client); the service-account JSON above is.
+    firebase_api_key: str = ""
+    firebase_android_api_key: str = ""  # optional; falls back to firebase_api_key
+    firebase_ios_api_key: str = ""  # optional; falls back to firebase_api_key
+    firebase_auth_domain: str = ""
+    firebase_storage_bucket: str = ""
+    firebase_messaging_sender_id: str = ""
+    firebase_web_app_id: str = ""
+    firebase_android_app_id: str = ""
+    firebase_ios_app_id: str = ""
+    firebase_ios_bundle_id: str = ""
+    firebase_vapid_key: str = ""
 
     max_items_per_order: int = 50
     max_qty_per_line: int = 20

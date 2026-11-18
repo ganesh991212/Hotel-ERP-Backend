@@ -43,3 +43,9 @@ def test_escpos_layout_and_bytes():
     assert data.startswith(b"\x1b@") and data.endswith(b"\x1b!\x00" if False else data[-6:])
     assert escpos.CUT in data and b"KOT" in data
     data.decode("ascii")  # pure ASCII payload, safe for any ESC/POS printer
+
+
+def test_escpos_qr_block():
+    data = escpos.render([("qr", "https://example.com/#/t/abc"), ("cut",)], 80)
+    assert b"\x1d(k" in data and b"https://example.com/#/t/abc" in data
+    assert escpos.qr_command("x", 8).endswith(b"\x1d(k\x03\x001Q0")

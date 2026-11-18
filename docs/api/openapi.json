@@ -1839,6 +1839,138 @@
     }
    }
   },
+  "/api/v1/tables/{table_id}/qr-print": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Print Table Qr",
+    "operationId": "print_table_qr_api_v1_tables__table_id__qr_print_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QrPrintIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Print Table Qr Api V1 Tables  Table Id  Qr Print Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables/qr-print": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Print All Qr",
+    "operationId": "print_all_qr_api_v1_tables_qr_print_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QrPrintIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Print All Qr Api V1 Tables Qr Print Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/categories": {
    "get": {
     "tags": [
@@ -4832,6 +4964,30 @@
     }
    }
   },
+  "/api/v1/push/config": {
+   "get": {
+    "tags": [
+     "notifications"
+    ],
+    "summary": "Push Config",
+    "description": "Public Firebase client config from .env, so apps need no per-build Firebase files. `enabled` is true only\nwhen the server can actually send (FCM project + service account) and the client side is configured.",
+    "operationId": "push_config_api_v1_push_config_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Push Config Api V1 Push Config Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/me/devices": {
    "post": {
     "tags": [
@@ -6091,6 +6247,37 @@
     },
     "type": "object",
     "title": "PrintIn"
+   },
+   "QrPrintIn": {
+    "properties": {
+     "paper_mm": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Paper Mm",
+      "description": "58 or 80 to also get ESC/POS bytes"
+     },
+     "origin": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 200,
+        "pattern": "^https?://[^\\s/]+$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Origin"
+     }
+    },
+    "type": "object",
+    "title": "QrPrintIn"
    },
    "QuoteIn": {
     "properties": {

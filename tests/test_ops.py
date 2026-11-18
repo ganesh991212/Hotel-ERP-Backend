@@ -180,3 +180,46 @@ async def test_expense_categories_global_and_hotel_scoped(client, root, hz):
     assert "Licences & fees" not in names
     listed = (await client.get(f"{API}/platform/expense-categories", headers=h(root))).json()
     assert any(c["name"] == "Licences & fees" and not c["is_active"] for c in listed)
+
+
+async def test_print_table_qr(client, hz):
+    t = hz["table"]
+    # Without PUBLIC_DINER_URL the client must say which origin the code should open.
+    r = await client.post(f"{API}/tables/{t['id']}/qr-print", headers=h(hz["admin"]), json={})
+    assert r.status_code == 400 and r.json()["code"] == "public_url_missing"
+    r = await client.post(
+        f"{API}/tables/{t['id']}/qr-print",
+        headers=h(hz["admin"]),
+        json={"origin": "https://demo.example.com", "paper_mm": 58},
+    )
+    doc = r.json()
+    url = f"https://demo.example.com/#/t/{t['qr_token']}"
+    assert doc["tickets"][0]["url"] == url and ["qr", url] in doc["tickets"][0]["blocks"]
+    assert url.encode() in base64.b64decode(doc["escpos_b64"])
+    allq = (
+        await client.post(f"{API}/tables/qr-print", headers=h(hz["admin"]), json={"origin": "https://demo.example.com"})
+    ).json()
+    assert len(allq["tickets"]) >= 1
+    assert (await client.post(f"{API}/tables/qr-print", headers=h(hz["Kiran"]), json={})).status_code == 403
+
+
+async def test_push_config_comes_from_env(client, monkeypatch):
+    from app.core.config import get_settings
+
+    r = (await client.get(f"{API}/push/config")).json()
+    assert r["enabled"] is False and r["web"] is None  # nothing configured in tests
+    s = get_settings()
+    for k, v in {
+        "fcm_project_id": "p1",
+        "fcm_service_account_json": "{}",
+        "firebase_api_key": "AIza-test",
+        "firebase_web_app_id": "1:2:web:3",
+        "firebase_vapid_key": "BXyz",
+        "firebase_android_app_id": "1:2:android:4",
+        "firebase_messaging_sender_id": "2",
+    }.items():
+        monkeypatch.setattr(s, k, v)
+    r = (await client.get(f"{API}/push/config")).json()
+    assert r["enabled"] is True
+    assert r["web"]["vapidKey"] == "BXyz" and r["android"]["appId"] == "1:2:android:4" and r["ios"] is None
+    assert "service" not in str(r).lower()  # the secret never leaves the server

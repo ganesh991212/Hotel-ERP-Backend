@@ -10,6 +10,7 @@ Blocks are tuples:
   ("total", left, right)   like row, bold, double height
   ("divider",)
   ("feed", n)
+  ("qr", data)             QR code, centred (native ESC/POS QR command on thermal printers)
   ("cut",)
 """
 
@@ -65,7 +66,31 @@ def to_lines(blocks: list[tuple], width: int) -> list[tuple[str, str]]:
             lines += [("text", "")] * int(b[1])
         elif kind == "cut":
             lines.append(("cut", ""))
+        elif kind == "qr":
+            lines.append(("qr", b[1]))
     return lines
+
+
+def qr_command(data: str, module: int = 6) -> bytes:
+    """GS ( k: model 2, module size, error correction M, store, print. Supported by Epson-compatible printers."""
+    payload = data.encode("ascii", "replace")
+    n = len(payload) + 3
+    return (
+        GS
+        + b"(k\x04\x00\x31\x41\x32\x00"  # model 2
+        + GS
+        + b"(k\x03\x00\x31\x43"
+        + bytes([module])  # module size
+        + GS
+        + b"(k\x03\x00\x31\x45\x31"  # error correction M
+        + GS
+        + b"(k"
+        + bytes([n % 256, n // 256])
+        + b"\x31\x50\x30"
+        + payload  # store
+        + GS
+        + b"(k\x03\x00\x31\x51\x30"  # print
+    )
 
 
 def render(blocks: list[tuple], paper_mm: int = 80) -> bytes:
@@ -74,6 +99,9 @@ def render(blocks: list[tuple], paper_mm: int = 80) -> bytes:
     for style, text in to_lines(blocks, width):
         if style == "cut":
             out += b"\n\n\n" + CUT
+            continue
+        if style == "qr":
+            out += ALIGN["center"] + qr_command(text, module=8 if paper_mm >= 80 else 6) + b"\n"
             continue
         if style == "title":
             out += ALIGN["center"] + SIZE_DOUBLE + BOLD_ON

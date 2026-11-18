@@ -4,12 +4,40 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
 
+from app.core.config import get_settings
 from app.core.db import platform_session
 from app.core.deps import Ctx, HotelCtx
 from app.models import DeviceToken
 from app.notify import push
 
 router = APIRouter(tags=["notifications"])
+
+
+@router.get("/push/config")
+async def push_config() -> dict:
+    """Public Firebase client config from .env, so apps need no per-build Firebase files. `enabled` is true only
+    when the server can actually send (FCM project + service account) and the client side is configured."""
+    s = get_settings()
+    base = {
+        "projectId": s.fcm_project_id,
+        "messagingSenderId": s.firebase_messaging_sender_id,
+        "storageBucket": s.firebase_storage_bucket,
+    }
+
+    def platform(api_key: str, app_id: str, **extra) -> dict | None:
+        key = api_key or s.firebase_api_key
+        return {**base, "apiKey": key, "appId": app_id, **extra} if key and app_id else None
+
+    out = {
+        "web": platform(
+            s.firebase_api_key, s.firebase_web_app_id, authDomain=s.firebase_auth_domain, vapidKey=s.firebase_vapid_key
+        )
+        if s.firebase_vapid_key
+        else None,
+        "android": platform(s.firebase_android_api_key, s.firebase_android_app_id),
+        "ios": platform(s.firebase_ios_api_key, s.firebase_ios_app_id, iosBundleId=s.firebase_ios_bundle_id),
+    }
+    return {"enabled": push.configured() and any(out.values()), **out}
 
 
 class TokenIn(BaseModel):

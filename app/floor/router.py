@@ -181,3 +181,67 @@ async def delete_table(table_id: UUID, ctx: Ctx = HotelCtx("table.manage")) -> N
         raise bad_request("table_has_orders", "Tables with order history can be deactivated, not deleted")
     await ctx.db.delete(t)
     await ctx.audit("table.delete", "table", table_id)
+
+
+class QrPrintIn(BaseModel):
+    paper_mm: int | None = Field(default=None, description="58 or 80 to also get ESC/POS bytes")
+    # Only used when PUBLIC_DINER_URL is not configured (dev/preview): the web origin the codes should open.
+    origin: str | None = Field(default=None, max_length=200, pattern=r"^https?://[^\s/]+$")
+
+
+def _absolute(url: str, origin: str | None) -> str:
+    if url.startswith("http"):
+        return url
+    if not origin:
+        raise bad_request("public_url_missing", "Set PUBLIC_DINER_URL so printed QR codes open the right site")
+    return origin.rstrip("/") + url
+
+
+async def _qr_doc(ctx: Ctx, tables: list[DiningTable], body: QrPrintIn) -> dict:
+    import base64
+
+    from app.models import Hotel
+    from app.printing import escpos
+    from app.printing.documents import table_qr_blocks
+
+    hotel = await ctx.db.get(Hotel, ctx.hotel_id)
+    tickets = [
+        {
+            "table_id": str(t.id),
+            "label": t.label,
+            "area": t.area,
+            "url": _absolute(_qr_url(t.qr_token), body.origin),
+            "blocks": table_qr_blocks(
+                hotel_name=hotel.name, table_label=t.label, area=t.area, url=_absolute(_qr_url(t.qr_token), body.origin)
+            ),
+        }
+        for t in tables
+    ]
+    out: dict = {"hotel_name": hotel.name, "tickets": tickets}
+    if body.paper_mm:
+        out["escpos_b64"] = base64.b64encode(
+            b"".join(escpos.render(tk["blocks"], body.paper_mm) for tk in tickets)
+        ).decode()
+    return out
+
+
+@router.post("/tables/{table_id}/qr-print")
+async def print_table_qr(table_id: UUID, body: QrPrintIn, ctx: Ctx = HotelCtx("table.manage")) -> dict:
+    t = await ctx.db.get(DiningTable, table_id)
+    if not t:
+        raise not_found("Table")
+    return await _qr_doc(ctx, [t], body)
+
+
+@router.post("/tables/qr-print")
+async def print_all_qr(body: QrPrintIn, ctx: Ctx = HotelCtx("table.manage")) -> dict:
+    tables = (
+        (
+            await ctx.db.execute(
+                select(DiningTable).where(DiningTable.status == "ACTIVE").order_by(DiningTable.area, DiningTable.label)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return await _qr_doc(ctx, list(tables), body)

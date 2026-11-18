@@ -59,6 +59,21 @@ def kot_blocks(
     return blocks
 
 
+def table_qr_blocks(*, hotel_name: str, table_label: str, area: str | None, url: str) -> list[tuple]:
+    """A table tent / sticker: hotel, table, QR, and how to use it. English only (see docs/07)."""
+    blocks: list[tuple] = [("title", hotel_name), ("center", f"Table {table_label}" + (f" - {area}" if area else ""))]
+    blocks += [
+        ("feed", 1),
+        ("qr", url),
+        ("feed", 1),
+        ("title", "Scan to order"),
+        ("center", "Open your phone camera and point it at the code"),
+        ("feed", 1),
+        ("cut",),
+    ]
+    return blocks
+
+
 DOC_TITLE = {"TAX_INVOICE": "TAX INVOICE", "BILL_OF_SUPPLY": "BILL OF SUPPLY", "BILL": "BILL"}
 
 
