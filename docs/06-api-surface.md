@@ -40,7 +40,8 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 - `GET/POST /orders/{id}/kot` (preview / print, optional `send_to_kitchen`, `paper_mm` for ESC/POS), `POST /orders/{id}/mark-ready` (paper path).
 - `POST /bills`, `GET /bills`, `GET /bills/{id}`, `POST /bills/{id}/print|settle|void`.
 - `POST/DELETE /me/devices` (push tokens); `GET /push/config` (public Firebase client config from .env).
-- `POST /tables/{id}/qr-print`, `POST /tables/qr-print` (QR tickets as blocks, optional ESC/POS).
+- `POST /tables/{id}/qr-print`, `POST /tables/qr-print` (branded QR tickets: hotel, logo, powered-by, blocks, optional ESC/POS).
+- `GET/PUT /branding`, `GET/PUT/DELETE /branding/logo`.
 - `PATCH/DELETE /expense-categories/{id}` (own only); `GET/POST/PATCH /platform/expense-categories` (global).
 - Dashboard summary adds `timings` (avg + p90 per stage) and `servers`.
 - Full contract: `docs/api/openapi.json` (CI fails if it drifts).

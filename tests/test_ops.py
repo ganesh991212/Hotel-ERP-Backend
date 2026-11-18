@@ -199,7 +199,7 @@ async def test_print_table_qr(client, hz):
     allq = (
         await client.post(f"{API}/tables/qr-print", headers=h(hz["admin"]), json={"origin": "https://demo.example.com"})
     ).json()
-    assert len(allq["tickets"]) >= 1
+    assert len(allq["tickets"]) >= 1 and allq["hotel"]["name"]
     assert (await client.post(f"{API}/tables/qr-print", headers=h(hz["Kiran"]), json={})).status_code == 403
 
 
@@ -223,3 +223,63 @@ async def test_push_config_comes_from_env(client, monkeypatch):
     assert r["enabled"] is True
     assert r["web"]["vapidKey"] == "BXyz" and r["android"]["appId"] == "1:2:android:4" and r["ios"] is None
     assert "service" not in str(r).lower()  # the secret never leaves the server
+
+
+def _png(color=(102, 160, 95), size=(300, 120)) -> str:
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGBA", size, color + (255,)).save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+async def test_branding_logo_and_branded_qr_card(client, hz):
+    t = hz["table"]
+    # Only settings.manage may change branding; anything that is not an image is refused.
+    assert (
+        await client.put(f"{API}/branding/logo", headers=h(hz["Kiran"]), json={"image_b64": _png()})
+    ).status_code == 403
+    bad = await client.put(
+        f"{API}/branding/logo",
+        headers=h(hz["admin"]),
+        json={"image_b64": base64.b64encode(b"<svg onload=alert(1)>").decode()},
+    )
+    assert bad.status_code == 400 and bad.json()["code"] == "bad_image"
+    r = await client.put(f"{API}/branding/logo", headers=h(hz["admin"]), json={"image_b64": _png()})
+    assert r.status_code == 200 and r.json()["has_logo"] and r.json()["logo_version"] == 1
+    img = await client.get(f"{API}/branding/logo", headers=h(hz["Kiran"]))  # any staff can display it
+    assert img.headers["content-type"] == "image/png" and img.content.startswith(b"\x89PNG")
+    r = await client.put(
+        f"{API}/branding", headers=h(hz["admin"]), json={"address_line": "  12 MG Road,\n Banjara Hills,  Hyderabad  "}
+    )
+    assert r.json()["address_line"] == "12 MG Road, Banjara Hills, Hyderabad"  # one line on prints
+
+    doc = (
+        await client.post(
+            f"{API}/tables/{t['id']}/qr-print",
+            headers=h(hz["admin"]),
+            json={"origin": "https://demo.example.com", "paper_mm": 80},
+        )
+    ).json()
+    blocks = doc["tickets"][0]["blocks"]
+    assert (
+        blocks[0] == ["logo"]
+        and blocks[1][0] == "title"
+        and blocks[2] == ["center", "12 MG Road, Banjara Hills, Hyderabad"]
+    )
+    assert ["badge", f"Table {t['label']}"] in blocks
+    assert any(b[0] == "small" and b[1].startswith("Powered by ") for b in blocks)
+    assert doc["hotel"]["logo_b64"] and doc["powered_by"]["name"]
+    raw = base64.b64decode(doc["escpos_b64"])
+    assert b"\x1dv0\x00" in raw  # logo printed as a raster image
+    assert b"\x1dB\x01" in raw  # table name inverted
+
+    assert (await client.delete(f"{API}/branding/logo", headers=h(hz["admin"]))).json()["has_logo"] is False
+    blocks = (
+        await client.post(
+            f"{API}/tables/{t['id']}/qr-print", headers=h(hz["admin"]), json={"origin": "https://demo.example.com"}
+        )
+    ).json()["tickets"][0]["blocks"]
+    assert ["logo"] not in blocks

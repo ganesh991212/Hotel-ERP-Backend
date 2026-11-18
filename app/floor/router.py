@@ -200,27 +200,49 @@ def _absolute(url: str, origin: str | None) -> str:
 async def _qr_doc(ctx: Ctx, tables: list[DiningTable], body: QrPrintIn) -> dict:
     import base64
 
-    from app.models import Hotel
+    from app.core.config import get_settings
+    from app.models import Hotel, HotelBranding
     from app.printing import escpos
     from app.printing.documents import table_qr_blocks
 
+    s = get_settings()
     hotel = await ctx.db.get(Hotel, ctx.hotel_id)
-    tickets = [
-        {
-            "table_id": str(t.id),
-            "label": t.label,
-            "area": t.area,
-            "url": _absolute(_qr_url(t.qr_token), body.origin),
-            "blocks": table_qr_blocks(
-                hotel_name=hotel.name, table_label=t.label, area=t.area, url=_absolute(_qr_url(t.qr_token), body.origin)
-            ),
-        }
-        for t in tables
-    ]
-    out: dict = {"hotel_name": hotel.name, "tickets": tickets}
+    brand = await ctx.db.get(HotelBranding, ctx.hotel_id)
+    logo = brand.logo_png if brand else None
+    address = brand.address_line if brand else None
+    powered_by = f"Powered by {s.powered_by_name}" + (f" | {s.powered_by_contact}" if s.powered_by_contact else "")
+    tickets = []
+    for t in tables:
+        url = _absolute(_qr_url(t.qr_token), body.origin)
+        tickets.append(
+            {
+                "table_id": str(t.id),
+                "label": t.label,
+                "area": t.area,
+                "url": url,
+                "blocks": table_qr_blocks(
+                    hotel_name=hotel.name,
+                    address_line=address,
+                    has_logo=bool(logo),
+                    table_label=t.label,
+                    area=t.area,
+                    url=url,
+                    powered_by=powered_by,
+                ),
+            }
+        )
+    out: dict = {
+        "hotel": {
+            "name": hotel.name,
+            "address_line": address,
+            "logo_b64": base64.b64encode(logo).decode() if logo else None,
+        },
+        "powered_by": {"name": s.powered_by_name, "contact": s.powered_by_contact or None},
+        "tickets": tickets,
+    }
     if body.paper_mm:
         out["escpos_b64"] = base64.b64encode(
-            b"".join(escpos.render(tk["blocks"], body.paper_mm) for tk in tickets)
+            b"".join(escpos.render(tk["blocks"], body.paper_mm, logo_png=logo) for tk in tickets)
         ).decode()
     return out
 

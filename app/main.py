@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.billing.router import router as bills
+from app.branding.router import router as branding
 from app.catalog.router import router as catalog
 from app.core.config import get_settings
 from app.core.errors import ApiError, api_error_handler
@@ -41,6 +42,7 @@ for r in (
     bills,
     printing,
     devices,
+    branding,
 ):
     app.include_router(r, prefix="/api/v1")
 app.include_router(realtime)

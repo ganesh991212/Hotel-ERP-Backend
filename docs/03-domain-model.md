@@ -71,6 +71,7 @@ Order-item states: `PLACED → CONFIRMED → ASSIGNED → PREPARING → READY �
 - `print_log(kind[KOT|BILL], order_id|bill_id, copy_no, printed_by, at)`.
 - `orders`: `served_by_user_id`, `kot_print_count`, `on_paper` (handed to kitchen as a printed KOT).
 - `device_tokens(hotel_id, user_id, token unique, platform[android|ios|web])`.
+- `hotel_branding(hotel_id pk, address_line, logo_png, logo_version)`: logo is decoded and re-encoded as PNG on upload (never stored as uploaded).
 - `expense_categories.hotel_id` is nullable: NULL = global (super admin). RLS: SELECT own or global; write own only. Plus `is_active`.
 
 Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is printed and sent on paper (no chef assignment).

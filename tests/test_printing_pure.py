@@ -49,3 +49,21 @@ def test_escpos_qr_block():
     data = escpos.render([("qr", "https://example.com/#/t/abc"), ("cut",)], 80)
     assert b"\x1d(k" in data and b"https://example.com/#/t/abc" in data
     assert escpos.qr_command("x", 8).endswith(b"\x1d(k\x03\x001Q0")
+
+
+def test_logo_sanitised_and_rasterised():
+    import io
+
+    import pytest
+    from PIL import Image
+
+    from app.branding.images import BadImage, sanitise_logo, thermal_raster
+
+    buf = io.BytesIO()
+    Image.new("RGBA", (2000, 800), (0, 0, 0, 0)).save(buf, format="PNG")
+    png = sanitise_logo(buf.getvalue())
+    assert png.startswith(b"\x89PNG") and max(Image.open(io.BytesIO(png)).size) <= 512
+    with pytest.raises(BadImage):
+        sanitise_logo(b"GIF89a not really")
+    r = thermal_raster(png, 230)
+    assert r.startswith(b"\x1dv0\x00") and (r[4] + 256 * r[5]) * 8 <= 232

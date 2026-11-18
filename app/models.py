@@ -14,6 +14,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -496,6 +497,19 @@ class DeviceToken(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class HotelBranding(Base):
+    """What a hotel prints and shows: logo (sanitised PNG, re-encoded on upload) and a one-line address."""
+
+    __tablename__ = "hotel_branding"
+    hotel_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("hotels.id", ondelete="CASCADE"), primary_key=True
+    )
+    address_line: Mapped[str | None] = mapped_column(String(200))
+    logo_png: Mapped[bytes | None] = mapped_column(LargeBinary)
+    logo_version: Mapped[int] = mapped_column(Integer, server_default="0")  # cache-busting for clients
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AuditLog(Base):
     __tablename__ = "audit_log"
     id: Mapped[uuid.UUID] = pk()
@@ -537,4 +551,5 @@ TENANT_TABLES = [
     "bill_lines",
     "print_log",
     "device_tokens",
+    "hotel_branding",
 ]

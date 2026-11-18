@@ -11,6 +11,9 @@ Blocks are tuples:
   ("divider",)
   ("feed", n)
   ("qr", data)             QR code, centred (native ESC/POS QR command on thermal printers)
+  ("logo",)                hotel logo (raster image); skipped when no logo bytes are given
+  ("badge", text)          centred, inverted (white on black), double size: the table name
+  ("small", text)          centred, small font (footer)
   ("cut",)
 """
 
@@ -68,6 +71,12 @@ def to_lines(blocks: list[tuple], width: int) -> list[tuple[str, str]]:
             lines.append(("cut", ""))
         elif kind == "qr":
             lines.append(("qr", b[1]))
+        elif kind == "logo":
+            lines.append(("logo", ""))
+        elif kind == "badge":
+            lines += [("badge", t) for t in textwrap.wrap(_ascii(b[1]), width // 2) or [""]]
+        elif kind == "small":
+            lines += [("small", t) for t in textwrap.wrap(_ascii(b[1]), width + width // 3) or [""]]
     return lines
 
 
@@ -93,10 +102,28 @@ def qr_command(data: str, module: int = 6) -> bytes:
     )
 
 
-def render(blocks: list[tuple], paper_mm: int = 80) -> bytes:
+DOTS = {58: 384, 80: 576}
+REVERSE_ON, REVERSE_OFF = GS + b"B\x01", GS + b"B\x00"
+FONT_B, FONT_A = ESC + b"M\x01", ESC + b"M\x00"
+
+
+def render(blocks: list[tuple], paper_mm: int = 80, logo_png: bytes | None = None) -> bytes:
     width = WIDTHS.get(paper_mm, 48)
     out = bytearray(INIT)
     for style, text in to_lines(blocks, width):
+        if style == "logo":
+            if logo_png:
+                from app.branding.images import thermal_raster  # Pillow only when a logo is printed
+
+                out += ALIGN["center"] + thermal_raster(logo_png, DOTS.get(paper_mm, 576) * 2 // 5) + b"\n"
+            continue
+        if style == "badge":
+            out += ALIGN["center"] + SIZE_DOUBLE + BOLD_ON + REVERSE_ON + f" {text} ".encode("ascii")
+            out += REVERSE_OFF + SIZE_NORMAL + BOLD_OFF + b"\n"
+            continue
+        if style == "small":
+            out += ALIGN["center"] + FONT_B + SIZE_NORMAL + BOLD_OFF + text.encode("ascii") + FONT_A + b"\n"
+            continue
         if style == "cut":
             out += b"\n\n\n" + CUT
             continue

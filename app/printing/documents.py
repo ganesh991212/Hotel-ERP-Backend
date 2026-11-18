@@ -59,15 +59,30 @@ def kot_blocks(
     return blocks
 
 
-def table_qr_blocks(*, hotel_name: str, table_label: str, area: str | None, url: str) -> list[tuple]:
-    """A table tent / sticker: hotel, table, QR, and how to use it. English only (see docs/07)."""
-    blocks: list[tuple] = [("title", hotel_name), ("center", f"Table {table_label}" + (f" - {area}" if area else ""))]
+def table_qr_blocks(
+    *,
+    hotel_name: str,
+    address_line: str | None,
+    has_logo: bool,
+    table_label: str,
+    area: str | None,
+    url: str,
+    powered_by: str,
+) -> list[tuple]:
+    """Branded table card: logo + hotel name, one-line address, QR, table name, how to use it, powered-by footer.
+    English only (thermal printers have no Indic fonts; see docs/07)."""
+    blocks: list[tuple] = [("logo",)] if has_logo else []
+    blocks.append(("title", hotel_name))
+    if address_line:
+        blocks.append(("center", address_line))
     blocks += [
         ("feed", 1),
         ("qr", url),
         ("feed", 1),
-        ("title", "Scan to order"),
-        ("center", "Open your phone camera and point it at the code"),
+        ("badge", f"Table {table_label}"),
+        ("center", "Scan to order" + (f"  -  {area}" if area else "")),
+        ("divider",),
+        ("small", powered_by),
         ("feed", 1),
         ("cut",),
     ]

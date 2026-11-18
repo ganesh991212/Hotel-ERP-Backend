@@ -70,6 +70,8 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] Paper path: printing a KOT can hand a waiting order to the kitchen on paper (leaves the chef board; staff mark ready)
 - [x] Print log for every KOT and bill print; reprints labelled REPRINT/DUPLICATE
 - [x] Table QR printing: one table or all; A4 card sheet or roll tickets; native ESC/POS QR on thermal printers
+- [x] Branded QR cards: hotel logo + name, one-line address, QR, table name, "Powered by" (POWERED_BY_* in .env); themed PDF cards (4 per A4, single large, roll) and ESC/POS raster logo + inverted table name
+- [x] Hotel branding settings: logo upload (validated and re-encoded to PNG server-side) and address line
 - [ ] Printers registry and server-side print queue for a shared print station (today: per-device printer settings)
 - [ ] USB/Bluetooth raw printing from the app (today via OS driver + print dialog)
 - [x] KDS API (`GET /kitchen/board`)

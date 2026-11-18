@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     firebase_ios_bundle_id: str = ""
     firebase_vapid_key: str = ""
 
+    # "Powered by" line on printed QR cards (your company). Public text, not a secret.
+    powered_by_name: str = "Vethra"
+    powered_by_contact: str = ""
+
     max_items_per_order: int = 50
     max_qty_per_line: int = 20
 
