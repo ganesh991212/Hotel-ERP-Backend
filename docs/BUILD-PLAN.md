@@ -148,6 +148,12 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] "My work" dashboard per role (cooking / serving / billing), today or 7 days, with team averages
 - [ ] Forgot password by email (needs an email provider)
 
+## Billing visits and long lists (added 2026-11-20)
+- [x] One bill per table visit; items added after billing replace the unpaid bill; warn-and-allow while cooking
+- [x] Orders and bills lists: date range, search, pages; indexes
+- [x] Reprint any bill (DUPLICATE, logged)
+- [ ] Bills register export (CSV) for the accountant
+
 ## Phase 8: Rooms
 - [ ] Room types, rooms, rate plans
 - [ ] Bookings, check-in/out, folio

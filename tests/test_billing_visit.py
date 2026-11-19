@@ -123,3 +123,48 @@ async def test_paid_bill_can_be_printed_again_as_duplicate(client, hb):
     again = (await client.post(f"{API}/bills/{bill['id']}/print", headers=h(hb["admin"]), json={})).json()
     titles = lambda doc: " ".join(str(b) for b in doc["blocks"])  # noqa: E731
     assert "DUPLICATE" not in titles(first) and "DUPLICATE" in titles(again)
+
+
+# ----------------------------------------------------------------- long lists --
+
+
+async def test_orders_and_bills_lists_by_date_search_and_pages(client, hb):
+    from datetime import date, timedelta
+
+    orders = []
+    for _ in range(3):
+        o = await _order(client, hb, qty=1)
+        await _cook(client, hb, o)
+        orders.append(o)
+    bill = (await _bill(client, hb)).json()
+    today = (await client.get(f"{API}/dashboard/summary", headers=h(hb["admin"]))).json()["date"]  # hotel-local
+    yesterday = (date.fromisoformat(today) - timedelta(days=1)).isoformat()
+
+    def get(path):
+        return client.get(f"{API}{path}", headers=h(hb["admin"]))
+
+    day = (await get(f"/orders?scope=all&from={today}&to={today}")).json()
+    assert {o["id"] for o in orders} <= {o["id"] for o in day}
+    assert (await get(f"/orders?scope=all&from={yesterday}&to={yesterday}")).json() == []
+
+    # Pages: newest first, no overlap, nothing lost.
+    p1 = (await get(f"/orders?scope=all&from={today}&limit=2&offset=0")).json()
+    p2 = (await get(f"/orders?scope=all&from={today}&limit=2&offset=2")).json()
+    assert len(p1) == 2 and not {o["id"] for o in p1} & {o["id"] for o in p2}
+    assert p1[0]["number"] > p1[1]["number"]
+
+    # Search by order number (with or without #) and by table.
+    n = orders[1]["number"]
+    assert [o["number"] for o in (await get(f"/orders?scope=all&q=%23{n}")).json()] == [n]
+    by_table = (await get(f"/orders?scope=all&q={hb['table']['label']}")).json()
+    assert len(by_table) >= 3
+
+    bills = (await get(f"/bills?scope=all&from={today}&to={today}")).json()
+    assert [b["id"] for b in bills] == [bill["id"]]
+    assert (await get(f"/bills?scope=all&q={bill['invoice_no'][-5:]}")).json()[0]["id"] == bill["id"]
+    assert (await get("/bills?scope=all&status=PAID")).json() == []
+
+    too_long = await get("/orders?scope=all&from=2026-01-01&to=2026-03-01")
+    assert too_long.status_code == 400 and too_long.json()["code"] == "range_too_long"
+    backwards = await get(f"/bills?scope=all&from={today}&to={yesterday}")
+    assert backwards.status_code == 400 and backwards.json()["code"] == "bad_range"
