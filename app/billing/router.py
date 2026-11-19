@@ -3,7 +3,7 @@ from datetime import timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import or_, select
 
 from app.billing import service
@@ -18,8 +18,17 @@ router = APIRouter(tags=["bills"])
 
 
 class BillIn(BaseModel):
-    table_id: UUID
+    """A table's bill for this visit (`table_id`), or one takeaway order's bill (`order_id`)."""
+
+    table_id: UUID | None = None
+    order_id: UUID | None = None
     include_unserved: bool = False
+
+    @model_validator(mode="after")
+    def _one_target(self) -> "BillIn":
+        if (self.table_id is None) == (self.order_id is None):
+            raise ValueError("Give either table_id or order_id")
+        return self
 
 
 class SettleIn(BaseModel):
@@ -43,13 +52,23 @@ async def _get(ctx: Ctx, bill_id: UUID) -> Bill:
 
 @router.post("/bills", status_code=201)
 async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
-    b, replaced = await service.create_bill(
-        ctx.db,
-        hotel_id=ctx.hotel_id,
-        table_id=body.table_id,
-        user_id=ctx.user_id,
-        include_unserved=body.include_unserved,
-    )
+    if body.order_id:
+        b = await service.create_order_bill(
+            ctx.db,
+            hotel_id=ctx.hotel_id,
+            order_id=body.order_id,
+            user_id=ctx.user_id,
+            include_unserved=body.include_unserved,
+        )
+        replaced: list[str] = []
+    else:
+        b, replaced = await service.create_bill(
+            ctx.db,
+            hotel_id=ctx.hotel_id,
+            table_id=body.table_id,
+            user_id=ctx.user_id,
+            include_unserved=body.include_unserved,
+        )
     after = {"invoice_no": b.invoice_no, "total_minor": b.total_minor, "replaced": replaced}
     await ctx.audit("bill.create", "bill", b.id, after=after)
     ctx.emit(f"outlet:{b.outlet_id}", {"type": "bill.created", "table_id": str(b.table_id)})

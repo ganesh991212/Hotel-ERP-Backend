@@ -74,7 +74,39 @@ async def create_bill(
         await void(db, old, "Items added: replaced by a new bill")
         replaced.append(old)
     orders = await _unbilled(db, table_id)
+    bill = await _issue(
+        db, hotel_id=hotel_id, outlet_id=table.outlet_id, table_id=table.id, orders=orders, user_id=user_id
+    )
+    for old in replaced:
+        old.void_reason = f"Items added: replaced by {bill.invoice_no}"
+    await db.flush()
+    return bill, [old.invoice_no for old in replaced]
 
+
+async def create_order_bill(
+    db: AsyncSession, *, hotel_id: UUID, order_id: UUID, user_id: UUID, include_unserved: bool
+) -> Bill:
+    """Bill one takeaway / counter order (no table, so no table visit). Usually paid at the counter before or at
+    pickup; billing while it is still cooking warns like a table bill."""
+    await db.execute(text("select pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"bill:{hotel_id}"})
+    o = await db.get(Order, order_id, with_for_update=True)
+    if not o:
+        raise not_found("Order")
+    if o.table_id is not None:
+        raise bad_request("table_order", "Bill table orders by table: one bill per table visit")
+    if o.bill_id is not None:
+        raise conflict("already_billed", "This order already has a bill")
+    if o.status in ("CANCELLED", "PLACED"):
+        raise conflict("bad_order_state", f"Order is {o.status}")
+    if o.status != "SERVED" and not include_unserved:
+        raise conflict("orders_not_served", "This order is not handed over yet", {"orders": [o.number]})
+    return await _issue(db, hotel_id=hotel_id, outlet_id=o.outlet_id, table_id=None, orders=[o], user_id=user_id)
+
+
+async def _issue(
+    db: AsyncSession, *, hotel_id: UUID, outlet_id: UUID, table_id: UUID | None, orders: list[Order], user_id: UUID
+) -> Bill:
+    """Issue one GST bill covering exactly these orders. Caller holds the hotel's bill-number lock."""
     profile = (await db.execute(select(HotelTaxProfile))).scalar_one_or_none()
     hotel = await db.get(Hotel, hotel_id)
     fy = financial_year(now().astimezone(ZoneInfo(hotel.timezone)))
@@ -103,8 +135,8 @@ async def create_bill(
 
     bill = Bill(
         hotel_id=hotel_id,
-        outlet_id=table.outlet_id,
-        table_id=table.id,
+        outlet_id=outlet_id,
+        table_id=table_id,
         fy=fy,
         number=number,
         invoice_no=invoice_no(fy, number),
@@ -134,10 +166,15 @@ async def create_bill(
         )
     for o in orders:
         o.bill_id = bill.id
-    for old in replaced:
-        old.void_reason = f"Items added: replaced by {bill.invoice_no}"
     await db.flush()
-    return bill, [old.invoice_no for old in replaced]
+    return bill
+
+
+async def _customer(db: AsyncSession, bill: Bill) -> str | None:
+    """Takeaway bills name the guest (from the order); table bills do not."""
+    if bill.table_id:
+        return None
+    return (await db.execute(select(Order.customer_name).where(Order.bill_id == bill.id).limit(1))).scalar()
 
 
 async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) -> dict:
@@ -170,6 +207,7 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
         "status": bill.status,
         "table_label": table.label if table else None,
         "table_id": str(bill.table_id) if bill.table_id else None,
+        "customer_name": await _customer(db, bill),
         "subtotal_minor": bill.subtotal_minor,
         "tax_minor": bill.tax_minor,
         "cgst_minor": bill.cgst_minor,

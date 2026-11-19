@@ -5819,9 +5819,28 @@
    "BillIn": {
     "properties": {
      "table_id": {
-      "type": "string",
-      "format": "uuid",
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Table Id"
+     },
+     "order_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Order Id"
      },
      "include_unserved": {
       "type": "boolean",
@@ -5830,10 +5849,8 @@
      }
     },
     "type": "object",
-    "required": [
-     "table_id"
-    ],
-    "title": "BillIn"
+    "title": "BillIn",
+    "description": "A table's bill for this visit (`table_id`), or one takeaway order's bill (`order_id`)."
    },
    "BrandingIn": {
     "properties": {
@@ -6668,9 +6685,45 @@
       "title": "Items"
      },
      "table_id": {
-      "type": "string",
-      "format": "uuid",
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Table Id"
+     },
+     "takeaway": {
+      "type": "boolean",
+      "title": "Takeaway",
+      "default": false
+     },
+     "customer_name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Customer Name"
+     },
+     "customer_phone": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^[0-9+ -]{6,20}$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Customer Phone"
      },
      "note": {
       "anyOf": [
@@ -6699,10 +6752,10 @@
     },
     "type": "object",
     "required": [
-     "items",
-     "table_id"
+     "items"
     ],
-    "title": "OrderIn"
+    "title": "OrderIn",
+    "description": "A table order (`table_id`) or a takeaway / counter order (`takeaway: true`, no table)."
    },
    "OverrideIn": {
     "properties": {

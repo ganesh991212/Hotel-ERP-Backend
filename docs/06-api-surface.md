@@ -72,6 +72,12 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 - `POST /bills` returns `replaced_invoice_nos`: the unpaid bills it cancelled because the guest ordered more
   (docs/03 "Billing a table visit").
 
+## Takeaway (added 2026-11-20)
+- `POST /orders {takeaway: true, customer_name?, customer_phone?, items, note?}`: no table (exactly one of
+  `table_id` or `takeaway`). Channel `TAKEAWAY`; order JSON carries `customer_name`, `customer_phone`.
+- `POST /bills {order_id}`: bill one takeaway order (`table_order` for table orders, `already_billed`).
+- `GET /orders?q=` also matches the takeaway customer's name or phone.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

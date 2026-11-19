@@ -289,7 +289,10 @@ class Order(Base):
     table_session_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("table_sessions.id"))
     number: Mapped[int] = mapped_column(Integer)
     client_ref: Mapped[str | None] = mapped_column(String(64))  # idempotency / offline dedupe
-    channel: Mapped[str] = mapped_column(String(8))  # QR|WAITER|ADMIN
+    channel: Mapped[str] = mapped_column(String(8))  # QR|WAITER|ADMIN|TAKEAWAY
+    # Takeaway / counter orders have no table; the name (and phone) identify the guest at pickup and on the bill.
+    customer_name: Mapped[str | None] = mapped_column(String(80))
+    customer_phone: Mapped[str | None] = mapped_column(String(20))
     placed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     status: Mapped[str] = mapped_column(String(12))
     note: Mapped[str | None] = mapped_column(Text)

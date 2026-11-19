@@ -33,6 +33,7 @@ What each role may do is set per hotel (section 11). The bottom bar shows only t
 | **Bill / invoice** | The guest's document with prices and tax. Its type follows the hotel's GST registration: **Tax invoice** (regular GST), **Bill of supply** (composition scheme), or **Bill** (not registered). Numbered `INV/26-27/00001` per financial year, never reused. |
 | **Table visit** | From the first order at a table until its bill is paid. One visit gets one bill. |
 | **Outlet** | A restaurant inside a hotel (restaurant, bar, room service). v1 shows one outlet per hotel. |
+| **Takeaway** | An order with no table (counter, parcel). Its order number is the token the guest collects with. |
 | **Paise** | All money is stored in paise (1 rupee = 100 paise) so totals never have rounding errors. |
 | **Paper path** | An order handed to the kitchen as a printed KOT instead of the kitchen screen. |
 | **Strict queue** | A chef cooks their orders one at a time, oldest first. |
@@ -52,7 +53,7 @@ Any open order can be Cancelled with a reason (not after it is served).
 | **Confirmed** (waiting for a chef) | A chef taps **Accept** on the Kitchen screen; or auto-assign; or staff print the KOT | a chef picks it up / waiting for a free chef / print the KOT |
 | **Queued** | The assigned chef starts it (only the first in their queue) | chef starts cooking |
 | **Cooking** | The chef taps **Ready** (or staff, for paper orders) | chef is cooking |
-| **Ready** | A server taps **Served** (counter mode: done automatically, the diner collects) | serve it to the table |
+| **Ready** | A server taps **Served** (takeaway: **Handed over**; counter mode: done automatically) | serve it to the table / hand it over |
 | **Served** | Billing the table | bill the table |
 
 Every change is recorded with who, when, from and to (audit trail). If no chef picks up an order in time, an alert
@@ -81,6 +82,9 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 - **Table cards** by area: **Free**, the current order status, or **Bill pending · ₹amount** (served but unpaid).
 - Tap a table: its open orders, **Bill table**, and (for staff allowed to take orders) the order composer: pick
   items by category or search, quantities, a note, live total from the server, **Send to kitchen**.
+- **Takeaway** button (staff who take orders): the same composer without a table, plus the guest's name and phone
+  (both optional). The order number is the guest's token. Takeaway orders appear in Needs attention as
+  "Takeaway #12 · Ramesh" with **Handed over** when ready and **Bill** until billed.
 
 ### Orders tab (admins and billing staff)
 - **Orders | Bills** switch.
@@ -124,6 +128,8 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
     **"1 new order since this bill" → Update bill**: the old bill is cancelled (it stays in the register) and one new
     bill covers everything. A GST invoice is never edited.
   - After payment, the table is free and the next order starts a new visit.
+- **Takeaway orders are billed one order at a time** (usually paid at the counter when ordering or at pickup), with
+  the same warning if the food is not handed over yet. The bill says "Takeaway" and the guest's name.
 - **Bill contents**: hotel details and GSTIN, bill type, number, table, date, items, subtotal, CGST and SGST per rate,
   service charge (if set), total, payment method once paid.
 - **Settle**: Cash, UPI or Card. Paying frees the table and ends the guests' QR session.
@@ -219,7 +225,7 @@ Limits protect the kitchen: at most 5 open orders per table session, sold-out it
 
 | Document | When | Paper |
 |---|---|---|
-| KOT | Paper path, or reprint | 58/80 mm thermal or A4 |
+| KOT | Paper path, or reprint (says TAKEAWAY and the name for takeaway) | 58/80 mm thermal or A4 |
 | Bill | Print / Print again (DUPLICATE) | 58/80 mm thermal or A4 |
 | Table QR cards | Tables screen | A4 sheet, single card, or roll |
 
@@ -262,4 +268,5 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Takeaway / counter orders (section 6, 10, 17) |
 | 2026-11-20 | Guide created, covering everything up to: one bill per visit, Orders/Bills with dates and search, reprint, change/reset password, My work, workflow settings, no-pickup alerts, bill pending |

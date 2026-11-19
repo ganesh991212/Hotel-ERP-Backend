@@ -166,8 +166,8 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 
 | # | Module | Weight | Ours | Score | Status |
 |---|---|---|---|---|---|
-| 1 | Point of sale / billing | 10 | 40% | 4.0 | Partial |
-| 2 | Orders (all channels) | 6 | 50% | 3.0 | Partial |
+| 1 | Point of sale / billing | 10 | 55% | 5.5 | Partial |
+| 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
 | 3 | Tables / floor plan | 6 | 55% | 3.3 | Partial |
 | 4 | Kitchen display | 8 | 80% | 6.4 | Mostly done |
 | 5 | Menu and pricing | 7 | 50% | 3.5 | Partial |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 85% | 3.4 | Mostly done |
-| | **Total** | **100** | | **35.4** | |
+| | **Total** | **100** | | **37.8** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -195,7 +195,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] Order per table by waiter/admin, prices from the server
 - [x] GST bill (CGST/SGST, FY numbering), print (ESC/POS + PDF), settle Cash/UPI/Card, void, duplicate reprint
 - [x] One bill per table visit; items added after billing replace the unpaid bill
-- [ ] Takeaway / counter orders (no table)
+- [x] Takeaway / counter orders (no table): name/phone, token = order number, billed per order
 - [ ] Discounts (amount or %, per role maximum, reason, audited)
 - [ ] Split bill (by items or equally) and part payments (e.g. cash + UPI)
 - [ ] Hold / resume an order; keyboard shortcuts for a counter PC
@@ -204,7 +204,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 ### 2. Orders (6)
 - [x] List with status filters, date range, search, pages; next-step line
 - [x] Channels QR / Waiter / Admin
-- [ ] Takeaway channel (with 1)
+- [x] Takeaway channel
 - [ ] Online channels (website ordering, Swiggy/Zomato via 16)
 
 ### 3. Tables / floor plan (6)

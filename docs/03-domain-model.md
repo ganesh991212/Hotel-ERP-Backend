@@ -95,5 +95,11 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   refused (`on_paid_bill`; refunds are a separate flow).
 - Any bill, paid included, can be printed again; copies after the first say DUPLICATE and are logged.
 
+## Takeaway orders (added 2026-11-20)
+- An order with no table: `channel = TAKEAWAY`, optional `customer_name` / `customer_phone` (migration 0006). Its
+  order number is the pickup token. Same kitchen flow as table orders; "served" means handed over.
+- Billed **per order** (`POST /bills {order_id}`), not per table visit; warn-and-allow while still cooking; an
+  order is billed once (`already_billed`). Never affects table state. KOT and bill say TAKEAWAY and the name.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.
