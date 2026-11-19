@@ -8,7 +8,7 @@ from app.core.config import get_settings
 from app.core.deps import Ctx, HotelCtx, count
 from app.core.errors import bad_request, conflict, not_found
 from app.core.security import new_opaque_token
-from app.models import DiningTable, Order, Outlet
+from app.models import Bill, DiningTable, Order, Outlet
 from app.realtime.hub import outlet_channel  # noqa: F401  (re-exported)
 
 router = APIRouter(tags=["floor"])
@@ -28,6 +28,8 @@ class SettingsOut(BaseModel):
     kitchen_mode: str
     qr_confirm_required: bool
     max_queue_orders: int
+    serve_mode: str
+    pickup_alert_minutes: int | None
     available_modes: list[str]
 
 
@@ -36,6 +38,9 @@ class SettingsIn(BaseModel):
     kitchen_mode: str | None = Field(default=None, pattern="^(CHEF_ACCEPT|AUTO_ASSIGN|ADMIN_PRINT)$")
     qr_confirm_required: bool | None = None
     max_queue_orders: int | None = Field(default=None, ge=1, le=10)
+    serve_mode: str | None = Field(default=None, pattern="^(SERVER|COUNTER)$")
+    # 1-60 minutes; send 0 to turn the alert off (null means "leave unchanged", like every field here).
+    pickup_alert_minutes: int | None = Field(default=None, ge=0, le=60)
 
 
 def _settings_out(ctx: Ctx, o: Outlet) -> SettingsOut:
@@ -46,6 +51,8 @@ def _settings_out(ctx: Ctx, o: Outlet) -> SettingsOut:
         kitchen_mode=o.kitchen_mode,
         qr_confirm_required=o.qr_confirm_required,
         max_queue_orders=o.max_queue_orders,
+        serve_mode=o.serve_mode,
+        pickup_alert_minutes=o.pickup_alert_minutes,
         available_modes=modes,
     )
 
@@ -62,10 +69,12 @@ async def put_settings(body: SettingsIn, ctx: Ctx = HotelCtx("settings.manage"))
     if body.kitchen_mode:
         ctx.require_feature(MODE_FEATURE[body.kitchen_mode])  # validated on write, re-checked on use
         o.kitchen_mode = body.kitchen_mode
-    for f in ("name", "qr_confirm_required", "max_queue_orders"):
+    for f in ("name", "qr_confirm_required", "max_queue_orders", "serve_mode"):
         v = getattr(body, f)
         if v is not None:
             setattr(o, f, v)
+    if body.pickup_alert_minutes is not None:
+        o.pickup_alert_minutes = body.pickup_alert_minutes or None  # 0 = off
     out = _settings_out(ctx, o)
     await ctx.audit("settings.update", "outlet", o.id, before=before, after=out.model_dump(mode="json"))
     return out
@@ -80,6 +89,10 @@ class TableOut(BaseModel):
     qr_token: str
     qr_url: str
     open_orders: int = 0
+    # Derived (docs/04): OCCUPIED while orders are open, BILL_PENDING while served food is unpaid, else FREE.
+    state: str = "FREE"
+    unbilled_orders: int = 0
+    unbilled_total_minor: int = 0  # unbilled served orders + issued-but-unpaid bills; computed by the server
 
 
 class TableIn(BaseModel):
@@ -125,7 +138,36 @@ async def list_tables(ctx: Ctx = HotelCtx("order.view")) -> list[TableOut]:
             )
         ).all()
     )
-    return [_table_out(t, counts.get(t.id, 0)) for t in tables]
+    # Served but not on a bill yet.
+    unbilled = {
+        tid: (n, total)
+        for tid, n, total in (
+            await ctx.db.execute(
+                select(Order.table_id, func.count(), func.coalesce(func.sum(Order.total_minor), 0))
+                .where(Order.status == "SERVED", Order.bill_id.is_(None))
+                .group_by(Order.table_id)
+            )
+        ).all()
+    }
+    # On a bill that is issued but not paid.
+    owing = dict(
+        (
+            await ctx.db.execute(
+                select(Bill.table_id, func.coalesce(func.sum(Bill.total_minor), 0))
+                .where(Bill.status == "ISSUED")
+                .group_by(Bill.table_id)
+            )
+        ).all()
+    )
+    out = []
+    for t in tables:
+        row = _table_out(t, counts.get(t.id, 0))
+        n, total = unbilled.get(t.id, (0, 0))
+        row.unbilled_orders = n
+        row.unbilled_total_minor = int(total) + int(owing.get(t.id, 0))
+        row.state = "OCCUPIED" if row.open_orders else "BILL_PENDING" if row.unbilled_total_minor or n else "FREE"
+        out.append(row)
+    return out
 
 
 @router.post("/tables", response_model=TableOut, status_code=201)

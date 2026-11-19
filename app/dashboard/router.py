@@ -111,13 +111,15 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         "serving": (Order.ready_at, Order.served_at),  # ready at the pass -> on the table
         "total": (Order.created_at, Order.served_at),  # guest's view: order -> food on table
     }
+    # Counter orders (diner collects) have served_at == ready_at: no serving step to measure.
+    only = {"serving": Order.served_at > Order.ready_at}
     timings = {}
     for key, (start, end) in stages.items():
         m = minutes(start, end)
         n, avg, p90 = (
             await db.execute(
                 select(func.count(), func.avg(m), func.percentile_cont(0.9).within_group(m)).where(
-                    is_today, start.is_not(None), end.is_not(None)
+                    is_today, start.is_not(None), end.is_not(None), *([only[key]] if key in only else [])
                 )
             )
         ).one()

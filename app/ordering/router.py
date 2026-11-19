@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 
 from app.core.deps import Ctx, HotelCtx
 from app.core.errors import forbidden, not_found
@@ -95,17 +95,23 @@ async def place_order(body: OrderIn, ctx: Ctx = HotelCtx("order.create", feature
 
 @router.get("/orders")
 async def list_orders(
-    scope: str = Query("open", pattern="^(open|today|all)$"),
+    scope: str = Query("open", pattern="^(open|attention|today|all)$"),
     table_id: UUID | None = None,
+    status: str | None = Query(None, pattern="^(PLACED|CONFIRMED|ASSIGNED|PREPARING|READY|SERVED|CANCELLED)$"),
     ctx: Ctx = HotelCtx("order.view"),
 ) -> list[dict]:
     q = select(Order).order_by(Order.created_at.desc()).limit(200)
     if scope == "open":
         q = q.where(Order.status.in_(OPEN_STATES))
+    elif scope == "attention":
+        # The Floor's "Needs attention": still in progress, or served but not billed yet (next step: bill).
+        q = q.where(or_(Order.status.in_(OPEN_STATES), and_(Order.status == "SERVED", Order.bill_id.is_(None))))
     elif scope == "today":
         q = q.where(Order.created_at >= now() - timedelta(hours=24))
     if table_id:
         q = q.where(Order.table_id == table_id)
+    if status:
+        q = q.where(Order.status == status)
     return [await order_json(ctx.db, o) for o in (await ctx.db.execute(q)).scalars()]
 
 
@@ -123,7 +129,8 @@ async def confirm(order_id: UUID, ctx: Ctx = HotelCtx("order.confirm")) -> dict:
     if not o:
         raise not_found("Order")
     await do_transition(ctx.db, o, "CONFIRMED", Actor("USER", ctx.user_id))
-    await emit_order(ctx.db, ctx.emit, o, "order.updated")
+    # Its own event: a confirmed QR order is new work for the kitchen and must alert chefs like a new order.
+    await emit_order(ctx.db, ctx.emit, o, "order.confirmed")
     outlet = await current_outlet(ctx)
     await kitchen.lock_outlet(ctx.db, outlet.id)
     await kitchen.route_pending(ctx.db, outlet, ctx.emit)

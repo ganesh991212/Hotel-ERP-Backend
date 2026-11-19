@@ -24,7 +24,7 @@ All tenant tables have `hotel_id` (RLS). Ids are UUIDs. Amounts are `_minor` int
 - `refresh_tokens(id, user_id, family_id, hash, used_at, revoked_at, expires_at)`
 
 ## Floor
-- `outlets(id, hotel_id, name, kitchen_mode[AUTO_ASSIGN|CHEF_ACCEPT|ADMIN_PRINT], require_accept, max_queue_orders, rating_band_minutes, qr_confirm_required, ratings_enabled, business_day_cutoff)`
+- `outlets(id, hotel_id, name, kitchen_mode[AUTO_ASSIGN|CHEF_ACCEPT|ADMIN_PRINT], require_accept, max_queue_orders, rating_band_minutes, qr_confirm_required, serve_mode[SERVER|COUNTER], pickup_alert_minutes null, ratings_enabled, business_day_cutoff)` (workflow: docs/04 "Order workflow")
 - `areas(id, outlet_id, name)`, `tables(id, area_id, label, seats, qr_token, status)`
 - `table_sessions(id, table_id, opened_at, closed_at, diner_phone_verified, token_hash)`
 
@@ -78,6 +78,10 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 
 ## Implementation notes (v1)
 - `users.role_id` (one role per user) instead of `user_outlet_roles`; tables carry `area` as text instead of an `areas` table; one menu per outlet (`menu_categories`, `menu_items`). Each is a planned extension, not a change of direction.
+
+## Order workflow (added 2026-11-19)
+- `orders.pickup_alerted_at`: set when the no-pickup alert fired (once per order).
+- Table state is derived: `OCCUPIED` / `BILL_PENDING` / `FREE` (docs/04). Tables list returns `state`, `unbilled_orders`, `unbilled_total_minor`.
 
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

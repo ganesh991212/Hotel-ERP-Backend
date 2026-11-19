@@ -1,3 +1,7 @@
+import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,6 +16,7 @@ from app.expenses.router import router as expenses
 from app.floor.router import router as floor
 from app.iam.router import router as auth
 from app.iam.router import staff
+from app.kitchen import overdue
 from app.kitchen.router import router as kitchen
 from app.notify.router import router as devices
 from app.ordering.diner import router as diner
@@ -21,7 +26,17 @@ from app.platform.router import router as platform
 from app.printing.router import router as printing
 from app.realtime.router import router as realtime
 
-app = FastAPI(title="Hotel ERP API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Background jobs that live with the (single) API process: the no-pickup alert (docs/04)."""
+    task = None if get_settings().app_env == "test" else asyncio.create_task(overdue.run_forever())
+    yield
+    if task:
+        task.cancel()
+
+
+app = FastAPI(title="Hotel ERP API", version="0.1.0", lifespan=lifespan)
 app.add_exception_handler(ApiError, api_error_handler)
 # Order matters: the middleware added last runs first. CORS must wrap the crash handler so a 500 still
 # carries the CORS headers the browser needs to show the error.

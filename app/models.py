@@ -205,6 +205,9 @@ class Outlet(Base):
     max_queue_orders: Mapped[int] = mapped_column(Integer, server_default="3")
     rating_band_minutes: Mapped[int] = mapped_column(Integer, server_default="5")
     qr_confirm_required: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    # Order workflow (docs/04): who brings the food, and when an unclaimed order raises an alert (null = off).
+    serve_mode: Mapped[str] = mapped_column(String(8), server_default="SERVER")  # SERVER|COUNTER
+    pickup_alert_minutes: Mapped[int | None] = mapped_column(Integer, server_default="5")
     created_at: Mapped[datetime] = created()
 
 
@@ -298,6 +301,7 @@ class Order(Base):
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    pickup_alerted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # no-pickup alert sent
     served_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     served_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     kot_print_count: Mapped[int] = mapped_column(Integer, server_default="0")
