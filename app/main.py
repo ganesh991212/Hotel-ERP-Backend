@@ -5,7 +5,7 @@ from app.billing.router import router as bills
 from app.branding.router import router as branding
 from app.catalog.router import router as catalog
 from app.core.config import get_settings
-from app.core.errors import ApiError, api_error_handler
+from app.core.errors import ApiError, ServerErrorsAsJson, api_error_handler
 from app.dashboard.router import router as dashboard
 from app.expenses.router import platform as expense_platform
 from app.expenses.router import router as expenses
@@ -23,6 +23,9 @@ from app.realtime.router import router as realtime
 
 app = FastAPI(title="Hotel ERP API", version="0.1.0")
 app.add_exception_handler(ApiError, api_error_handler)
+# Order matters: the middleware added last runs first. CORS must wrap the crash handler so a 500 still
+# carries the CORS headers the browser needs to show the error.
+app.add_middleware(ServerErrorsAsJson)
 origins = [o.strip() for o in get_settings().cors_origins.split(",") if o.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
 
