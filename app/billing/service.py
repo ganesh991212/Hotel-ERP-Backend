@@ -34,33 +34,46 @@ def split_gst(tax_minor: int) -> tuple[int, int]:
     return cgst, tax_minor - cgst
 
 
+async def _unbilled(db: AsyncSession, table_id: UUID) -> list[Order]:
+    q = (
+        select(Order)
+        .where(Order.table_id == table_id, Order.bill_id.is_(None), Order.status.not_in(("CANCELLED", "PLACED")))
+        .order_by(Order.created_at)
+        .with_for_update()
+    )
+    return list((await db.execute(q)).scalars().all())
+
+
 async def create_bill(
     db: AsyncSession, *, hotel_id: UUID, table_id: UUID, user_id: UUID, include_unserved: bool
-) -> Bill:
+) -> tuple[Bill, list[str]]:
+    """One bill per table visit (docs/03 "Billing a table visit"). If the table already has an issued, unpaid
+    bill and the guest ordered more, that bill is cancelled (a GST invoice cannot be edited; the cancelled number
+    stays in the register) and one new bill covers everything. Returns the bill and the invoice numbers it
+    replaced."""
     table = await db.get(DiningTable, table_id)
     if not table:
         raise not_found("Table")
     # One bill number at a time per hotel: sequential numbering must have no gaps or duplicates.
     await db.execute(text("select pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"bill:{hotel_id}"})
-    orders = (
-        (
-            await db.execute(
-                select(Order)
-                .where(
-                    Order.table_id == table_id, Order.bill_id.is_(None), Order.status.not_in(("CANCELLED", "PLACED"))
-                )
-                .order_by(Order.created_at)
-                .with_for_update()
-            )
-        )
+    if not await _unbilled(db, table_id):
+        raise bad_request("nothing_to_bill", "This table has no orders to bill")
+    open_bills = (
+        (await db.execute(select(Bill).where(Bill.table_id == table_id, Bill.status == "ISSUED").with_for_update()))
         .scalars()
         .all()
     )
-    if not orders:
-        raise bad_request("nothing_to_bill", "This table has no orders to bill")
-    unserved = [o.number for o in orders if o.status != "SERVED"]
+    orders = await _unbilled(db, table_id)
+    already = [o for b in open_bills for o in (await db.execute(select(Order).where(Order.bill_id == b.id))).scalars()]
+    unserved = sorted(o.number for o in [*orders, *already] if o.status != "SERVED")
     if unserved and not include_unserved:
+        # The client warns ("still being prepared: bill anyway?") and retries with include_unserved.
         raise conflict("orders_not_served", "Some orders are not served yet", {"orders": unserved})
+    replaced = []
+    for old in open_bills:
+        await void(db, old, "Items added: replaced by a new bill")
+        replaced.append(old)
+    orders = await _unbilled(db, table_id)
 
     profile = (await db.execute(select(HotelTaxProfile))).scalar_one_or_none()
     hotel = await db.get(Hotel, hotel_id)
@@ -121,8 +134,10 @@ async def create_bill(
         )
     for o in orders:
         o.bill_id = bill.id
+    for old in replaced:
+        old.void_reason = f"Items added: replaced by {bill.invoice_no}"
     await db.flush()
-    return bill
+    return bill, [old.invoice_no for old in replaced]
 
 
 async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) -> dict:

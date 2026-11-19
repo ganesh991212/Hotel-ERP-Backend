@@ -42,16 +42,17 @@ async def _get(ctx: Ctx, bill_id: UUID) -> Bill:
 
 @router.post("/bills", status_code=201)
 async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
-    b = await service.create_bill(
+    b, replaced = await service.create_bill(
         ctx.db,
         hotel_id=ctx.hotel_id,
         table_id=body.table_id,
         user_id=ctx.user_id,
         include_unserved=body.include_unserved,
     )
-    await ctx.audit("bill.create", "bill", b.id, after={"invoice_no": b.invoice_no, "total_minor": b.total_minor})
+    after = {"invoice_no": b.invoice_no, "total_minor": b.total_minor, "replaced": replaced}
+    await ctx.audit("bill.create", "bill", b.id, after=after)
     ctx.emit(f"outlet:{b.outlet_id}", {"type": "bill.created", "table_id": str(b.table_id)})
-    return await service.bill_json(ctx.db, b)
+    return {**await service.bill_json(ctx.db, b), "replaced_invoice_nos": replaced}
 
 
 @router.get("/bills")

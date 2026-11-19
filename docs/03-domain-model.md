@@ -83,5 +83,17 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - `orders.pickup_alerted_at`: set when the no-pickup alert fired (once per order).
 - Table state is derived: `OCCUPIED` / `BILL_PENDING` / `FREE` (docs/04). Tables list returns `state`, `unbilled_orders`, `unbilled_total_minor`.
 
+## Billing a table visit (added 2026-11-20)
+- One bill per **table visit**: from the first order until the bill is paid. Paying ends the visit (QR sessions
+  close); the next order at that table starts a new visit and a new bill.
+- Guest orders more after the bill was issued (unpaid): billing the table again **cancels the issued bill**
+  (`void_reason` "Items added: replaced by <new invoice>") and issues **one** bill with every order of the visit.
+  A GST invoice is never edited; the cancelled number stays in the register, numbering stays gapless.
+- Orders still being prepared: billing returns `orders_not_served` with their numbers; the client warns and may
+  retry with `include_unserved` (decided 2026-11-20: warn and allow).
+- Cancelling an order that is on an issued bill cancels that bill (bill the table again); on a paid bill it is
+  refused (`on_paid_bill`; refunds are a separate flow).
+- Any bill, paid included, can be printed again; copies after the first say DUPLICATE and are logged.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

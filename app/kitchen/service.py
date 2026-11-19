@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import conflict, forbidden, not_found
 from app.core.security import now
 from app.kitchen import routing
-from app.models import ACTIVE_ASSIGNMENT, Assignment, ChefProfile, Order, Outlet, User
+from app.models import ACTIVE_ASSIGNMENT, Assignment, Bill, ChefProfile, Order, Outlet, User
 from app.ordering.service import Actor, emit_order, lock_outlet, mark_ready, transition
 
 
@@ -226,6 +226,15 @@ async def cancel(db: AsyncSession, order_id: UUID, actor: Actor, reason: str, em
     outlet = await _outlet(db, o0)
     await lock_outlet(db, outlet.id)
     o = await _get_order(db, order_id)
+    if o.bill_id:
+        # Billed before it was served (warn-and-allow). The bill's total includes it, so the bill must change too.
+        from app.billing import service as billing
+
+        bill = await db.get(Bill, o.bill_id, with_for_update=True)
+        if bill is not None and bill.status == "PAID":
+            raise conflict("on_paid_bill", f"Order #{o.number} is on paid bill {bill.invoice_no}; refund it instead")
+        if bill is not None and bill.status == "ISSUED":
+            await billing.void(db, bill, f"Order #{o.number} cancelled; bill the table again")
     await transition(db, o, "CANCELLED", actor, reason)
     await remove_from_queue(db, o, "CANCELLED", reason)
     await emit_order(db, emit, o, "order.cancelled")
