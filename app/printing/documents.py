@@ -27,18 +27,19 @@ def _local(ts: datetime | None, tz: str) -> str:
     return ts.astimezone(ZoneInfo(tz)).strftime("%d %b %Y %H:%M")
 
 
-CHANNEL = {"QR": "QR order", "WAITER": "Server", "ADMIN": "Admin"}
+CHANNEL = {"QR": "QR order", "WAITER": "Server", "ADMIN": "Admin", "TAKEAWAY": "Takeaway"}
 
 
 def kot_blocks(
     *, hotel_name: str, order: dict, tz: str, copy_no: int, printed_by: str | None, created_at: datetime | None
 ) -> list[tuple]:
-    table = (order.get("table") or {}).get("label") or "-"
+    table = (order.get("table") or {}).get("label")
+    where = f"Table {table}" if table else "TAKEAWAY"
     blocks: list[tuple] = [
         ("title", "KOT" if copy_no <= 1 else f"KOT REPRINT {copy_no}"),
         ("center", hotel_name),
         ("divider",),
-        ("total", f"Order #{order['number']}", f"Table {table}"),
+        ("total", f"Order #{order['number']}", where),
         ("row", _local(created_at, tz), CHANNEL.get(order["channel"], order["channel"])),
         ("divider",),
     ]
@@ -49,6 +50,8 @@ def kot_blocks(
         if it.get("note"):
             blocks.append(("text", f"   > {it['note']}"))
     blocks.append(("divider",))
+    if not table and order.get("customer_name"):
+        blocks.append(("bold", f"For: {order['customer_name']}"))
     if order.get("note"):
         blocks.append(("text", f"NOTE: {order['note']}"))
     if order.get("chef"):
@@ -114,8 +117,12 @@ def bill_blocks(
         blocks.append(("title", "VOID"))
     blocks += [
         ("divider",),
-        ("row", f"Bill No: {bill['invoice_no']}", f"Table {bill.get('table_label') or '-'}"),
-        ("row", _local(created_at, tz), ""),
+        (
+            "row",
+            f"Bill No: {bill['invoice_no']}",
+            f"Table {bill['table_label']}" if bill.get("table_label") else "Takeaway",
+        ),
+        ("row", _local(created_at, tz), bill.get("customer_name") or ""),
         ("divider",),
         ("row", "Item", "Amount"),
         ("divider",),
@@ -124,6 +131,11 @@ def bill_blocks(
         blocks.append(("text", ln["name"]))
         blocks.append(("row", f"   {ln['qty']} x {rs(ln['unit_price_minor'])}", rs(ln["line_total_minor"])))
     blocks += [("divider",), ("row", "Subtotal", rs(bill["subtotal_minor"]))]
+    if bill.get("discount_minor"):
+        blocks.append(("row", "Discount", "-" + rs(bill["discount_minor"])))
+        if bill.get("discount_reason"):
+            blocks.append(("small", f"  ({bill['discount_reason']})"))
+        blocks.append(("row", "Taxable value", rs(bill["taxable_minor"])))
     for g in tax_groups:
         half = g["rate_bp"] / 200  # display only: 500 bp -> "2.5%"
         pct = f"{half:g}%"
@@ -133,7 +145,12 @@ def bill_blocks(
         blocks.append(("row", "Service charge", rs(bill["service_charge_minor"])))
     blocks += [("divider",), ("total", "TOTAL", rs(bill["total_minor"])), ("divider",)]
     if bill["status"] == "PAID":
-        blocks.append(("row", "Paid by", bill.get("payment_method") or ""))
+        payments = bill.get("payments") or []
+        if len(payments) > 1:
+            for pay in payments:
+                blocks.append(("row", f"Paid by {pay['method']}", rs(pay["amount_minor"])))
+        else:
+            blocks.append(("row", "Paid by", bill.get("payment_method") or ""))
     if bill["doc_type"] == "BILL_OF_SUPPLY":
         blocks.append(("text", "Composition taxable person, not eligible to collect tax on supplies."))
     blocks += [("center", "Thank you! Please visit again."), ("feed", 1), ("cut",)]

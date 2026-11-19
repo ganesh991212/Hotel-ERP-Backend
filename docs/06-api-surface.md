@@ -72,6 +72,25 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 - `POST /bills` returns `replaced_invoice_nos`: the unpaid bills it cancelled because the guest ordered more
   (docs/03 "Billing a table visit").
 
+## Takeaway (added 2026-11-20)
+- `POST /orders {takeaway: true, customer_name?, customer_phone?, items, note?}`: no table (exactly one of
+  `table_id` or `takeaway`). Channel `TAKEAWAY`; order JSON carries `customer_name`, `customer_phone`.
+- `POST /bills {order_id}`: bill one takeaway order (`table_order` for table orders, `already_billed`).
+- `GET /orders?q=` also matches the takeaway customer's name or phone.
+
+## Discounts (added 2026-11-20)
+- `POST /bills {table_id | order_id, discount: {percent_bp | amount_minor, reason}}`: bill with a discount; with an
+  unpaid bill already open it re-issues it. Errors: `discount_limit` (403, `details.max_bp`), `bad_discount`.
+- Bill JSON adds `discount_minor`, `discount_reason`, `taxable_minor`, and per line `discount_minor`.
+- `PUT /roles/{id}/discount-limit {max_discount_bp}` (`role.manage`); roles report `max_discount_bp`.
+
+## Payments (added 2026-11-20)
+- `POST /bills/{id}/payments {method, amount_minor, reference?}`: one part; errors `overpayment` (`details.due_minor`).
+- `DELETE /bills/{id}/payments/{payment_id}`: undo a part while unpaid.
+- `GET /bills/{id}/split?parts=2..20`: `{due_minor, shares_minor[]}`.
+- `POST /bills/{id}/settle {method}` pays whatever is still due.
+- Bill JSON adds `payments[]`, `paid_minor`, `due_minor`; `payment_method` may be `MIXED`.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

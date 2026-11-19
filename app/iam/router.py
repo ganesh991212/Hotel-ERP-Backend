@@ -170,6 +170,7 @@ async def me(claims: dict = Depends(claims_from_header)) -> dict:
         u = await db.get(User, p.user_id)
         hotel = await db.get(Hotel, p.hotel_id)
         outlet = (await db.execute(select(Outlet).order_by(Outlet.created_at).limit(1))).scalar_one_or_none()
+        role = (await db.execute(select(Role).where(Role.code == p.role_code))).scalar_one_or_none()
         return {
             "id": str(u.id),
             "name": u.name,
@@ -177,6 +178,8 @@ async def me(claims: dict = Depends(claims_from_header)) -> dict:
             "platform": False,
             "role": p.role_code,
             "permissions": sorted(p.permissions),
+            # The screens offer discounts only up to this (the server enforces it anyway).
+            "max_discount_bp": 10_000 if p.role_code == LOCKED_ROLE else (role.max_discount_bp if role else 0),
             "hotel": {"id": str(hotel.id), "name": hotel.name} if hotel else None,
             "outlet": {
                 "id": str(outlet.id),
@@ -338,6 +341,7 @@ class RoleOut(BaseModel):
     is_system: bool
     locked: bool
     permissions: list[str]
+    max_discount_bp: int = 0  # largest bill discount this role may give (1000 = 10%)
 
 
 class RolePermsIn(BaseModel):
@@ -363,6 +367,7 @@ async def _role_out(ctx: Ctx, r: Role) -> RoleOut:
         is_system=r.is_system,
         locked=r.code == LOCKED_ROLE,
         permissions=sorted(perms),
+        max_discount_bp=10_000 if r.code == LOCKED_ROLE else r.max_discount_bp,
     )
 
 
@@ -398,6 +403,24 @@ async def set_role_permissions(role_id: UUID, body: RolePermsIn, ctx: Ctx = Hote
         "role.permissions", "role", role.id, before={"permissions": sorted(old)}, after={"permissions": sorted(new)}
     )
     await ctx.db.flush()
+    return await _role_out(ctx, role)
+
+
+class DiscountLimitIn(BaseModel):
+    max_discount_bp: int = Field(ge=0, le=10_000)
+
+
+@staff.put("/roles/{role_id}/discount-limit", response_model=RoleOut)
+async def set_discount_limit(role_id: UUID, body: DiscountLimitIn, ctx: Ctx = HotelCtx("role.manage")) -> RoleOut:
+    """The largest bill discount this role may give (0 = none). Hotel admin is always 100%."""
+    role = await ctx.db.get(Role, role_id)
+    if not role:
+        raise not_found("Role")
+    if role.code == LOCKED_ROLE:
+        raise forbidden("role_locked", "Hotel admin can always give any discount")
+    before = role.max_discount_bp
+    role.max_discount_bp = body.max_discount_bp
+    await ctx.audit("role.discount_limit", "role", role.id, before={"max_discount_bp": before}, after=body.model_dump())
     return await _role_out(ctx, role)
 
 

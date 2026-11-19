@@ -2,7 +2,7 @@ from datetime import timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import and_, func, or_, select
 
 from app.core.deps import Ctx, HotelCtx
@@ -40,9 +40,20 @@ class QuoteIn(BaseModel):
 
 
 class OrderIn(QuoteIn):
-    table_id: UUID
+    """A table order (`table_id`) or a takeaway / counter order (`takeaway: true`, no table)."""
+
+    table_id: UUID | None = None
+    takeaway: bool = False
+    customer_name: str | None = Field(default=None, max_length=80)
+    customer_phone: str | None = Field(default=None, pattern=r"^[0-9+ -]{6,20}$")
     note: str | None = Field(default=None, max_length=300)
     client_ref: str | None = Field(default=None, max_length=64)
+
+    @model_validator(mode="after")
+    def _table_or_takeaway(self) -> "OrderIn":
+        if self.takeaway == (self.table_id is not None):
+            raise ValueError("Give either a table_id or takeaway: true")
+        return self
 
 
 class ReasonIn(BaseModel):
@@ -70,12 +81,17 @@ async def quote_order(body: QuoteIn, ctx: Ctx = HotelCtx("order.create")) -> dic
 
 @router.post("/orders", status_code=201)
 async def place_order(body: OrderIn, ctx: Ctx = HotelCtx("order.create", feature="WAITER_ORDERING")) -> dict:
-    table = await ctx.db.get(DiningTable, body.table_id)
-    if not table:
-        raise not_found("Table")
+    table = None
+    if body.table_id:
+        table = await ctx.db.get(DiningTable, body.table_id)
+        if not table:
+            raise not_found("Table")
     await ensure_order_quota(ctx.db, ctx.entitlements)
     outlet = await current_outlet(ctx)
-    channel = "ADMIN" if "settings.manage" in ctx.principal.permissions else "WAITER"
+    if body.takeaway:
+        channel = "TAKEAWAY"
+    else:
+        channel = "ADMIN" if "settings.manage" in ctx.principal.permissions else "WAITER"
     o, created = await create_order(
         ctx.db,
         hotel_id=ctx.hotel_id,
@@ -88,6 +104,9 @@ async def place_order(body: OrderIn, ctx: Ctx = HotelCtx("order.create", feature
         note=body.note,
         client_ref=body.client_ref,
     )
+    if created and body.takeaway:
+        o.customer_name = (body.customer_name or "").strip() or None
+        o.customer_phone = body.customer_phone
     if created:
         await emit_order(ctx.db, ctx.emit, o, "order.created")
         await kitchen.route_pending(ctx.db, outlet, ctx.emit)
@@ -110,7 +129,14 @@ async def list_orders(
     if page.q:
         term = page.q.lstrip("#")
         tables = select(DiningTable.id).where(DiningTable.label.ilike(f"%{term}%"))
-        q = q.where(or_(Order.table_id.in_(tables), *([Order.number == int(term)] if term.isdigit() else [])))
+        q = q.where(
+            or_(
+                Order.table_id.in_(tables),
+                Order.customer_name.ilike(f"%{term}%"),
+                Order.customer_phone.ilike(f"%{term}%"),
+                *([Order.number == int(term)] if term.isdigit() else []),
+            )
+        )
     if scope == "open":
         q = q.where(Order.status.in_(OPEN_STATES))
     elif scope == "attention":

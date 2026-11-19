@@ -75,3 +75,49 @@ def price(lines: list[PriceLine], service_charge_bp: int = 0) -> Totals:
     tax = sum(p.tax_minor for p in priced)
     service = bp_of(subtotal, service_charge_bp)
     return Totals(priced, subtotal, tax, service, subtotal + tax + service)
+
+
+@dataclass(frozen=True)
+class Discounted:
+    """A bill after a discount: per-line share of the discount, and the recomputed money."""
+
+    line_discounts: list[int]
+    discount_minor: int
+    tax_minor: int
+    service_charge_minor: int
+    total_minor: int
+
+
+def discount_minor_for(subtotal_minor: int, *, percent_bp: int | None, amount_minor: int | None) -> int:
+    """Rupee value of a discount given as basis points (1000 = 10%) or a fixed amount, capped at the subtotal."""
+    d = bp_of(subtotal_minor, percent_bp) if percent_bp is not None else (amount_minor or 0)
+    return max(0, min(d, subtotal_minor))
+
+
+def discount_bp_of(discount_minor: int, subtotal_minor: int) -> int:
+    """The discount as basis points of the subtotal, rounded UP so a role limit can never be beaten by rounding."""
+    if subtotal_minor <= 0:
+        return 0
+    return -(-discount_minor * 10_000 // subtotal_minor)
+
+
+def apply_discount(lines: list[tuple[int, int]], discount_minor: int, service_charge_bp: int) -> Discounted:
+    """`lines` = (line_total_minor, tax_rate_bp). The discount is shared across lines in proportion to their value
+    (largest-remainder, so the shares add up to the paisa). GST is charged on each line's discounted value: a discount
+    shown on the invoice reduces the taxable value. Service charge applies to the discounted subtotal."""
+    subtotal = sum(t for t, _ in lines)
+    discount_minor = max(0, min(discount_minor, subtotal))
+    if subtotal == 0 or discount_minor == 0:
+        shares = [0] * len(lines)
+    else:
+        exact = [t * discount_minor for t, _ in lines]
+        shares = [e // subtotal for e in exact]
+        rest = discount_minor - sum(shares)
+        # Hand the leftover paise to the lines with the largest remainders (ties: earlier lines first).
+        order = sorted(range(len(lines)), key=lambda i: (-(exact[i] % subtotal), i))
+        for i in order[:rest]:
+            shares[i] += 1
+    tax = sum(bp_of(t - s, rate) for (t, rate), s in zip(lines, shares, strict=True))
+    taxable = subtotal - discount_minor
+    service = bp_of(taxable, service_charge_bp)
+    return Discounted(shares, discount_minor, tax, service, taxable + tax + service)

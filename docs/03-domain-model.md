@@ -95,5 +95,36 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   refused (`on_paid_bill`; refunds are a separate flow).
 - Any bill, paid included, can be printed again; copies after the first say DUPLICATE and are logged.
 
+## Takeaway orders (added 2026-11-20)
+- An order with no table: `channel = TAKEAWAY`, optional `customer_name` / `customer_phone` (migration 0006). Its
+  order number is the pickup token. Same kitchen flow as table orders; "served" means handed over.
+- Billed **per order** (`POST /bills {order_id}`), not per table visit; warn-and-allow while still cooking; an
+  order is billed once (`already_billed`). Never affects table state. KOT and bill say TAKEAWAY and the name.
+
+## Discounts (added 2026-11-20)
+- A bill-level discount, by percent (`percent_bp`, 1000 = 10%) or amount, with a required reason. Stored on the bill
+  (`discount_minor`, `discount_reason`, `discount_by`) and shared across bill lines (`bill_lines.discount_minor`,
+  largest-remainder so the shares add up to the paisa). Migration 0007.
+- **GST on the discounted value**: each line is taxed on (line total - its share); service charge applies to the
+  discounted subtotal. Pure maths: `pricing.apply_discount`.
+- **Per-role maximum** `roles.max_discount_bp` (0 = none). Defaults: Hotel admin 100% (locked), Manager 20%,
+  Cashier 10%, others 0; the admin changes them. A discount's share of the subtotal is rounded **up** before the check,
+  so rounding can never beat the limit. Enforced on the server (`discount_limit`, with `max_bp`).
+- Discounting an issued, unpaid bill re-issues it (old bill cancelled "Discount applied: replaced by ...").
+- The Overview's revenue is order value before discounts; Reports (checklist 7) will show net sales.
+
+## Payments (added 2026-11-20)
+- `bill_payments(hotel_id, bill_id, method[CASH|UPI|CARD], amount_minor > 0, reference, received_by, created_at)`,
+  RLS like every hotel table (migration 0008; earlier paid bills back-filled with one payment each).
+- A bill is paid in one go (`settle`) or in parts; when the parts reach the total it becomes PAID with
+  `payment_method` = the single method, or `MIXED`. Paying more than is due is refused (`overpayment`); change is
+  given outside the app.
+- Equal split: shares of what is due that add up to the paisa (first shares take the leftover paise); each guest pays
+  theirs as a part. Split **by items** (a separate GST invoice per guest) is not built yet.
+- A part entered by mistake can be removed while the bill is unpaid (audited); a paid bill's takings are final.
+- A bill with parts paid cannot be voided by hand (`has_payments`). When a bill is replaced (items added, discount),
+  its payments move to the replacement; if they would exceed the new total, the replacement is refused.
+- "My work" counts the money each person received (payments), not the bills they raised.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

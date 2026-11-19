@@ -119,6 +119,8 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
         "number": o.number,
         "status": o.status,
         "channel": o.channel,
+        "customer_name": o.customer_name,
+        "customer_phone": o.customer_phone,
         "table": {"id": str(table.id), "label": table.label, "area": table.area} if table else None,
         "note": o.note,
         "items": [

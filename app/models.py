@@ -166,6 +166,8 @@ class Role(Base):
     code: Mapped[str] = mapped_column(String(40))
     name: Mapped[str] = mapped_column(String(80))
     is_system: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    # Largest bill discount this role may give, in basis points of the subtotal (0 = none, 10000 = 100%).
+    max_discount_bp: Mapped[int] = mapped_column(Integer, server_default="0")
 
 
 class RolePermission(Base):
@@ -289,7 +291,10 @@ class Order(Base):
     table_session_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("table_sessions.id"))
     number: Mapped[int] = mapped_column(Integer)
     client_ref: Mapped[str | None] = mapped_column(String(64))  # idempotency / offline dedupe
-    channel: Mapped[str] = mapped_column(String(8))  # QR|WAITER|ADMIN
+    channel: Mapped[str] = mapped_column(String(8))  # QR|WAITER|ADMIN|TAKEAWAY
+    # Takeaway / counter orders have no table; the name (and phone) identify the guest at pickup and on the bill.
+    customer_name: Mapped[str | None] = mapped_column(String(80))
+    customer_phone: Mapped[str | None] = mapped_column(String(20))
     placed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     status: Mapped[str] = mapped_column(String(12))
     note: Mapped[str | None] = mapped_column(Text)
@@ -453,7 +458,11 @@ class Bill(Base):
     sgst_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")
     service_charge_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")
     total_minor: Mapped[int] = mapped_column(BigInteger)
-    payment_method: Mapped[str | None] = mapped_column(String(8))  # CASH | UPI | CARD
+    # Bill-level discount (before tax: it lowers the taxable value). Who gave it and why are kept for the audit.
+    discount_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")
+    discount_reason: Mapped[str | None] = mapped_column(String(200))
+    discount_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    payment_method: Mapped[str | None] = mapped_column(String(8))  # CASH | UPI | CARD | MIXED (several parts)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     print_count: Mapped[int] = mapped_column(Integer, server_default="0")
     void_reason: Mapped[str | None] = mapped_column(Text)
@@ -475,6 +484,7 @@ class BillLine(Base):
     unit_price_minor: Mapped[int] = mapped_column(BigInteger)
     tax_rate_bp: Mapped[int] = mapped_column(Integer)
     line_total_minor: Mapped[int] = mapped_column(BigInteger)
+    discount_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")  # this line's share
 
 
 class PrintLog(Base):
@@ -533,6 +543,24 @@ class AuditLog(Base):
 
 
 # Tables with tenant RLS. The migration enables RLS on each and the RLS test iterates this list.
+
+
+class BillPayment(Base):
+    """One payment towards a bill (a bill can be paid in parts: cash + UPI, or a share per guest)."""
+
+    __tablename__ = "bill_payments"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    bill_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("bills.id", ondelete="CASCADE"), index=True
+    )
+    method: Mapped[str] = mapped_column(String(8))  # CASH | UPI | CARD
+    amount_minor: Mapped[int] = mapped_column(BigInteger)
+    reference: Mapped[str | None] = mapped_column(String(60))  # UPI ref / card slip number, optional
+    received_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    created_at: Mapped[datetime] = created()
+
+
 TENANT_TABLES = [
     "hotel_tax_profiles",
     "subscriptions",
@@ -560,4 +588,5 @@ TENANT_TABLES = [
     "print_log",
     "device_tokens",
     "hotel_branding",
+    "bill_payments",
 ]

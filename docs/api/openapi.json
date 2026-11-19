@@ -760,6 +760,76 @@
     }
    }
   },
+  "/api/v1/roles/{role_id}/discount-limit": {
+   "put": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "Set Discount Limit",
+    "description": "The largest bill discount this role may give (0 = none). Hotel admin is always 100%.",
+    "operationId": "set_discount_limit_api_v1_roles__role_id__discount_limit_put",
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DiscountLimitIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoleOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/platform/summary": {
    "get": {
     "tags": [
@@ -5008,6 +5078,7 @@
      "bills"
     ],
     "summary": "Settle",
+    "description": "Pay whatever is still due, in one method.",
     "operationId": "settle_api_v1_bills__bill_id__settle_post",
     "parameters": [
      {
@@ -5056,6 +5127,223 @@
          "type": "object",
          "additionalProperties": true,
          "title": "Response Settle Api V1 Bills  Bill Id  Settle Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bills/{bill_id}/payments": {
+   "post": {
+    "tags": [
+     "bills"
+    ],
+    "summary": "Add Payment",
+    "description": "One part of the payment (cash + UPI, or a guest's share). The bill is paid when the parts reach the total.",
+    "operationId": "add_payment_api_v1_bills__bill_id__payments_post",
+    "parameters": [
+     {
+      "name": "bill_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Bill Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PaymentIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Add Payment Api V1 Bills  Bill Id  Payments Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bills/{bill_id}/payments/{payment_id}": {
+   "delete": {
+    "tags": [
+     "bills"
+    ],
+    "summary": "Remove Payment",
+    "description": "Undo a part entered by mistake, while the bill is still unpaid. Audited.",
+    "operationId": "remove_payment_api_v1_bills__bill_id__payments__payment_id__delete",
+    "parameters": [
+     {
+      "name": "bill_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Bill Id"
+      }
+     },
+     {
+      "name": "payment_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Payment Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Remove Payment Api V1 Bills  Bill Id  Payments  Payment Id  Delete"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bills/{bill_id}/split": {
+   "get": {
+    "tags": [
+     "bills"
+    ],
+    "summary": "Split",
+    "description": "Equal shares of what is still due, adding up to the paisa. Each guest then pays theirs as a part payment.",
+    "operationId": "split_api_v1_bills__bill_id__split_get",
+    "parameters": [
+     {
+      "name": "bill_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Bill Id"
+      }
+     },
+     {
+      "name": "parts",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "maximum": 20,
+       "minimum": 2,
+       "title": "Parts"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Split Api V1 Bills  Bill Id  Split Get"
         }
        }
       }
@@ -5819,21 +6107,48 @@
    "BillIn": {
     "properties": {
      "table_id": {
-      "type": "string",
-      "format": "uuid",
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Table Id"
+     },
+     "order_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Order Id"
      },
      "include_unserved": {
       "type": "boolean",
       "title": "Include Unserved",
       "default": false
+     },
+     "discount": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/DiscountIn"
+       },
+       {
+        "type": "null"
+       }
+      ]
      }
     },
     "type": "object",
-    "required": [
-     "table_id"
-    ],
-    "title": "BillIn"
+    "title": "BillIn",
+    "description": "A table's bill for this visit (`table_id`), or one takeaway order's bill (`order_id`)."
    },
    "BrandingIn": {
     "properties": {
@@ -5949,6 +6264,62 @@
      "items"
     ],
     "title": "DinerQuoteIn"
+   },
+   "DiscountIn": {
+    "properties": {
+     "percent_bp": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 10000.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Percent Bp"
+     },
+     "amount_minor": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount Minor"
+     },
+     "reason": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "reason"
+    ],
+    "title": "DiscountIn",
+    "description": "Either `percent_bp` (1000 = 10%) or `amount_minor` (paise), and why. Computed and capped on the server."
+   },
+   "DiscountLimitIn": {
+    "properties": {
+     "max_discount_bp": {
+      "type": "integer",
+      "maximum": 10000.0,
+      "minimum": 0.0,
+      "title": "Max Discount Bp"
+     }
+    },
+    "type": "object",
+    "required": [
+     "max_discount_bp"
+    ],
+    "title": "DiscountLimitIn"
    },
    "ExpenseIn": {
     "properties": {
@@ -6668,9 +7039,45 @@
       "title": "Items"
      },
      "table_id": {
-      "type": "string",
-      "format": "uuid",
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Table Id"
+     },
+     "takeaway": {
+      "type": "boolean",
+      "title": "Takeaway",
+      "default": false
+     },
+     "customer_name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Customer Name"
+     },
+     "customer_phone": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^[0-9+ -]{6,20}$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Customer Phone"
      },
      "note": {
       "anyOf": [
@@ -6699,10 +7106,10 @@
     },
     "type": "object",
     "required": [
-     "items",
-     "table_id"
+     "items"
     ],
-    "title": "OrderIn"
+    "title": "OrderIn",
+    "description": "A table order (`table_id`) or a takeaway / counter order (`takeaway: true`, no table)."
    },
    "OverrideIn": {
     "properties": {
@@ -6787,6 +7194,38 @@
      "new_password"
     ],
     "title": "PasswordResetIn"
+   },
+   "PaymentIn": {
+    "properties": {
+     "method": {
+      "type": "string",
+      "pattern": "^(CASH|UPI|CARD)$",
+      "title": "Method"
+     },
+     "amount_minor": {
+      "type": "integer",
+      "minimum": 1.0,
+      "title": "Amount Minor"
+     },
+     "reference": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 60
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference"
+     }
+    },
+    "type": "object",
+    "required": [
+     "method",
+     "amount_minor"
+    ],
+    "title": "PaymentIn"
    },
    "PlanOut": {
     "properties": {
@@ -7091,6 +7530,11 @@
       },
       "type": "array",
       "title": "Permissions"
+     },
+     "max_discount_bp": {
+      "type": "integer",
+      "title": "Max Discount Bp",
+      "default": 0
      }
     },
     "type": "object",

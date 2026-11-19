@@ -47,3 +47,6 @@ SYSTEM_ROLES: dict[str, tuple[str, set[str]]] = {
 }
 
 LOCKED_ROLE = "HOTEL_ADMIN"
+
+# Starting bill-discount limits per system role, in basis points (1000 = 10%). Hotel admins change them per role.
+DEFAULT_MAX_DISCOUNT_BP: dict[str, int] = {"HOTEL_ADMIN": 10_000, "MANAGER": 2_000, "CASHIER": 1_000}
