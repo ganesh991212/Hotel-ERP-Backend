@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from sqlalchemy import Date, cast, func, select
 
 from app.core.deps import Ctx, HotelCtx
@@ -10,6 +10,7 @@ from app.core.security import now
 from app.models import (
     ACTIVE_ASSIGNMENT,
     Assignment,
+    Bill,
     ChefProfile,
     DiningTable,
     Expense,
@@ -215,3 +216,147 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         "live_orders": [await order_json(db, o) for o in live],
         "generated_at": now().isoformat(),
     }
+
+
+# ------------------------------------------------------------------- my work --
+
+
+def _avg(v) -> float | None:
+    return round(float(v), 1) if v is not None else None
+
+
+@router.get("/dashboard/me")
+async def my_work(period: str = Query("today", pattern="^(today|week)$"), ctx: Ctx = HotelCtx()) -> dict:
+    """The signed-in person's own work, by what their role does: cooking, serving, billing. Each figure comes
+    with the team's figure for context. No other person's name or numbers (staff see themselves; admins see
+    everyone on the main dashboard)."""
+    db, me = ctx.db, ctx.user_id
+    hotel = await db.get(Hotel, ctx.hotel_id)
+    tz = hotel.timezone
+    today = (await db.execute(select(cast(func.timezone(tz, func.now()), Date)))).scalar_one()
+    first = today - timedelta(days=6 if period == "week" else 0)
+
+    def within(ts):  # hotel-local business date of a timestamp falls in the period
+        d = cast(func.timezone(tz, ts), Date)
+        return d.between(first, today)
+
+    def minutes(start, end):
+        return func.extract("epoch", end - start) / 60
+
+    out: dict = {"period": period, "from": first.isoformat(), "to": today.isoformat(), "sections": []}
+
+    if ctx.principal.permissions & {"kitchen.cook"}:
+        cooked = (Assignment.status == "READY", within(Assignment.completed_at))
+        prep = minutes(Assignment.started_at, Assignment.completed_at)
+        n, mine = (
+            await db.execute(select(func.count(), func.avg(prep)).where(Assignment.chef_user_id == me, *cooked))
+        ).one()
+        team = (await db.execute(select(func.avg(prep)).where(*cooked))).scalar_one()
+        # How long guests waited before this chef started cooking their order.
+        wait = minutes(Order.confirmed_at, Order.started_at)
+        my_wait, team_wait = (
+            await db.execute(
+                select(
+                    func.avg(wait).filter(Assignment.chef_user_id == me),
+                    func.avg(wait),
+                )
+                .select_from(Assignment)
+                .join(Order, Order.id == Assignment.order_id)
+                .where(*cooked, Order.confirmed_at.is_not(None), Order.started_at.is_not(None))
+            )
+        ).one()
+        items = (
+            await db.execute(
+                select(func.coalesce(func.sum(OrderItem.qty), 0))
+                .join(Assignment, Assignment.order_id == OrderItem.order_id)
+                .where(Assignment.chef_user_id == me, *cooked, OrderItem.status != "CANCELLED")
+            )
+        ).scalar_one()
+        queue = (
+            await db.execute(
+                select(func.count())
+                .select_from(Assignment)
+                .where(Assignment.chef_user_id == me, Assignment.status.in_(ACTIVE_ASSIGNMENT))
+            )
+        ).scalar_one()
+        out["sections"].append(
+            {
+                "kind": "cooking",
+                "orders_cooked": int(n),
+                "items_cooked": int(items),
+                "avg_prep_minutes": _avg(mine),
+                "team_avg_prep_minutes": _avg(team),
+                "avg_wait_before_start_minutes": _avg(my_wait),
+                "team_avg_wait_before_start_minutes": _avg(team_wait),
+                "in_queue_now": int(queue),
+            }
+        )
+
+    if ctx.principal.permissions & {"order.serve", "order.create"}:
+        # Counter orders (served_at == ready_at) have no serving step to time.
+        served = (Order.status == "SERVED", within(Order.served_at))
+        serve = minutes(Order.ready_at, Order.served_at)
+        timed = (Order.ready_at.is_not(None), Order.served_at > Order.ready_at)
+        n, tables, mine = (
+            await db.execute(
+                select(
+                    func.count(),
+                    func.count(func.distinct(Order.table_id)),
+                    func.avg(serve).filter(*timed),
+                ).where(Order.served_by_user_id == me, *served)
+            )
+        ).one()
+        team = (await db.execute(select(func.avg(serve)).where(*served, *timed))).scalar_one()
+        taken, taken_minor = (
+            await db.execute(
+                select(func.count(), func.coalesce(func.sum(Order.total_minor), 0)).where(
+                    Order.placed_by_user_id == me, Order.status != "CANCELLED", within(Order.created_at)
+                )
+            )
+        ).one()
+        ready_now = (await db.execute(select(func.count()).where(Order.status == "READY"))).scalar_one()
+        out["sections"].append(
+            {
+                "kind": "serving",
+                "orders_served": int(n),
+                "tables_served": int(tables),
+                "avg_serve_minutes": _avg(mine),
+                "team_avg_serve_minutes": _avg(team),
+                "orders_taken": int(taken),
+                "orders_taken_minor": int(taken_minor),
+                "ready_to_serve_now": int(ready_now),
+            }
+        )
+
+    if ctx.principal.permissions & {"bill.manage"}:
+        mine_q = (Bill.created_by == me, within(Bill.created_at), Bill.status != "VOID")
+        n, total = (
+            await db.execute(select(func.count(), func.coalesce(func.sum(Bill.total_minor), 0)).where(*mine_q))
+        ).one()
+        by_method = {
+            m: int(v)
+            for m, v in (
+                await db.execute(
+                    select(Bill.payment_method, func.coalesce(func.sum(Bill.total_minor), 0))
+                    .where(*mine_q, Bill.status == "PAID")
+                    .group_by(Bill.payment_method)
+                )
+            ).all()
+        }
+        unpaid_n, unpaid = (
+            await db.execute(
+                select(func.count(), func.coalesce(func.sum(Bill.total_minor), 0)).where(Bill.status == "ISSUED")
+            )
+        ).one()
+        out["sections"].append(
+            {
+                "kind": "billing",
+                "bills_raised": int(n),
+                "bills_raised_minor": int(total),
+                "collected_minor": sum(by_method.values()),
+                "collected_by_method_minor": by_method,
+                "unpaid_bills_now": int(unpaid_n),
+                "unpaid_now_minor": int(unpaid),
+            }
+        )
+    return out
