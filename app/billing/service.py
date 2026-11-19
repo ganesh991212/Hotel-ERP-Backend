@@ -17,6 +17,10 @@ from app.printing.documents import bill_blocks
 
 DOC_TYPE = {"REGULAR": "TAX_INVOICE", "COMPOSITION": "BILL_OF_SUPPLY", "UNREGISTERED": "BILL"}
 
+# A bill cancelled only because a newer bill for the same food replaced it. Reports keep these apart from
+# real cancellations (docs/14 "Reports").
+REPLACED_MARK = ": replaced by "
+
 
 def financial_year(at: datetime) -> str:
     """Indian FY: April to March. 2026-11-18 -> '2026-27'."""
@@ -93,7 +97,7 @@ async def create_bill(
     replaced = []
     why = "Items added" if has_new else "Discount applied"
     for old in open_bills:
-        await void(db, old, f"{why}: replaced by a new bill", keep_payments=True)
+        await void(db, old, f"{why}{REPLACED_MARK}a new bill", keep_payments=True)
         replaced.append(old)
     orders = await _unbilled(db, table_id)
     bill = await _issue(
@@ -106,7 +110,7 @@ async def create_bill(
         discount=discount,
     )
     for old in replaced:
-        old.void_reason = f"{why}: replaced by {bill.invoice_no}"
+        old.void_reason = f"{why}{REPLACED_MARK}{bill.invoice_no}"
     await _carry_payments(db, replaced, bill)
     await db.flush()
     return bill, [old.invoice_no for old in replaced]
@@ -137,12 +141,12 @@ async def create_order_bill(
     if o.status != "SERVED" and not include_unserved:
         raise conflict("orders_not_served", "This order is not handed over yet", {"orders": [o.number]})
     if old_bill is not None:  # applying a discount to the unpaid bill: cancel it, issue a new one
-        await void(db, old_bill, "Discount applied: replaced by a new bill", keep_payments=True)
+        await void(db, old_bill, f"Discount applied{REPLACED_MARK}a new bill", keep_payments=True)
     bill = await _issue(
         db, hotel_id=hotel_id, outlet_id=o.outlet_id, table_id=None, orders=[o], user_id=user_id, discount=discount
     )
     if old_bill is not None:
-        old_bill.void_reason = f"Discount applied: replaced by {bill.invoice_no}"
+        old_bill.void_reason = f"Discount applied{REPLACED_MARK}{bill.invoice_no}"
         await _carry_payments(db, [old_bill], bill)
     return bill, [old_bill.invoice_no] if old_bill is not None else []
 
@@ -252,6 +256,21 @@ async def _customer(db: AsyncSession, bill: Bill) -> str | None:
     return (await db.execute(select(Order.customer_name).where(Order.bill_id == bill.id).limit(1))).scalar()
 
 
+def tax_by_rate(tax_minor: int, lines) -> dict[int, int]:
+    """A bill's tax per GST rate. The printed bill and the GST report both use this, so they always agree."""
+    by_rate: dict[int, int] = defaultdict(int)
+    for ln in lines:
+        if ln.tax_rate_bp:
+            # Discounted bills are taxed on each line's discounted value (exactly as stored).
+            by_rate[ln.tax_rate_bp] += bp_of(ln.line_total_minor - ln.discount_minor, ln.tax_rate_bp)
+    # Rate-group taxes are recomputed from summed lines; reconcile any rounding into the largest group
+    # so the groups always add up to the bill's stored tax.
+    if by_rate:
+        drift = tax_minor - sum(by_rate.values())
+        by_rate[max(by_rate, key=lambda r: by_rate[r])] += drift
+    return dict(by_rate)
+
+
 async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) -> dict:
     lines = (
         (await db.execute(select(BillLine).where(BillLine.bill_id == bill.id).order_by(BillLine.name))).scalars().all()
@@ -260,16 +279,7 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
     profile = await db.get(HotelTaxProfile, bill.hotel_id)
     table = await db.get(DiningTable, bill.table_id) if bill.table_id else None
     orders = (await db.execute(select(Order.number).where(Order.bill_id == bill.id).order_by(Order.number))).scalars()
-    by_rate: dict[int, int] = defaultdict(int)
-    for ln in lines:
-        if ln.tax_rate_bp:
-            # Discounted bills are taxed on each line's discounted value (exactly as stored).
-            by_rate[ln.tax_rate_bp] += bp_of(ln.line_total_minor - ln.discount_minor, ln.tax_rate_bp)
-    # Rate-group taxes are recomputed from summed lines for display; reconcile any rounding into the largest group
-    # so the printed groups always add up to the bill's stored tax.
-    if by_rate:
-        drift = bill.tax_minor - sum(by_rate.values())
-        by_rate[max(by_rate, key=lambda r: by_rate[r])] += drift
+    by_rate = tax_by_rate(bill.tax_minor, lines)
     groups = [
         {"rate_bp": r, "tax_minor": t, "cgst_minor": split_gst(t)[0], "sgst_minor": split_gst(t)[1]}
         for r, t in sorted(by_rate.items())

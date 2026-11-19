@@ -27,7 +27,21 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 `POST /bills`, `GET /bills/{id}`, `POST /bills/{id}/split`, `/merge`, `/discount`, `POST /bills/{id}/payments`, `POST /webhooks/razorpay`, `POST /day-close`
 
 ## Reports
-`/reports/sales`, `/reports/items`, `/reports/chefs`, `/reports/tables`
+Built 2026-11-20 (`report.view`; `?from=&to=` hotel-local dates, default today, at most 92 days; basis in every
+response; design in docs/14 "Reports"):
+- `GET /reports/sales`: per day and in total: bills, gross, discount, taxable, CGST, SGST, other tax, service charge,
+  round off, total; paid / unpaid; cancelled (by hand) and replaced bills kept apart; money received by CASH/UPI/CARD
+  by the day it was taken; `unbilled` (orders on no live bill: a warning, never sales).
+- `GET /reports/items`: per item name as billed: qty, gross, discount, taxable.
+- `GET /reports/gst`: by GST rate: taxable, CGST, SGST (per bill as printed, then summed); SAC 996331; documents
+  issued per type and FY (first/last number, total, cancelled, net) for GSTR-1 table 13.
+- `GET /reports/staff` (also plan feature `REPORTS_ADVANCED`): per person: bills, billed value, discounts given,
+  money received by method, cancellations made by hand.
+- `GET /reports/{sales|items|gst|staff|register}.csv`: the same numbers as CSV in rupees (UTF-8 with BOM for Excel);
+  `register` lists every bill in the period, cancelled ones included, with the reason.
+- `GET /dashboard/summary` revenue (today, 7 days, month) now uses the same definition (issued, not-cancelled bills);
+  adds `bills_today` and `unbilled_today_minor`; `avg_ticket_minor` is per bill.
+- Later: `/reports/chefs`, `/reports/tables`, category-wise, PDF.
 
 ## Implemented additions (2026-11-18)
 - `POST /orders/quote`, `POST /d/{qr}/quote`: server-priced totals for carts (clients never compute money).
