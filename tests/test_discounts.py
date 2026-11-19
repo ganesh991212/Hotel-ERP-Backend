@@ -91,6 +91,8 @@ async def test_role_limits_are_enforced_on_the_server(client, hd):
 async def test_admin_sets_each_roles_limit(client, hd):
     cashier = hd["roles"]["CASHIER"]
     assert cashier["max_discount_bp"] == 1000
+    assert (await client.get(f"{API}/me", headers=h(hd["Cara"]))).json()["max_discount_bp"] == 1000
+    assert (await client.get(f"{API}/me", headers=h(hd["admin"]))).json()["max_discount_bp"] == 10_000
     assert hd["roles"]["HOTEL_ADMIN"]["max_discount_bp"] == 10_000
     r = await client.put(
         f"{API}/roles/{cashier['id']}/discount-limit", headers=h(hd["admin"]), json={"max_discount_bp": 2500}

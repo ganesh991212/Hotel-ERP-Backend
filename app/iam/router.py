@@ -170,6 +170,7 @@ async def me(claims: dict = Depends(claims_from_header)) -> dict:
         u = await db.get(User, p.user_id)
         hotel = await db.get(Hotel, p.hotel_id)
         outlet = (await db.execute(select(Outlet).order_by(Outlet.created_at).limit(1))).scalar_one_or_none()
+        role = (await db.execute(select(Role).where(Role.code == p.role_code))).scalar_one_or_none()
         return {
             "id": str(u.id),
             "name": u.name,
@@ -177,6 +178,8 @@ async def me(claims: dict = Depends(claims_from_header)) -> dict:
             "platform": False,
             "role": p.role_code,
             "permissions": sorted(p.permissions),
+            # The screens offer discounts only up to this (the server enforces it anyway).
+            "max_discount_bp": 10_000 if p.role_code == LOCKED_ROLE else (role.max_discount_bp if role else 0),
             "hotel": {"id": str(hotel.id), "name": hotel.name} if hotel else None,
             "outlet": {
                 "id": str(outlet.id),
