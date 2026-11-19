@@ -13,7 +13,7 @@ from app.core.errors import conflict, forbidden, not_found
 from app.core.security import now
 from app.kitchen import routing
 from app.models import ACTIVE_ASSIGNMENT, Assignment, ChefProfile, Order, Outlet, User
-from app.ordering.service import Actor, emit_order, lock_outlet, transition
+from app.ordering.service import Actor, emit_order, lock_outlet, mark_ready, transition
 
 
 async def active_queue(db: AsyncSession, chef_id: UUID) -> list[Assignment]:
@@ -199,7 +199,7 @@ async def ready(db: AsyncSession, order_id: UUID, chef_id: UUID, emit) -> Order:
     prof = await db.get(ChefProfile, chef_id)
     if prof:
         prof.last_completed_at = a.completed_at
-    await transition(db, o, "READY", Actor("USER", chef_id))
+    await mark_ready(db, o, Actor("USER", chef_id))
     await db.flush()
     await _close_up(db, chef_id)
     await emit_order(db, emit, o, "order.ready")

@@ -46,6 +46,14 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 - Dashboard summary adds `timings` (avg + p90 per stage) and `servers`.
 - Full contract: `docs/api/openapi.json` (CI fails if it drifts).
 
+## Order workflow (added 2026-11-19)
+- `GET/PUT /settings`: adds `serve_mode` (SERVER|COUNTER) and `pickup_alert_minutes` (1-60 or null).
+- `GET /tables`: each table adds `state` (FREE|OCCUPIED|BILL_PENDING), `unbilled_orders`, `unbilled_total_minor`.
+- `GET /orders?scope=attention`: open orders plus served orders not yet billed (the Floor's "Needs attention").
+- `GET /orders?scope=today|all&status=&table_id=`: the admin Orders screen.
+- Events: `order.confirmed` (a QR order confirmed by staff: alerts chefs like a new order); `order.pickup_overdue`
+  (no chef picked it up in time: admins and chefs on shift).
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

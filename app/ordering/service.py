@@ -154,6 +154,7 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
         "started_at": o.started_at.isoformat() if o.started_at else None,
         "ready_at": o.ready_at.isoformat() if o.ready_at else None,
         "served_at": o.served_at.isoformat() if o.served_at else None,
+        "pickup_alerted_at": o.pickup_alerted_at.isoformat() if o.pickup_alerted_at else None,
     }
 
 
@@ -188,6 +189,16 @@ async def transition(db: AsyncSession, o: Order, to: str, actor: Actor, reason: 
         o.ready_at = ts
     elif to == "SERVED":
         o.served_at = ts
+
+
+async def mark_ready(db: AsyncSession, o: Order, actor: Actor, reason: str | None = None) -> None:
+    """READY; in counter mode also SERVED at once (the diner collects, nobody carries it). served_at equals
+    ready_at for counter orders, which the dashboard uses to leave them out of the serving average."""
+    await transition(db, o, "READY", actor, reason)
+    outlet = await db.get(Outlet, o.outlet_id)
+    if outlet is not None and outlet.serve_mode == "COUNTER":
+        await transition(db, o, "SERVED", actor, "counter")
+        o.served_at = o.ready_at
 
 
 async def create_order(
@@ -283,6 +294,10 @@ async def emit_order(db: AsyncSession, emit, o: Order, kind: str) -> dict:
     return data
 
 
+# Events that put a confirmed order in front of the kitchen: placed already confirmed, or confirmed by staff.
+NEW_WORK = ("order.created", "order.confirmed")
+
+
 async def _queue_push(db: AsyncSession, emit, o: Order, kind: str, data: dict) -> None:
     """Who gets a phone alert for this event (sent after commit; loud sound on mobile)."""
     from app.notify import push
@@ -295,10 +310,10 @@ async def _queue_push(db: AsyncSession, emit, o: Order, kind: str, data: dict) -
     if kind == "order.created" and o.status == "PLACED":
         targets = await push.targets_for(db, permission="order.confirm")
         title = f"Confirm order #{o.number} - Table {table}"
-    elif kind == "order.created" and o.status == "CONFIRMED" and outlet.kitchen_mode == "CHEF_ACCEPT":
+    elif kind in NEW_WORK and o.status == "CONFIRMED" and outlet.kitchen_mode == "CHEF_ACCEPT":
         targets = await push.targets_for(db, chefs_on_shift=True)
         title = f"New order #{o.number} - Table {table}"
-    elif kind == "order.created" and o.status == "CONFIRMED" and outlet.kitchen_mode == "ADMIN_PRINT":
+    elif kind in NEW_WORK and o.status == "CONFIRMED" and outlet.kitchen_mode == "ADMIN_PRINT":
         targets = await push.targets_for(db, permission="kot.print")
         title = f"Print KOT #{o.number} - Table {table}"
     elif kind == "order.assigned" and data.get("chef"):

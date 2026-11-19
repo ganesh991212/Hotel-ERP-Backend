@@ -133,6 +133,16 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] Branches: `staging` (auto-deploys) -> `main` (production); superseded PR #2 kept in history at commit `a840958`
 - [ ] Port the hardening items in docs/11 (login lockout and Argon2 off the event loop first)
 
+## Order workflow (added 2026-11-19, docs/04 "Order workflow")
+- [x] Serving mode per outlet (waiter serves / diner collects at counter); counter orders left out of serving average
+- [x] No-pickup alert: configurable minutes (or off), admins + chefs on shift, once per order, hotel-scoped
+- [x] Table state FREE / OCCUPIED / BILL_PENDING with amount owed; served-unbilled orders stay in "Needs attention"
+- [x] Confirmed QR orders alert chefs (`order.confirmed`; was silent)
+- [x] Orders list filters for the admin Orders screen
+- [ ] Screens: "Next:" line per order, Bill pending tables, Orders screen, workflow settings
+- [ ] Stations (bar / kitchen split): waiting on decision
+- [ ] Automatic KOT printing: installed app + network printer only (browsers cannot print silently)
+
 ## Phase 8: Rooms
 - [ ] Room types, rooms, rate plans
 - [ ] Bookings, check-in/out, folio

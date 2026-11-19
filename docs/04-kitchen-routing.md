@@ -62,3 +62,34 @@ In ADMIN_PRINT mode this is the normal flow.
 
 ## KOT content
 Table, area, time, order number, items with modifiers and notes, station, assigned chef (AUTO mode), channel (QR/Waiter).
+
+## Order workflow (added 2026-11-19)
+Fixed stages, switched per outlet. No free-form workflow builder (every combination would need testing and staff
+would get a different app per hotel).
+
+```
+Order in -> [Confirm] -> Kitchen (mode) -> Cooking -> Ready -> [Served] -> Bill & pay -> Table free
+```
+
+| Setting (outlet) | Values | Default |
+|---|---|---|
+| `qr_confirm_required` | QR orders wait for a waiter/admin to confirm | off |
+| `kitchen_mode` | CHEF_ACCEPT / AUTO_ASSIGN / ADMIN_PRINT (above) | CHEF_ACCEPT |
+| `serve_mode` | `SERVER`: a waiter carries food and taps Served. `COUNTER`: the diner collects; marking READY also marks it SERVED and tells the diner to collect | SERVER |
+| `pickup_alert_minutes` | 1 to 60, or null = off. A CONFIRMED order still on the chefs' board after this long alerts admins (`kitchen.manage`) and chefs on shift, once per order | 5 |
+
+Payment is after eating only (decided 2026-11-19; pay-before-cooking is out of scope).
+
+Every order and table shows **what happens next and who does it** ("Next: chef to accept", "Next: serve",
+"Next: bill"), with the button for that step when the viewer may do it. Admins can always step in (assign, print
+KOT, mark ready).
+
+**Table state** (derived, not stored): `OCCUPIED` while any order is open; `BILL_PENDING` while served orders are
+unbilled or the table's bill is ISSUED (unpaid); `FREE` otherwise. Settling the bill frees the table.
+
+**Counter mode and timings:** counter orders have `served_at = ready_at`; they are left out of the "serving"
+average so they do not pull it to zero.
+
+Deferred: **stations** (bar/kitchen split per item: needs a station per menu item and item-level tracking; waiting
+on whether hotels have a separate bar); **automatic KOT printing** (browsers cannot print without a click; possible
+later in the installed Android/desktop app with a network printer).

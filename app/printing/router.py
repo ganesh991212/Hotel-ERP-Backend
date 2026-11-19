@@ -18,6 +18,7 @@ from app.core.errors import conflict, forbidden, not_found
 from app.kitchen.service import lock_outlet
 from app.models import ACTIVE_ASSIGNMENT, Assignment, Hotel, Order, PrintLog, User
 from app.ordering.service import Actor, emit_order, order_json, transition
+from app.ordering.service import mark_ready as finish_ready
 from app.printing import escpos
 from app.printing.documents import kot_blocks
 
@@ -96,6 +97,6 @@ async def mark_ready(order_id: UUID, ctx: Ctx = HotelCtx("order.view")) -> dict:
         raise conflict("chef_assigned", "A chef is cooking this order; they mark it ready")
     if o.status != "PREPARING":
         raise conflict("bad_transition", f"Order is {o.status}")
-    await transition(ctx.db, o, "READY", Actor("USER", ctx.user_id), "paper")
+    await finish_ready(ctx.db, o, Actor("USER", ctx.user_id), "paper")
     await emit_order(ctx.db, ctx.emit, o, "order.ready")
     return await order_json(ctx.db, o)

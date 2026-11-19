@@ -2632,7 +2632,7 @@
       "required": false,
       "schema": {
        "type": "string",
-       "pattern": "^(open|today|all)$",
+       "pattern": "^(open|attention|today|all)$",
        "default": "open",
        "title": "Scope"
       }
@@ -2652,6 +2652,23 @@
         }
        ],
        "title": "Table Id"
+      }
+     },
+     {
+      "name": "status",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^(PLACED|CONFIRMED|ASSIGNED|PREPARING|READY|SERVED|CANCELLED)$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
       }
      },
      {
@@ -6761,6 +6778,31 @@
        }
       ],
       "title": "Max Queue Orders"
+     },
+     "serve_mode": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^(SERVER|COUNTER)$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Serve Mode"
+     },
+     "pickup_alert_minutes": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 60.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pickup Alert Minutes"
      }
     },
     "type": "object",
@@ -6789,6 +6831,21 @@
       "type": "integer",
       "title": "Max Queue Orders"
      },
+     "serve_mode": {
+      "type": "string",
+      "title": "Serve Mode"
+     },
+     "pickup_alert_minutes": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pickup Alert Minutes"
+     },
      "available_modes": {
       "items": {
        "type": "string"
@@ -6804,6 +6861,8 @@
      "kitchen_mode",
      "qr_confirm_required",
      "max_queue_orders",
+     "serve_mode",
+     "pickup_alert_minutes",
      "available_modes"
     ],
     "title": "SettingsOut"
@@ -6910,6 +6969,21 @@
      "open_orders": {
       "type": "integer",
       "title": "Open Orders",
+      "default": 0
+     },
+     "state": {
+      "type": "string",
+      "title": "State",
+      "default": "FREE"
+     },
+     "unbilled_orders": {
+      "type": "integer",
+      "title": "Unbilled Orders",
+      "default": 0
+     },
+     "unbilled_total_minor": {
+      "type": "integer",
+      "title": "Unbilled Total Minor",
       "default": 0
      }
     },
