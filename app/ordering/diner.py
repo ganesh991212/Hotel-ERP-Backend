@@ -140,6 +140,12 @@ class DinerOrderIn(DinerQuoteIn):
     client_ref: str | None = Field(default=None, max_length=64)
 
 
+def _qr_client_ref(session_id: UUID, client_ref: str) -> str:
+    """Idempotency key for a diner order, scoped to the table session (two phones may pick the same ref).
+    A fixed-length fingerprint, because session id + the app's ref is longer than the 64-char column."""
+    return "qr:" + sha256(f"{session_id}:{client_ref}")[:48]
+
+
 @router.post("/orders", status_code=201)
 async def diner_order(body: DinerOrderIn, x_diner_token: str | None = Header(default=None)) -> dict:
     s = await _session(x_diner_token)
@@ -167,7 +173,7 @@ async def diner_order(body: DinerOrderIn, x_diner_token: str | None = Header(def
             actor=Actor("DINER"),
             lines=_lines(body.items),
             note=body.note,
-            client_ref=f"qr:{s.id}:{body.client_ref}" if body.client_ref else None,
+            client_ref=_qr_client_ref(s.id, body.client_ref) if body.client_ref else None,
         )
         if created:
             await emit_order(db, emit, o, "order.created")

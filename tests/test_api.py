@@ -100,6 +100,30 @@ async def test_rls_without_context_sees_nothing():
 # ------------------------------------------------------------ the main flow --
 
 
+async def test_qr_order_as_the_phone_sends_it(client, hx):
+    """Regression: the app sends a 32-char client_ref with every QR order; the server prefixed it with the
+    session id and overflowed the 64-char column, so every phone order failed with a 500."""
+    qr = hx["table"]["qr_token"]
+    s = await client.post(f"{API}/d/{qr}/session")
+    tok = s.json()["session_token"]
+    body = {
+        "items": [{"item_id": hx["items"]["Naan"], "qty": 1, "note": "less spicy"}],
+        "note": "Please bring water too",
+        "client_ref": "a" * 64,  # longest the API accepts
+    }
+    first = await client.post(f"{API}/d/orders", headers={"X-Diner-Token": tok}, json=body)
+    assert first.status_code == 201, first.text
+    assert first.json()["note"] == "Please bring water too"
+    # A retry after a dropped connection returns the same order instead of a duplicate.
+    again = await client.post(f"{API}/d/orders", headers={"X-Diner-Token": tok}, json=body)
+    assert again.status_code in (200, 201) and again.json()["id"] == first.json()["id"]
+    # The same client_ref from another table session is a different order.
+    other = (await client.post(f"{API}/d/{qr}/session")).json()["session_token"]
+    third = await client.post(f"{API}/d/orders", headers={"X-Diner-Token": other}, json=body)
+    assert third.status_code == 201 and third.json()["id"] != first.json()["id"]
+
+
+
 async def test_qr_order_to_chef_to_served(client, hx):
     qr = hx["table"]["qr_token"]
     menu = (await client.get(f"{API}/d/{qr}")).json()
@@ -461,3 +485,20 @@ async def test_expenses_month_summary(client, hx):
         json={"category_id": cats["Gas"], "amount_minor": -5, "spent_on": "2026-10-01"},
     )
     assert r.status_code == 422
+
+
+async def test_server_error_reaches_the_browser_with_cors(client):
+    """A crash must still carry CORS headers, or the web app sees a network failure ("check your internet")."""
+    from app.main import app
+
+    async def boom() -> None:
+        raise RuntimeError("simulated crash")
+
+    app.add_api_route("/api/v1/__boom", boom)
+    try:
+        r = await client.get(f"{API}/__boom", headers={"Origin": "https://web.example.com"})
+    finally:
+        app.router.routes[:] = [rt for rt in app.router.routes if getattr(rt, "path", "") != "/api/v1/__boom"]
+    assert r.status_code == 500
+    assert r.json()["code"] == "server_error"
+    assert r.headers.get("access-control-allow-origin") in ("*", "https://web.example.com")
