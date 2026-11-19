@@ -154,6 +154,7 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
         "started_at": o.started_at.isoformat() if o.started_at else None,
         "ready_at": o.ready_at.isoformat() if o.ready_at else None,
         "served_at": o.served_at.isoformat() if o.served_at else None,
+        "pickup_alerted_at": o.pickup_alerted_at.isoformat() if o.pickup_alerted_at else None,
     }
 
 

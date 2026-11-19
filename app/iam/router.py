@@ -139,7 +139,12 @@ async def me(claims: dict = Depends(claims_from_header)) -> dict:
             "role": p.role_code,
             "permissions": sorted(p.permissions),
             "hotel": {"id": str(hotel.id), "name": hotel.name} if hotel else None,
-            "outlet": {"id": str(outlet.id), "name": outlet.name, "kitchen_mode": outlet.kitchen_mode}
+            "outlet": {
+                "id": str(outlet.id),
+                "name": outlet.name,
+                "kitchen_mode": outlet.kitchen_mode,
+                "serve_mode": outlet.serve_mode,
+            }
             if outlet
             else None,
         }

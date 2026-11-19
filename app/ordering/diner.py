@@ -69,7 +69,8 @@ async def menu(qr_token: str) -> dict:
         items = (await db.execute(select(MenuItem).order_by(MenuItem.sort, MenuItem.name))).scalars().all()
         return {
             "hotel": {"name": hotel.name},
-            "outlet": {"name": outlet.name},
+            # serve_mode tells the diner page whether to say "on its way" or "collect at the counter".
+            "outlet": {"name": outlet.name, "serve_mode": outlet.serve_mode},
             "table": {"label": table.label, "area": table.area},
             "ordering_enabled": bool(ent["features"].get("QR_ORDERING")),
             "categories": [

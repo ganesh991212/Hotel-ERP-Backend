@@ -121,6 +121,10 @@ async def test_counter_mode_ready_means_collected(client, hw):
         assert done["status"] == "SERVED", "diner collects: no separate Served step"
         assert done["served_at"] == done["ready_at"]
         assert (await _table(client, hw))["state"] == "BILL_PENDING"
+        menu = (await client.get(f"{API}/d/{hw['table']['qr_token']}")).json()
+        assert menu["outlet"]["serve_mode"] == "COUNTER", "the diner page says 'collect at the counter'"
+        me = (await client.get(f"{API}/me", headers=h(hw["Kiran"]))).json()
+        assert me["outlet"]["serve_mode"] == "COUNTER"
         after = (await client.get(f"{API}/dashboard/summary", headers=h(hw["admin"]))).json()["timings"]
         # Counter orders have no serving step, so they must not drag the serving average to zero.
         assert after["serving"]["count"] == before["serving"]["count"]
@@ -166,6 +170,7 @@ async def test_unpicked_order_alerts_admins_and_chefs_once_and_only_its_hotel(cl
     overdue = [e for ch, e in events if ch != "push"]
     assert [e["order"]["id"] for e in overdue] == [late["id"]], "only the order past the limit"
     assert overdue[0]["type"] == "order.pickup_overdue" and overdue[0]["minutes"] == 5
+    assert overdue[0]["order"]["pickup_alerted_at"], "screens can flag the order as overdue"
     pushed = [e for ch, e in events if ch == "push"]
     assert len(pushed) == 1
     tokens = {t for t, _ in pushed[0]["targets"]}
