@@ -11,6 +11,7 @@ from app.models import (
     ACTIVE_ASSIGNMENT,
     Assignment,
     Bill,
+    BillPayment,
     ChefProfile,
     DiningTable,
     Expense,
@@ -333,13 +334,15 @@ async def my_work(period: str = Query("today", pattern="^(today|week)$"), ctx: C
         n, total = (
             await db.execute(select(func.count(), func.coalesce(func.sum(Bill.total_minor), 0)).where(*mine_q))
         ).one()
+        # Money this person actually took (each part payment counts for whoever received it).
         by_method = {
             m: int(v)
             for m, v in (
                 await db.execute(
-                    select(Bill.payment_method, func.coalesce(func.sum(Bill.total_minor), 0))
-                    .where(*mine_q, Bill.status == "PAID")
-                    .group_by(Bill.payment_method)
+                    select(BillPayment.method, func.coalesce(func.sum(BillPayment.amount_minor), 0))
+                    .join(Bill, Bill.id == BillPayment.bill_id)
+                    .where(BillPayment.received_by == me, within(BillPayment.created_at), Bill.status != "VOID")
+                    .group_by(BillPayment.method)
                 )
             ).all()
         }

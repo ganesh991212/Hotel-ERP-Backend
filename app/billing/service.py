@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import bad_request, conflict, forbidden, not_found
 from app.core.security import now
-from app.models import Bill, BillLine, DiningTable, Hotel, HotelTaxProfile, Order, OrderItem, TableSession
+from app.models import Bill, BillLine, BillPayment, DiningTable, Hotel, HotelTaxProfile, Order, OrderItem, TableSession
 from app.ordering.pricing import apply_discount, bp_of, discount_bp_of, discount_minor_for
 from app.printing.documents import bill_blocks
 
@@ -93,7 +93,7 @@ async def create_bill(
     replaced = []
     why = "Items added" if has_new else "Discount applied"
     for old in open_bills:
-        await void(db, old, f"{why}: replaced by a new bill")
+        await void(db, old, f"{why}: replaced by a new bill", keep_payments=True)
         replaced.append(old)
     orders = await _unbilled(db, table_id)
     bill = await _issue(
@@ -107,6 +107,7 @@ async def create_bill(
     )
     for old in replaced:
         old.void_reason = f"{why}: replaced by {bill.invoice_no}"
+    await _carry_payments(db, replaced, bill)
     await db.flush()
     return bill, [old.invoice_no for old in replaced]
 
@@ -136,12 +137,13 @@ async def create_order_bill(
     if o.status != "SERVED" and not include_unserved:
         raise conflict("orders_not_served", "This order is not handed over yet", {"orders": [o.number]})
     if old_bill is not None:  # applying a discount to the unpaid bill: cancel it, issue a new one
-        await void(db, old_bill, "Discount applied: replaced by a new bill")
+        await void(db, old_bill, "Discount applied: replaced by a new bill", keep_payments=True)
     bill = await _issue(
         db, hotel_id=hotel_id, outlet_id=o.outlet_id, table_id=None, orders=[o], user_id=user_id, discount=discount
     )
     if old_bill is not None:
         old_bill.void_reason = f"Discount applied: replaced by {bill.invoice_no}"
+        await _carry_payments(db, [old_bill], bill)
     return bill, [old_bill.invoice_no] if old_bill is not None else []
 
 
@@ -292,6 +294,22 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
         "service_charge_minor": bill.service_charge_minor,
         "total_minor": bill.total_minor,
         "payment_method": bill.payment_method,
+        "payments": [
+            {
+                "id": str(p.id),
+                "method": p.method,
+                "amount_minor": p.amount_minor,
+                "reference": p.reference,
+                "at": p.created_at.isoformat() if p.created_at else None,
+            }
+            for p in (
+                await db.execute(
+                    select(BillPayment).where(BillPayment.bill_id == bill.id).order_by(BillPayment.created_at)
+                )
+            ).scalars()
+        ],
+        "paid_minor": await paid_minor(db, bill),
+        "due_minor": 0 if bill.status != "ISSUED" else bill.total_minor - await paid_minor(db, bill),
         "paid_at": bill.paid_at.isoformat() if bill.paid_at else None,
         "print_count": bill.print_count,
         "void_reason": bill.void_reason,
@@ -328,10 +346,83 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
     return data
 
 
-async def settle(db: AsyncSession, bill: Bill, method: str) -> None:
+async def paid_minor(db: AsyncSession, bill: Bill) -> int:
+    q = select(func.coalesce(func.sum(BillPayment.amount_minor), 0)).where(BillPayment.bill_id == bill.id)
+    return int((await db.execute(q)).scalar_one())
+
+
+async def add_payment(
+    db: AsyncSession, bill: Bill, *, method: str, amount_minor: int | None, reference: str | None, user_id: UUID
+) -> BillPayment:
+    """One part of the payment (docs/03 "Payments"). `amount_minor` None = whatever is still due. When the parts
+    reach the total the bill is paid; paying more than is due is refused (give change outside the app)."""
     if bill.status != "ISSUED":
         raise conflict("bad_bill_state", f"Bill is {bill.status}")
-    bill.status, bill.payment_method, bill.paid_at = "PAID", method, now()
+    due = bill.total_minor - await paid_minor(db, bill)
+    amount = due if amount_minor is None else amount_minor
+    if amount <= 0 or due <= 0:
+        raise bad_request("bad_amount", "Nothing is due on this bill")
+    if amount > due:
+        raise conflict("overpayment", "That is more than is due on this bill", {"due_minor": due})
+    p = BillPayment(
+        hotel_id=bill.hotel_id,
+        bill_id=bill.id,
+        method=method,
+        amount_minor=amount,
+        reference=reference,
+        received_by=user_id,
+    )
+    db.add(p)
+    await db.flush()
+    if amount == due:
+        await _mark_paid(db, bill)
+    return p
+
+
+async def remove_payment(db: AsyncSession, bill: Bill, payment_id: UUID) -> None:
+    """Undo a part entered by mistake. Only while the bill is unpaid: a paid bill's takings are final."""
+    if bill.status != "ISSUED":
+        raise conflict("bad_bill_state", f"Bill is {bill.status}")
+    p = await db.get(BillPayment, payment_id)
+    if p is None or p.bill_id != bill.id:
+        raise not_found("Payment")
+    await db.delete(p)
+    await db.flush()
+
+
+def split_equally(total_minor: int, parts: int) -> list[int]:
+    """Equal shares that add up to the paisa; the first shares take the leftover paise."""
+    base, extra = divmod(total_minor, parts)
+    return [base + 1 if i < extra else base for i in range(parts)]
+
+
+async def _carry_payments(db: AsyncSession, old_bills: list[Bill], new_bill: Bill) -> None:
+    """A replaced bill's payments move to its replacement, so money taken is never lost with a cancelled bill."""
+    if not old_bills:
+        return
+    await db.execute(
+        update(BillPayment).where(BillPayment.bill_id.in_([b.id for b in old_bills])).values(bill_id=new_bill.id)
+    )
+    paid = await paid_minor(db, new_bill)
+    if paid > new_bill.total_minor:
+        raise conflict(
+            "payments_exceed_total",
+            "More has been paid than the new total; remove a payment first",
+            {"paid_minor": paid, "total_minor": new_bill.total_minor},
+        )
+    if paid and paid == new_bill.total_minor:
+        await _mark_paid(db, new_bill)
+
+
+async def settle(db: AsyncSession, bill: Bill, method: str, user_id: UUID | None = None) -> None:
+    """Pay whatever is still due in one method (the common case)."""
+    await add_payment(db, bill, method=method, amount_minor=None, reference=None, user_id=user_id)
+
+
+async def _mark_paid(db: AsyncSession, bill: Bill) -> None:
+    methods = set((await db.execute(select(BillPayment.method).where(BillPayment.bill_id == bill.id))).scalars())
+    bill.status, bill.paid_at = "PAID", now()
+    bill.payment_method = methods.pop() if len(methods) == 1 else "MIXED"
     # Payment ends the table's QR sessions (docs/08): the next scan starts fresh.
     if bill.table_id:
         await db.execute(
@@ -341,8 +432,10 @@ async def settle(db: AsyncSession, bill: Bill, method: str) -> None:
         )
 
 
-async def void(db: AsyncSession, bill: Bill, reason: str) -> None:
+async def void(db: AsyncSession, bill: Bill, reason: str, *, keep_payments: bool = False) -> None:
     if bill.status == "VOID":
         raise conflict("bad_bill_state", "Bill is already void")
+    if not keep_payments and bill.status == "ISSUED" and await paid_minor(db, bill):
+        raise conflict("has_payments", "Part of this bill is paid; remove those payments first")
     bill.status, bill.void_reason = "VOID", reason
     await db.execute(update(Order).where(Order.bill_id == bill.id).values(bill_id=None))

@@ -136,7 +136,12 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   maximum (owner: any; Manager 20%, Cashier 10%, others none, until the owner changes them in Team > Roles). Tax is
   recalculated on the discounted amount, as GST requires. The bill shows Subtotal, Discount (and reason), Taxable
   value, CGST/SGST, Total. Discounting an already printed bill cancels it and issues a new one.
-- **Settle**: Cash, UPI or Card. Paying frees the table and ends the guests' QR session.
+- **Pay in parts**: enter an amount and method (e.g. ₹500 Cash, then the rest by UPI). The bill shows Paid and Due;
+  when nothing is due it is paid ("Mixed" if several methods). A part entered by mistake can be removed until the bill
+  is paid. **Split equally** shows each guest's share (2 to 20 guests), and each pays theirs. A bill with money taken
+  cannot be voided until those parts are removed; if the guest orders more, the money already paid moves to the new
+  bill.
+- **Settle**: Cash, UPI or Card for whatever is still due. Paying frees the table and ends the guests' QR session.
 - **Print / Print again**: every copy after the first is marked **DUPLICATE** and logged with who printed it.
 - **Void** (permission `bill.void`, reason required): withdraws a bill; its orders can be billed again.
 - Cancelling an order that is on an unpaid bill cancels that bill; on a paid bill it is refused.
@@ -184,7 +189,8 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 - **My work** (everyone else's Overview), today or last 7 days, with the team's average under each average:
   - Chef: orders and items cooked, average cooking time, average wait before starting, queue now.
   - Server: orders served, tables served, average ready-to-table time, orders taken and their value, ready now.
-  - Billing staff: bills raised, collected by Cash/UPI/Card, unpaid bills now.
+  - Billing staff: bills raised, money they received by Cash/UPI/Card (part payments count for whoever took them),
+    unpaid bills now.
 
 ## 14. Settings (hotel admin)
 
@@ -272,6 +278,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Part payments and equal split (sections 10, 13) |
 | 2026-11-20 | Discounts with a per-role maximum (sections 10, 11) |
 | 2026-11-20 | Takeaway / counter orders (section 6, 10, 17) |
 | 2026-11-20 | Guide created, covering everything up to: one bill per visit, Orders/Bills with dates and search, reprint, change/reset password, My work, workflow settings, no-pickup alerts, bill pending |

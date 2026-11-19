@@ -113,5 +113,18 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Discounting an issued, unpaid bill re-issues it (old bill cancelled "Discount applied: replaced by ...").
 - The Overview's revenue is order value before discounts; Reports (checklist 7) will show net sales.
 
+## Payments (added 2026-11-20)
+- `bill_payments(hotel_id, bill_id, method[CASH|UPI|CARD], amount_minor > 0, reference, received_by, created_at)`,
+  RLS like every hotel table (migration 0008; earlier paid bills back-filled with one payment each).
+- A bill is paid in one go (`settle`) or in parts; when the parts reach the total it becomes PAID with
+  `payment_method` = the single method, or `MIXED`. Paying more than is due is refused (`overpayment`); change is
+  given outside the app.
+- Equal split: shares of what is due that add up to the paisa (first shares take the leftover paise); each guest pays
+  theirs as a part. Split **by items** (a separate GST invoice per guest) is not built yet.
+- A part entered by mistake can be removed while the bill is unpaid (audited); a paid bill's takings are final.
+- A bill with parts paid cannot be voided by hand (`has_payments`). When a bill is replaced (items added, discount),
+  its payments move to the replacement; if they would exceed the new total, the replacement is refused.
+- "My work" counts the money each person received (payments), not the bills they raised.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

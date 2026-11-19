@@ -84,6 +84,13 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 - Bill JSON adds `discount_minor`, `discount_reason`, `taxable_minor`, and per line `discount_minor`.
 - `PUT /roles/{id}/discount-limit {max_discount_bp}` (`role.manage`); roles report `max_discount_bp`.
 
+## Payments (added 2026-11-20)
+- `POST /bills/{id}/payments {method, amount_minor, reference?}`: one part; errors `overpayment` (`details.due_minor`).
+- `DELETE /bills/{id}/payments/{payment_id}`: undo a part while unpaid.
+- `GET /bills/{id}/split?parts=2..20`: `{due_minor, shares_minor[]}`.
+- `POST /bills/{id}/settle {method}` pays whatever is still due.
+- Bill JSON adds `payments[]`, `paid_minor`, `due_minor`; `payment_method` may be `MIXED`.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

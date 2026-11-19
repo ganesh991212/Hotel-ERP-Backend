@@ -161,11 +161,48 @@ async def print_bill(bill_id: UUID, body: PrintIn, ctx: Ctx = HotelCtx("bill.man
 
 @router.post("/bills/{bill_id}/settle")
 async def settle(bill_id: UUID, body: SettleIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
+    """Pay whatever is still due, in one method."""
     b = await _get(ctx, bill_id)
-    await service.settle(ctx.db, b, body.method)
+    await service.settle(ctx.db, b, body.method, ctx.user_id)
     await ctx.audit("bill.settle", "bill", b.id, after={"method": body.method, "total_minor": b.total_minor})
     ctx.emit(f"outlet:{b.outlet_id}", {"type": "bill.paid", "table_id": str(b.table_id)})
     return await service.bill_json(ctx.db, b)
+
+
+class PaymentIn(BaseModel):
+    method: str = Field(pattern="^(CASH|UPI|CARD)$")
+    amount_minor: int = Field(ge=1)
+    reference: str | None = Field(default=None, max_length=60)
+
+
+@router.post("/bills/{bill_id}/payments")
+async def add_payment(bill_id: UUID, body: PaymentIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
+    """One part of the payment (cash + UPI, or a guest's share). The bill is paid when the parts reach the total."""
+    b = await _get(ctx, bill_id)
+    p = await service.add_payment(
+        ctx.db, b, method=body.method, amount_minor=body.amount_minor, reference=body.reference, user_id=ctx.user_id
+    )
+    await ctx.audit("bill.payment", "bill", b.id, after={"method": p.method, "amount_minor": p.amount_minor})
+    if b.status == "PAID":
+        ctx.emit(f"outlet:{b.outlet_id}", {"type": "bill.paid", "table_id": str(b.table_id)})
+    return await service.bill_json(ctx.db, b)
+
+
+@router.delete("/bills/{bill_id}/payments/{payment_id}")
+async def remove_payment(bill_id: UUID, payment_id: UUID, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
+    """Undo a part entered by mistake, while the bill is still unpaid. Audited."""
+    b = await _get(ctx, bill_id)
+    await service.remove_payment(ctx.db, b, payment_id)
+    await ctx.audit("bill.payment_removed", "bill", b.id, after={"payment_id": str(payment_id)})
+    return await service.bill_json(ctx.db, b)
+
+
+@router.get("/bills/{bill_id}/split")
+async def split(bill_id: UUID, parts: int = Query(ge=2, le=20), ctx: Ctx = HotelCtx("bill.manage")) -> dict:
+    """Equal shares of what is still due, adding up to the paisa. Each guest then pays theirs as a part payment."""
+    b = await _get(ctx, bill_id)
+    due = b.total_minor - await service.paid_minor(ctx.db, b) if b.status == "ISSUED" else 0
+    return {"due_minor": due, "shares_minor": service.split_equally(due, parts)}
 
 
 @router.post("/bills/{bill_id}/void")

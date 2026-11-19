@@ -145,7 +145,12 @@ def bill_blocks(
         blocks.append(("row", "Service charge", rs(bill["service_charge_minor"])))
     blocks += [("divider",), ("total", "TOTAL", rs(bill["total_minor"])), ("divider",)]
     if bill["status"] == "PAID":
-        blocks.append(("row", "Paid by", bill.get("payment_method") or ""))
+        payments = bill.get("payments") or []
+        if len(payments) > 1:
+            for pay in payments:
+                blocks.append(("row", f"Paid by {pay['method']}", rs(pay["amount_minor"])))
+        else:
+            blocks.append(("row", "Paid by", bill.get("payment_method") or ""))
     if bill["doc_type"] == "BILL_OF_SUPPLY":
         blocks.append(("text", "Composition taxable person, not eligible to collect tax on supplies."))
     blocks += [("center", "Thank you! Please visit again."), ("feed", 1), ("cut",)]

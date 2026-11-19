@@ -5078,6 +5078,7 @@
      "bills"
     ],
     "summary": "Settle",
+    "description": "Pay whatever is still due, in one method.",
     "operationId": "settle_api_v1_bills__bill_id__settle_post",
     "parameters": [
      {
@@ -5126,6 +5127,223 @@
          "type": "object",
          "additionalProperties": true,
          "title": "Response Settle Api V1 Bills  Bill Id  Settle Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bills/{bill_id}/payments": {
+   "post": {
+    "tags": [
+     "bills"
+    ],
+    "summary": "Add Payment",
+    "description": "One part of the payment (cash + UPI, or a guest's share). The bill is paid when the parts reach the total.",
+    "operationId": "add_payment_api_v1_bills__bill_id__payments_post",
+    "parameters": [
+     {
+      "name": "bill_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Bill Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PaymentIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Add Payment Api V1 Bills  Bill Id  Payments Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bills/{bill_id}/payments/{payment_id}": {
+   "delete": {
+    "tags": [
+     "bills"
+    ],
+    "summary": "Remove Payment",
+    "description": "Undo a part entered by mistake, while the bill is still unpaid. Audited.",
+    "operationId": "remove_payment_api_v1_bills__bill_id__payments__payment_id__delete",
+    "parameters": [
+     {
+      "name": "bill_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Bill Id"
+      }
+     },
+     {
+      "name": "payment_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Payment Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Remove Payment Api V1 Bills  Bill Id  Payments  Payment Id  Delete"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bills/{bill_id}/split": {
+   "get": {
+    "tags": [
+     "bills"
+    ],
+    "summary": "Split",
+    "description": "Equal shares of what is still due, adding up to the paisa. Each guest then pays theirs as a part payment.",
+    "operationId": "split_api_v1_bills__bill_id__split_get",
+    "parameters": [
+     {
+      "name": "bill_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Bill Id"
+      }
+     },
+     {
+      "name": "parts",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "maximum": 20,
+       "minimum": 2,
+       "title": "Parts"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Split Api V1 Bills  Bill Id  Split Get"
         }
        }
       }
@@ -6976,6 +7194,38 @@
      "new_password"
     ],
     "title": "PasswordResetIn"
+   },
+   "PaymentIn": {
+    "properties": {
+     "method": {
+      "type": "string",
+      "pattern": "^(CASH|UPI|CARD)$",
+      "title": "Method"
+     },
+     "amount_minor": {
+      "type": "integer",
+      "minimum": 1.0,
+      "title": "Amount Minor"
+     },
+     "reference": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 60
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference"
+     }
+    },
+    "type": "object",
+    "required": [
+     "method",
+     "amount_minor"
+    ],
+    "title": "PaymentIn"
    },
    "PlanOut": {
     "properties": {
