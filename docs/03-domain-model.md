@@ -141,8 +141,8 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   the last guest bill is paid.
 - Cancelling: a split is cancelled as a whole (all guest bills VOID, the food back to unbilled) and only while no
   guest has paid (`split_partly_paid`). Cancelling an order on an unpaid split does the same.
-- Later: a discount per guest bill (today: discount before splitting is not carried; discount a guest bill by
-  cancelling and re-splitting is not offered).
+- Discounts: a discounted bill is not split (`bill_discounted`; cancel it first), because the discount would be
+  lost. Guest bills cannot be discounted yet; a per-guest discount comes later.
 
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

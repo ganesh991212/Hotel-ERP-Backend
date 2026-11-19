@@ -145,7 +145,8 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   tap who had it: give units to guests (2 Naan: one each) or mark it **Shared** by some guests (its price is shared
   equally, to the paisa). Every dish must be given out and every guest must get something. Each guest then gets a GST
   bill of their own with its own number and its own tax, printed "Guest 2 of 3". If the table already had one bill,
-  it is cancelled and replaced (not if money was already taken on it). Each guest pays their own bill; the table is
+  it is cancelled and replaced (not if money was already taken on it, and not if it has a discount: cancel that bill
+  first; guest bills cannot be discounted yet). Each guest pays their own bill; the table is
   free only when every guest has paid. Food ordered after splitting gets its own bill. To redo a split, cancel any
   guest bill: the whole split is cancelled (only while nobody has paid).
 - **Settle**: Cash, UPI or Card for whatever is still due. Paying frees the table and ends the guests' QR session.

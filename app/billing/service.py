@@ -286,7 +286,13 @@ async def split_preview(db: AsyncSession, table_id: UUID) -> dict:
             for k, v in sorted(grouped.items())
         ],
         "unserved": sorted(o.number for o in orders if o.status != "SERVED"),
-        "open_bill": {"id": str(open_bill.id), "invoice_no": open_bill.invoice_no} if open_bill else None,
+        "open_bill": {
+            "id": str(open_bill.id),
+            "invoice_no": open_bill.invoice_no,
+            "discount_minor": open_bill.discount_minor,
+        }
+        if open_bill
+        else None,
         "open_bill_paid_minor": await paid_minor(db, open_bill) if open_bill else 0,
     }
 
@@ -311,6 +317,13 @@ async def split_by_items(
     open_bill = await _split_open_bill(db, table_id)
     if open_bill and await paid_minor(db, open_bill):
         raise conflict("has_payments", "Part of this bill is paid; remove those payments first")
+    if open_bill and open_bill.discount_minor:
+        # Splitting would drop the discount (guests would pay more). Discounts per guest bill come later.
+        raise conflict(
+            "bill_discounted",
+            "This bill has a discount; cancel it before splitting by items",
+            {"invoice_no": open_bill.invoice_no},
+        )
     orders = await _unbilled(db, table_id)
     already = []
     if open_bill:

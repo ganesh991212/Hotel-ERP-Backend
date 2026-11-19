@@ -182,6 +182,13 @@ async def test_refusals(client, root, hp):
         f"{API}/bills/{b['id']}/payments", headers=h(hp["admin"]), json={"method": "CASH", "amount_minor": 100}
     )
     assert (await _split(client, hp, [{"key": key, "qty": [1, 1]}], guests=2)).json()["code"] == "has_payments"
+    # A discounted bill is not split (the discount would be lost); it must be cancelled first.
+    paid = (await client.get(f"{API}/bills/{b['id']}", headers=h(hp["admin"]))).json()["payments"][0]["id"]
+    await client.delete(f"{API}/bills/{b['id']}/payments/{paid}", headers=h(hp["admin"]))
+    disc = {"table_id": hp["table"]["id"], "discount": {"percent_bp": 1000, "reason": "Regular guest"}}
+    assert (await client.post(f"{API}/bills", headers=h(hp["admin"]), json=disc)).status_code == 201
+    r = await _split(client, hp, [{"key": key, "qty": [1, 1]}], guests=2)
+    assert r.status_code == 409 and r.json()["code"] == "bill_discounted"
     # Another hotel cannot see this table.
     other = await make_hotel(client, root)
     r = await client.get(

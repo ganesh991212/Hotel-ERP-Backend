@@ -110,7 +110,7 @@ response; design in docs/14 "Reports"):
   line_total_minor}`, `unserved[]`, `open_bill` (the ordinary bill a split would replace) and its `open_bill_paid_minor`.
 - `POST /bills/split {table_id, guests 2..20, lines: [{key, qty: [per guest]} | {key, shared: [guest numbers]}],
   include_unserved}` -> 201 `{bills[], replaced_invoice_nos[]}`. Errors: `bad_split`, `guest_empty`,
-  `lines_changed` (open the split again), `orders_not_served`, `has_payments`, `nothing_to_bill`. Audited `bill.split`.
+  `lines_changed` (open the split again), `orders_not_served`, `has_payments`, `bill_discounted`, `nothing_to_bill`. Audited `bill.split`.
 - Bill JSON adds `split`: null, or `{group_id, guest_no, guest_count, bills: [{id, invoice_no, guest_no, status,
   total_minor, due_minor}]}`. Voiding a guest bill voids the whole split (`split_partly_paid` once anyone paid).
 
