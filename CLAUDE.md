@@ -14,6 +14,10 @@ Read `docs/BUILD-PLAN.md` at the start of every session. It is the only tracker.
 9. **Refresh tokens rotate; reuse revokes the family.**
 10. **Strict chef queue.** Only the head order of a chef's queue can start; ratings may only break near-ties and never override queue rules (`docs/04-kitchen-routing.md`).
 11. **While the repo is public:** no secrets, no real customer data, no real pricing in commits.
+12. **Prior art before every feature or change (mandatory).** Before building, research how existing restaurant
+    platforms (e.g. Petpooja, Restroworks/POSist, UrbanPiper, Square, Toast, Lightspeed) design it; how it fits our
+    app; what mistakes they made (user complaints, gaps) and how we avoid them. Record it in
+    `docs/14-prior-art.md` (one section per feature) **before** writing code, then build our own way.
 
 ## Definition of done
-Code, tests (including RLS and entitlement tests for new endpoints), OpenAPI updated, BUILD-PLAN ticked, migration reversible, `docs/13-functional-guide.md` updated (what users see and what happens).
+Code, tests (including RLS and entitlement tests for new endpoints), OpenAPI updated, BUILD-PLAN ticked, migration reversible, `docs/13-functional-guide.md` updated (what users see and what happens), prior-art section in `docs/14-prior-art.md`.
