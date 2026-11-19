@@ -131,6 +131,11 @@ def bill_blocks(
         blocks.append(("text", ln["name"]))
         blocks.append(("row", f"   {ln['qty']} x {rs(ln['unit_price_minor'])}", rs(ln["line_total_minor"])))
     blocks += [("divider",), ("row", "Subtotal", rs(bill["subtotal_minor"]))]
+    if bill.get("discount_minor"):
+        blocks.append(("row", "Discount", "-" + rs(bill["discount_minor"])))
+        if bill.get("discount_reason"):
+            blocks.append(("small", f"  ({bill['discount_reason']})"))
+        blocks.append(("row", "Taxable value", rs(bill["taxable_minor"])))
     for g in tax_groups:
         half = g["rate_bp"] / 200  # display only: 500 bp -> "2.5%"
         pct = f"{half:g}%"

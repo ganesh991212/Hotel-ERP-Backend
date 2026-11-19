@@ -132,6 +132,10 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   the same warning if the food is not handed over yet. The bill says "Takeaway" and the guest's name.
 - **Bill contents**: hotel details and GSTIN, bill type, number, table, date, items, subtotal, CGST and SGST per rate,
   service charge (if set), total, payment method once paid.
+- **Discount** (in the bill window, before or after printing): percent or amount, with a reason. Each role has a
+  maximum (owner: any; Manager 20%, Cashier 10%, others none, until the owner changes them in Team > Roles). Tax is
+  recalculated on the discounted amount, as GST requires. The bill shows Subtotal, Discount (and reason), Taxable
+  value, CGST/SGST, Total. Discounting an already printed bill cancels it and issues a new one.
 - **Settle**: Cash, UPI or Card. Paying frees the table and ends the guests' QR session.
 - **Print / Print again**: every copy after the first is marked **DUPLICATE** and logged with who printed it.
 - **Void** (permission `bill.void`, reason required): withdraws a bill; its orders can be billed again.
@@ -142,7 +146,7 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 - **Team**: add staff (name, email, phone, role, password), change role, disable or enable, **Reset password** for
   someone who forgot theirs (they are signed out everywhere). Only a hotel admin can reset a hotel admin's password.
 - **Roles**: Hotel admin (always everything), Manager, Cashier, Server, Chef, plus custom roles (plan feature). A
-  permission matrix shows exactly what each role may do:
+  permission matrix shows exactly what each role may do, plus each role's **maximum bill discount**:
 
 | Permission | What it allows |
 |---|---|
@@ -268,5 +272,6 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Discounts with a per-role maximum (sections 10, 11) |
 | 2026-11-20 | Takeaway / counter orders (section 6, 10, 17) |
 | 2026-11-20 | Guide created, covering everything up to: one bill per visit, Orders/Bills with dates and search, reprint, change/reset password, My work, workflow settings, no-pickup alerts, bill pending |

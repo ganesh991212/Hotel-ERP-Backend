@@ -78,6 +78,12 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 - `POST /bills {order_id}`: bill one takeaway order (`table_order` for table orders, `already_billed`).
 - `GET /orders?q=` also matches the takeaway customer's name or phone.
 
+## Discounts (added 2026-11-20)
+- `POST /bills {table_id | order_id, discount: {percent_bp | amount_minor, reason}}`: bill with a discount; with an
+  unpaid bill already open it re-issues it. Errors: `discount_limit` (403, `details.max_bp`), `bad_discount`.
+- Bill JSON adds `discount_minor`, `discount_reason`, `taxable_minor`, and per line `discount_minor`.
+- `PUT /roles/{id}/discount-limit {max_discount_bp}` (`role.manage`); roles report `max_discount_bp`.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

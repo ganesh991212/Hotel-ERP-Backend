@@ -101,5 +101,17 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Billed **per order** (`POST /bills {order_id}`), not per table visit; warn-and-allow while still cooking; an
   order is billed once (`already_billed`). Never affects table state. KOT and bill say TAKEAWAY and the name.
 
+## Discounts (added 2026-11-20)
+- A bill-level discount, by percent (`percent_bp`, 1000 = 10%) or amount, with a required reason. Stored on the bill
+  (`discount_minor`, `discount_reason`, `discount_by`) and shared across bill lines (`bill_lines.discount_minor`,
+  largest-remainder so the shares add up to the paisa). Migration 0007.
+- **GST on the discounted value**: each line is taxed on (line total - its share); service charge applies to the
+  discounted subtotal. Pure maths: `pricing.apply_discount`.
+- **Per-role maximum** `roles.max_discount_bp` (0 = none). Defaults: Hotel admin 100% (locked), Manager 20%,
+  Cashier 10%, others 0; the admin changes them. A discount's share of the subtotal is rounded **up** before the check,
+  so rounding can never beat the limit. Enforced on the server (`discount_limit`, with `max_bp`).
+- Discounting an issued, unpaid bill re-issues it (old bill cancelled "Discount applied: replaced by ...").
+- The Overview's revenue is order value before discounts; Reports (checklist 7) will show net sales.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

@@ -166,7 +166,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 
 | # | Module | Weight | Ours | Score | Status |
 |---|---|---|---|---|---|
-| 1 | Point of sale / billing | 10 | 55% | 5.5 | Partial |
+| 1 | Point of sale / billing | 10 | 70% | 7.0 | Partial |
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
 | 3 | Tables / floor plan | 6 | 55% | 3.3 | Partial |
 | 4 | Kitchen display | 8 | 80% | 6.4 | Mostly done |
@@ -184,8 +184,8 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 16 | Integrations | 6 | 25% | 1.5 | Partial |
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
-| 19 | Settings, roles, permissions | 4 | 85% | 3.4 | Mostly done |
-| | **Total** | **100** | | **37.8** | |
+| 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
+| | **Total** | **100** | | **39.7** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -196,7 +196,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] GST bill (CGST/SGST, FY numbering), print (ESC/POS + PDF), settle Cash/UPI/Card, void, duplicate reprint
 - [x] One bill per table visit; items added after billing replace the unpaid bill
 - [x] Takeaway / counter orders (no table): name/phone, token = order number, billed per order
-- [ ] Discounts (amount or %, per role maximum, reason, audited)
+- [x] Discounts (amount or %, per role maximum, reason, audited; GST on the discounted value)
 - [ ] Split bill (by items or equally) and part payments (e.g. cash + UPI)
 - [ ] Hold / resume an order; keyboard shortcuts for a counter PC
 - [ ] Customer name/phone on the bill (feeds CRM)
@@ -288,7 +288,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 
 ### 19. Settings, roles, permissions (4)
 - [x] Roles, custom roles, permission matrix, plan-gated features, kitchen and workflow settings, branding
-- [ ] Per-role maximum discount (with 1)
+- [x] Per-role maximum discount
 
 ### Next up (weight x gap / effort)
 1. POS: takeaway + discounts + split/part payment (+6 points, medium)

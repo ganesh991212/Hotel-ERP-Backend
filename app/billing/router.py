@@ -11,10 +11,25 @@ from app.core.deps import Ctx, HotelCtx
 from app.core.errors import not_found
 from app.core.listing import ListParams
 from app.core.security import now
-from app.models import Bill, DiningTable, Hotel, PrintLog
+from app.iam.permissions import LOCKED_ROLE
+from app.models import Bill, DiningTable, Hotel, PrintLog, Role
 from app.printing import escpos
 
 router = APIRouter(tags=["bills"])
+
+
+class DiscountIn(BaseModel):
+    """Either `percent_bp` (1000 = 10%) or `amount_minor` (paise), and why. Computed and capped on the server."""
+
+    percent_bp: int | None = Field(default=None, ge=1, le=10_000)
+    amount_minor: int | None = Field(default=None, ge=1)
+    reason: str = Field(min_length=3, max_length=200)
+
+    @model_validator(mode="after")
+    def _one_kind(self) -> "DiscountIn":
+        if (self.percent_bp is None) == (self.amount_minor is None):
+            raise ValueError("Give either percent_bp or amount_minor")
+        return self
 
 
 class BillIn(BaseModel):
@@ -23,6 +38,8 @@ class BillIn(BaseModel):
     table_id: UUID | None = None
     order_id: UUID | None = None
     include_unserved: bool = False
+    # With an unpaid bill already open, a discount re-issues it (the old one is cancelled, never edited).
+    discount: DiscountIn | None = None
 
     @model_validator(mode="after")
     def _one_target(self) -> "BillIn":
@@ -43,6 +60,14 @@ class PrintIn(BaseModel):
     paper_mm: int | None = None
 
 
+async def max_discount_bp(ctx: Ctx) -> int:
+    """The signed-in person's role limit. Hotel admins can always give any discount (their role is locked)."""
+    if ctx.principal.role_code == LOCKED_ROLE:
+        return 10_000
+    role = (await ctx.db.execute(select(Role).where(Role.code == ctx.principal.role_code))).scalar_one_or_none()
+    return role.max_discount_bp if role else 0
+
+
 async def _get(ctx: Ctx, bill_id: UUID) -> Bill:
     b = await ctx.db.get(Bill, bill_id, with_for_update=True)
     if not b:
@@ -52,15 +77,24 @@ async def _get(ctx: Ctx, bill_id: UUID) -> Bill:
 
 @router.post("/bills", status_code=201)
 async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
+    discount = None
+    if body.discount:
+        discount = service.DiscountSpec(
+            percent_bp=body.discount.percent_bp,
+            amount_minor=body.discount.amount_minor,
+            reason=body.discount.reason.strip(),
+            by_user=ctx.user_id,
+            max_bp=await max_discount_bp(ctx),
+        )
     if body.order_id:
-        b = await service.create_order_bill(
+        b, replaced = await service.create_order_bill(
             ctx.db,
             hotel_id=ctx.hotel_id,
             order_id=body.order_id,
             user_id=ctx.user_id,
             include_unserved=body.include_unserved,
+            discount=discount,
         )
-        replaced: list[str] = []
     else:
         b, replaced = await service.create_bill(
             ctx.db,
@@ -68,8 +102,11 @@ async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
             table_id=body.table_id,
             user_id=ctx.user_id,
             include_unserved=body.include_unserved,
+            discount=discount,
         )
     after = {"invoice_no": b.invoice_no, "total_minor": b.total_minor, "replaced": replaced}
+    if b.discount_minor:
+        after |= {"discount_minor": b.discount_minor, "discount_reason": b.discount_reason}
     await ctx.audit("bill.create", "bill", b.id, after=after)
     ctx.emit(f"outlet:{b.outlet_id}", {"type": "bill.created", "table_id": str(b.table_id)})
     return {**await service.bill_json(ctx.db, b), "replaced_invoice_nos": replaced}

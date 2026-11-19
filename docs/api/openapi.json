@@ -760,6 +760,76 @@
     }
    }
   },
+  "/api/v1/roles/{role_id}/discount-limit": {
+   "put": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "Set Discount Limit",
+    "description": "The largest bill discount this role may give (0 = none). Hotel admin is always 100%.",
+    "operationId": "set_discount_limit_api_v1_roles__role_id__discount_limit_put",
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DiscountLimitIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoleOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/platform/summary": {
    "get": {
     "tags": [
@@ -5846,6 +5916,16 @@
       "type": "boolean",
       "title": "Include Unserved",
       "default": false
+     },
+     "discount": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/DiscountIn"
+       },
+       {
+        "type": "null"
+       }
+      ]
      }
     },
     "type": "object",
@@ -5966,6 +6046,62 @@
      "items"
     ],
     "title": "DinerQuoteIn"
+   },
+   "DiscountIn": {
+    "properties": {
+     "percent_bp": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 10000.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Percent Bp"
+     },
+     "amount_minor": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount Minor"
+     },
+     "reason": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "reason"
+    ],
+    "title": "DiscountIn",
+    "description": "Either `percent_bp` (1000 = 10%) or `amount_minor` (paise), and why. Computed and capped on the server."
+   },
+   "DiscountLimitIn": {
+    "properties": {
+     "max_discount_bp": {
+      "type": "integer",
+      "maximum": 10000.0,
+      "minimum": 0.0,
+      "title": "Max Discount Bp"
+     }
+    },
+    "type": "object",
+    "required": [
+     "max_discount_bp"
+    ],
+    "title": "DiscountLimitIn"
    },
    "ExpenseIn": {
     "properties": {
@@ -7144,6 +7280,11 @@
       },
       "type": "array",
       "title": "Permissions"
+     },
+     "max_discount_bp": {
+      "type": "integer",
+      "title": "Max Discount Bp",
+      "default": 0
      }
     },
     "type": "object",

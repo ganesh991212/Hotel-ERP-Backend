@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.security import hash_password, now
-from app.iam.permissions import SYSTEM_ROLES
+from app.iam.permissions import DEFAULT_MAX_DISCOUNT_BP, SYSTEM_ROLES
 from app.models import (
     Hotel,
     HotelTaxProfile,
@@ -81,7 +81,13 @@ async def provision_hotel(
     db.add(Outlet(hotel_id=hotel.id, name=name))
     admin_role_id = None
     for code, (role_name, perms) in SYSTEM_ROLES.items():
-        role = Role(hotel_id=hotel.id, code=code, name=role_name, is_system=True)
+        role = Role(
+            hotel_id=hotel.id,
+            code=code,
+            name=role_name,
+            is_system=True,
+            max_discount_bp=DEFAULT_MAX_DISCOUNT_BP.get(code, 0),
+        )
         db.add(role)
         await db.flush()
         for perm in perms:

@@ -1,6 +1,7 @@
 """Table bills. Totals come from the orders' server-computed amounts; nothing is re-priced here."""
 
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -8,10 +9,10 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import bad_request, conflict, not_found
+from app.core.errors import bad_request, conflict, forbidden, not_found
 from app.core.security import now
 from app.models import Bill, BillLine, DiningTable, Hotel, HotelTaxProfile, Order, OrderItem, TableSession
-from app.ordering.pricing import bp_of
+from app.ordering.pricing import apply_discount, bp_of, discount_bp_of, discount_minor_for
 from app.printing.documents import bill_blocks
 
 DOC_TYPE = {"REGULAR": "TAX_INVOICE", "COMPOSITION": "BILL_OF_SUPPLY", "UNREGISTERED": "BILL"}
@@ -34,6 +35,18 @@ def split_gst(tax_minor: int) -> tuple[int, int]:
     return cgst, tax_minor - cgst
 
 
+@dataclass(frozen=True)
+class DiscountSpec:
+    """A requested bill discount: `percent_bp` (1000 = 10%) or `amount_minor`, why, by whom, and the most this
+    person's role may give (basis points of the subtotal)."""
+
+    percent_bp: int | None
+    amount_minor: int | None
+    reason: str
+    by_user: UUID
+    max_bp: int
+
+
 async def _unbilled(db: AsyncSession, table_id: UUID) -> list[Order]:
     q = (
         select(Order)
@@ -45,7 +58,13 @@ async def _unbilled(db: AsyncSession, table_id: UUID) -> list[Order]:
 
 
 async def create_bill(
-    db: AsyncSession, *, hotel_id: UUID, table_id: UUID, user_id: UUID, include_unserved: bool
+    db: AsyncSession,
+    *,
+    hotel_id: UUID,
+    table_id: UUID,
+    user_id: UUID,
+    include_unserved: bool,
+    discount: DiscountSpec | None = None,
 ) -> tuple[Bill, list[str]]:
     """One bill per table visit (docs/03 "Billing a table visit"). If the table already has an issued, unpaid
     bill and the guest ordered more, that bill is cancelled (a GST invoice cannot be edited; the cancelled number
@@ -56,13 +75,15 @@ async def create_bill(
         raise not_found("Table")
     # One bill number at a time per hotel: sequential numbering must have no gaps or duplicates.
     await db.execute(text("select pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"bill:{hotel_id}"})
-    if not await _unbilled(db, table_id):
-        raise bad_request("nothing_to_bill", "This table has no orders to bill")
+    has_new = bool(await _unbilled(db, table_id))
     open_bills = (
         (await db.execute(select(Bill).where(Bill.table_id == table_id, Bill.status == "ISSUED").with_for_update()))
         .scalars()
         .all()
     )
+    # Re-billing with nothing new is only meaningful to apply a discount to the open bill.
+    if not has_new and not (discount and open_bills):
+        raise bad_request("nothing_to_bill", "This table has no orders to bill")
     orders = await _unbilled(db, table_id)
     already = [o for b in open_bills for o in (await db.execute(select(Order).where(Order.bill_id == b.id))).scalars()]
     unserved = sorted(o.number for o in [*orders, *already] if o.status != "SERVED")
@@ -70,22 +91,35 @@ async def create_bill(
         # The client warns ("still being prepared: bill anyway?") and retries with include_unserved.
         raise conflict("orders_not_served", "Some orders are not served yet", {"orders": unserved})
     replaced = []
+    why = "Items added" if has_new else "Discount applied"
     for old in open_bills:
-        await void(db, old, "Items added: replaced by a new bill")
+        await void(db, old, f"{why}: replaced by a new bill")
         replaced.append(old)
     orders = await _unbilled(db, table_id)
     bill = await _issue(
-        db, hotel_id=hotel_id, outlet_id=table.outlet_id, table_id=table.id, orders=orders, user_id=user_id
+        db,
+        hotel_id=hotel_id,
+        outlet_id=table.outlet_id,
+        table_id=table.id,
+        orders=orders,
+        user_id=user_id,
+        discount=discount,
     )
     for old in replaced:
-        old.void_reason = f"Items added: replaced by {bill.invoice_no}"
+        old.void_reason = f"{why}: replaced by {bill.invoice_no}"
     await db.flush()
     return bill, [old.invoice_no for old in replaced]
 
 
 async def create_order_bill(
-    db: AsyncSession, *, hotel_id: UUID, order_id: UUID, user_id: UUID, include_unserved: bool
-) -> Bill:
+    db: AsyncSession,
+    *,
+    hotel_id: UUID,
+    order_id: UUID,
+    user_id: UUID,
+    include_unserved: bool,
+    discount: DiscountSpec | None = None,
+) -> tuple[Bill, list[str]]:
     """Bill one takeaway / counter order (no table, so no table visit). Usually paid at the counter before or at
     pickup; billing while it is still cooking warns like a table bill."""
     await db.execute(text("select pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"bill:{hotel_id}"})
@@ -94,17 +128,32 @@ async def create_order_bill(
         raise not_found("Order")
     if o.table_id is not None:
         raise bad_request("table_order", "Bill table orders by table: one bill per table visit")
-    if o.bill_id is not None:
+    old_bill = await db.get(Bill, o.bill_id, with_for_update=True) if o.bill_id else None
+    if old_bill is not None and not (discount and old_bill.status == "ISSUED"):
         raise conflict("already_billed", "This order already has a bill")
     if o.status in ("CANCELLED", "PLACED"):
         raise conflict("bad_order_state", f"Order is {o.status}")
     if o.status != "SERVED" and not include_unserved:
         raise conflict("orders_not_served", "This order is not handed over yet", {"orders": [o.number]})
-    return await _issue(db, hotel_id=hotel_id, outlet_id=o.outlet_id, table_id=None, orders=[o], user_id=user_id)
+    if old_bill is not None:  # applying a discount to the unpaid bill: cancel it, issue a new one
+        await void(db, old_bill, "Discount applied: replaced by a new bill")
+    bill = await _issue(
+        db, hotel_id=hotel_id, outlet_id=o.outlet_id, table_id=None, orders=[o], user_id=user_id, discount=discount
+    )
+    if old_bill is not None:
+        old_bill.void_reason = f"Discount applied: replaced by {bill.invoice_no}"
+    return bill, [old_bill.invoice_no] if old_bill is not None else []
 
 
 async def _issue(
-    db: AsyncSession, *, hotel_id: UUID, outlet_id: UUID, table_id: UUID | None, orders: list[Order], user_id: UUID
+    db: AsyncSession,
+    *,
+    hotel_id: UUID,
+    outlet_id: UUID,
+    table_id: UUID | None,
+    orders: list[Order],
+    user_id: UUID,
+    discount: DiscountSpec | None = None,
 ) -> Bill:
     """Issue one GST bill covering exactly these orders. Caller holds the hotel's bill-number lock."""
     profile = (await db.execute(select(HotelTaxProfile))).scalar_one_or_none()
@@ -131,6 +180,25 @@ async def _issue(
     service = sum(o.service_charge_minor for o in orders)
     total = sum(o.total_minor for o in orders)
     assert tax == sum(o.tax_minor for o in orders) and subtotal + tax + service == total, "bill must equal orders"
+    keys = list(grouped)
+    shares = [0] * len(keys)
+    discount_minor = 0
+    if discount is not None:
+        discount_minor = discount_minor_for(
+            subtotal, percent_bp=discount.percent_bp, amount_minor=discount.amount_minor
+        )
+        if discount_minor <= 0:
+            raise bad_request("bad_discount", "The discount must be more than zero")
+        if discount_bp_of(discount_minor, subtotal) > discount.max_bp:
+            raise forbidden(
+                "discount_limit",
+                f"Your role can give at most {discount.max_bp / 100:g}% off",
+                {"max_bp": discount.max_bp},
+            )
+        # Service charge was on; it now applies to the discounted subtotal at the hotel's rate.
+        sc_bp = (profile.service_charge_bp if profile else 0) if service else 0
+        d = apply_discount([(grouped[k][1], k[2]) for k in keys], discount_minor, sc_bp)
+        shares, tax, service, total = d.line_discounts, d.tax_minor, d.service_charge_minor, d.total_minor
     cgst, sgst = split_gst(tax)
 
     bill = Bill(
@@ -148,11 +216,15 @@ async def _issue(
         sgst_minor=sgst,
         service_charge_minor=service,
         total_minor=total,
+        discount_minor=discount_minor,
+        discount_reason=discount.reason if discount else None,
+        discount_by=discount.by_user if discount else None,
         created_by=user_id,
     )
     db.add(bill)
     await db.flush()
-    for (name, price, rate), (qty, line_total) in grouped.items():
+    for (name, price, rate), share in zip(keys, shares, strict=True):
+        qty, line_total = grouped[(name, price, rate)]
         db.add(
             BillLine(
                 hotel_id=hotel_id,
@@ -162,6 +234,7 @@ async def _issue(
                 unit_price_minor=price,
                 tax_rate_bp=rate,
                 line_total_minor=line_total,
+                discount_minor=share,
             )
         )
     for o in orders:
@@ -188,7 +261,8 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
     by_rate: dict[int, int] = defaultdict(int)
     for ln in lines:
         if ln.tax_rate_bp:
-            by_rate[ln.tax_rate_bp] += bp_of(ln.line_total_minor, ln.tax_rate_bp)
+            # Discounted bills are taxed on each line's discounted value (exactly as stored).
+            by_rate[ln.tax_rate_bp] += bp_of(ln.line_total_minor - ln.discount_minor, ln.tax_rate_bp)
     # Rate-group taxes are recomputed from summed lines for display; reconcile any rounding into the largest group
     # so the printed groups always add up to the bill's stored tax.
     if by_rate:
@@ -209,6 +283,9 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
         "table_id": str(bill.table_id) if bill.table_id else None,
         "customer_name": await _customer(db, bill),
         "subtotal_minor": bill.subtotal_minor,
+        "discount_minor": bill.discount_minor,
+        "discount_reason": bill.discount_reason,
+        "taxable_minor": bill.subtotal_minor - bill.discount_minor,
         "tax_minor": bill.tax_minor,
         "cgst_minor": bill.cgst_minor,
         "sgst_minor": bill.sgst_minor,
@@ -228,6 +305,7 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
                 "unit_price_minor": ln.unit_price_minor,
                 "tax_rate_bp": ln.tax_rate_bp,
                 "line_total_minor": ln.line_total_minor,
+                "discount_minor": ln.discount_minor,
             }
             for ln in lines
         ],
