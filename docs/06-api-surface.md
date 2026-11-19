@@ -54,6 +54,16 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 - Events: `order.confirmed` (a QR order confirmed by staff: alerts chefs like a new order); `order.pickup_overdue`
   (no chef picked it up in time: admins and chefs on shift).
 
+## Passwords and "My work" (added 2026-11-19)
+- `POST /me/password {current_password, new_password}`: any signed-in user (platform admin too). Signs out every
+  other device (refresh tokens revoked) and returns fresh tokens for this one. Audited.
+- `POST /users/{id}/password {new_password}` (`staff.manage`): reset for staff who forgot theirs; signs them out.
+  Only a hotel admin may reset a hotel admin; your own password goes through `/me/password`. Audited.
+- `GET /dashboard/me?period=today|week`: the caller's own work, one section per thing their role does:
+  `cooking` (kitchen.cook: orders/items cooked, avg prep, avg wait before start, queue), `serving` (order.serve or
+  order.create: served, tables, avg ready-to-table, orders taken), `billing` (bill.manage: bills raised, collected
+  by method, unpaid now). Each average comes with the team average; no other person's name or numbers.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

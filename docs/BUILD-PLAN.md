@@ -143,6 +143,11 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [ ] Stations (bar / kitchen split): waiting on decision
 - [ ] Automatic KOT printing: installed app + network printer only (browsers cannot print silently)
 
+## Staff self-service (added 2026-11-19)
+- [x] Change own password (signs out other devices); admin reset for staff, no escalation to the admin account
+- [x] "My work" dashboard per role (cooking / serving / billing), today or 7 days, with team averages
+- [ ] Forgot password by email (needs an email provider)
+
 ## Phase 8: Rooms
 - [ ] Room types, rooms, rate plans
 - [ ] Bookings, check-in/out, folio

@@ -122,6 +122,66 @@
     }
    }
   },
+  "/api/v1/me/password": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Change Password",
+    "description": "Any signed-in user, platform admin included. Every other device is signed out (their refresh tokens are\nrevoked; open screens last until their 15-minute access token expires). This device gets fresh tokens.",
+    "operationId": "change_password_api_v1_me_password_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PasswordChangeIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TokenOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/me": {
    "get": {
     "tags": [
@@ -390,6 +450,69 @@
         }
        }
       }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/users/{user_id}/password": {
+   "post": {
+    "tags": [
+     "staff"
+    ],
+    "summary": "Reset Password",
+    "description": "For staff who forgot their password. Signs them out everywhere. No escalation: only a hotel admin can reset\na hotel admin's password (otherwise a manager could take over the admin account).",
+    "operationId": "reset_password_api_v1_users__user_id__password_post",
+    "parameters": [
+     {
+      "name": "user_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "User Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PasswordResetIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "204": {
+      "description": "Successful Response"
      },
      "422": {
       "description": "Validation Error",
@@ -4373,6 +4496,69 @@
     }
    }
   },
+  "/api/v1/dashboard/me": {
+   "get": {
+    "tags": [
+     "dashboard"
+    ],
+    "summary": "My Work",
+    "description": "The signed-in person's own work, by what their role does: cooking, serving, billing. Each figure comes\nwith the team's figure for context. No other person's name or numbers (staff see themselves; admins see\neveryone on the main dashboard).",
+    "operationId": "my_work_api_v1_dashboard_me_get",
+    "parameters": [
+     {
+      "name": "period",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(today|week)$",
+       "default": "today",
+       "title": "Period"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response My Work Api V1 Dashboard Me Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/bills": {
    "post": {
     "tags": [
@@ -6395,6 +6581,43 @@
      "reason"
     ],
     "title": "OverrideIn"
+   },
+   "PasswordChangeIn": {
+    "properties": {
+     "current_password": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Current Password"
+     },
+     "new_password": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 8,
+      "title": "New Password"
+     }
+    },
+    "type": "object",
+    "required": [
+     "current_password",
+     "new_password"
+    ],
+    "title": "PasswordChangeIn"
+   },
+   "PasswordResetIn": {
+    "properties": {
+     "new_password": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 8,
+      "title": "New Password"
+     }
+    },
+    "type": "object",
+    "required": [
+     "new_password"
+    ],
+    "title": "PasswordResetIn"
    },
    "PlanOut": {
     "properties": {

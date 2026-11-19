@@ -18,7 +18,7 @@ from app.core.security import (
     verify_password,
 )
 from app.iam.permissions import LOCKED_ROLE, PERMISSIONS
-from app.models import ChefProfile, Hotel, Outlet, RefreshToken, Role, RolePermission, User
+from app.models import AuditLog, ChefProfile, Hotel, Outlet, RefreshToken, Role, RolePermission, User
 
 router = APIRouter(tags=["auth"])
 staff = APIRouter(tags=["staff"])
@@ -107,6 +107,45 @@ async def logout(body: RefreshIn) -> None:
             await db.execute(
                 update(RefreshToken).where(RefreshToken.family_id == tok.family_id).values(revoked_at=now())
             )
+
+
+class PasswordChangeIn(BaseModel):
+    current_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+@router.post("/me/password", response_model=TokenOut)
+async def change_password(body: PasswordChangeIn, claims: dict = Depends(claims_from_header)) -> TokenOut:
+    """Any signed-in user, platform admin included. Every other device is signed out (their refresh tokens are
+    revoked; open screens last until their 15-minute access token expires). This device gets fresh tokens."""
+    async with platform_session() as db:
+        user = await db.get(User, UUID(claims["sub"]), with_for_update=True)
+        if not user or user.status != "ACTIVE":
+            raise ApiError(401, "unauthenticated", "Unknown user")
+        if not verify_password(user.password_hash, body.current_password):
+            raise bad_request("wrong_password", "Current password is wrong")
+        if body.new_password == body.current_password:
+            raise bad_request("same_password", "Choose a password you have not just used")
+        user.password_hash = hash_password(body.new_password)
+        await _sign_out_everywhere(db, user.id)
+        db.add(
+            AuditLog(
+                hotel_id=user.hotel_id,
+                actor_user_id=user.id,
+                action="user.password_change",
+                entity="user",
+                entity_id=str(user.id),
+            )
+        )
+        return await _issue(db, user)
+
+
+async def _sign_out_everywhere(db, user_id: UUID) -> None:
+    await db.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+        .values(revoked_at=now())
+    )
 
 
 @router.get("/me")
@@ -265,6 +304,28 @@ async def patch_user(user_id: UUID, body: UserPatch, ctx: Ctx = HotelCtx("staff.
             setattr(u, f, v)
     await ctx.audit("user.update", "user", u.id, before=before, after={"status": u.status, "role_id": str(u.role_id)})
     return await _user_out(ctx, u)
+
+
+class PasswordResetIn(BaseModel):
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+@staff.post("/users/{user_id}/password", status_code=204)
+async def reset_password(user_id: UUID, body: PasswordResetIn, ctx: Ctx = HotelCtx("staff.manage")) -> None:
+    """For staff who forgot their password. Signs them out everywhere. No escalation: only a hotel admin can reset
+    a hotel admin's password (otherwise a manager could take over the admin account)."""
+    u = await ctx.db.get(User, user_id)
+    if not u:
+        raise not_found("User")
+    if u.id == ctx.user_id:
+        raise bad_request("use_change_password", "Change your own password from your profile")
+    role = await ctx.db.get(Role, u.role_id) if u.role_id else None
+    if role is not None and role.code == LOCKED_ROLE and ctx.principal.role_code != LOCKED_ROLE:
+        raise forbidden("permission_denied", "Only a hotel admin can reset a hotel admin's password")
+    u.password_hash = hash_password(body.new_password)
+    async with platform_session() as pdb:  # refresh tokens are the auth store, outside tenant scope
+        await _sign_out_everywhere(pdb, u.id)
+    await ctx.audit("user.password_reset", "user", u.id)
 
 
 # ------------------------------------------------------------------------ roles --
