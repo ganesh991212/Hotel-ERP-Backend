@@ -16,4 +16,4 @@ Read `docs/BUILD-PLAN.md` at the start of every session. It is the only tracker.
 11. **While the repo is public:** no secrets, no real customer data, no real pricing in commits.
 
 ## Definition of done
-Code, tests (including RLS and entitlement tests for new endpoints), OpenAPI updated, BUILD-PLAN ticked, migration reversible.
+Code, tests (including RLS and entitlement tests for new endpoints), OpenAPI updated, BUILD-PLAN ticked, migration reversible, `docs/13-functional-guide.md` updated (what users see and what happens).
