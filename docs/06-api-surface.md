@@ -105,6 +105,15 @@ response; design in docs/14 "Reports"):
 - `POST /bills/{id}/settle {method}` pays whatever is still due.
 - Bill JSON adds `payments[]`, `paid_minor`, `due_minor`; `payment_method` may be `MIXED`.
 
+## Split by items (added 2026-11-20)
+- `GET /bills/split-preview?table_id=`: the visit's grouped lines `{key, name, qty, unit_price_minor, tax_rate_bp,
+  line_total_minor}`, `unserved[]`, `open_bill` (the ordinary bill a split would replace) and its `open_bill_paid_minor`.
+- `POST /bills/split {table_id, guests 2..20, lines: [{key, qty: [per guest]} | {key, shared: [guest numbers]}],
+  include_unserved}` -> 201 `{bills[], replaced_invoice_nos[]}`. Errors: `bad_split`, `guest_empty`,
+  `lines_changed` (open the split again), `orders_not_served`, `has_payments`, `nothing_to_bill`. Audited `bill.split`.
+- Bill JSON adds `split`: null, or `{group_id, guest_no, guest_count, bills: [{id, invoice_no, guest_no, status,
+  total_minor, due_minor}]}`. Voiding a guest bill voids the whole split (`split_partly_paid` once anyone paid).
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

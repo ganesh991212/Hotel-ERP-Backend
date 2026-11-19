@@ -120,7 +120,8 @@ def bill_blocks(
         (
             "row",
             f"Bill No: {bill['invoice_no']}",
-            f"Table {bill['table_label']}" if bill.get("table_label") else "Takeaway",
+            (f"Table {bill['table_label']}" if bill.get("table_label") else "Takeaway")
+            + (f" - Guest {bill['split']['guest_no']} of {bill['split']['guest_count']}" if bill.get("split") else ""),
         ),
         ("row", _local(created_at, tz), bill.get("customer_name") or ""),
         ("divider",),

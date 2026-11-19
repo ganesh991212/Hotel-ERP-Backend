@@ -141,6 +141,13 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   is paid. **Split equally** shows each guest's share (2 to 20 guests), and each pays theirs. A bill with money taken
   cannot be voided until those parts are removed; if the guest orders more, the money already paid moves to the new
   bill.
+- **Split by items** (Floor or Orders > table > Bill > Split by items): choose how many guests, then for each dish
+  tap who had it: give units to guests (2 Naan: one each) or mark it **Shared** by some guests (its price is shared
+  equally, to the paisa). Every dish must be given out and every guest must get something. Each guest then gets a GST
+  bill of their own with its own number and its own tax, printed "Guest 2 of 3". If the table already had one bill,
+  it is cancelled and replaced (not if money was already taken on it). Each guest pays their own bill; the table is
+  free only when every guest has paid. Food ordered after splitting gets its own bill. To redo a split, cancel any
+  guest bill: the whole split is cancelled (only while nobody has paid).
 - **Settle**: Cash, UPI or Card for whatever is still due. Paying frees the table and ends the guests' QR session.
 - **Print / Print again**: every copy after the first is marked **DUPLICATE** and logged with who printed it.
 - **Void** (permission `bill.void`, reason required): withdraws a bill; its orders can be billed again.
@@ -306,6 +313,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Split by items: one GST bill per guest (section 10) |
 | 2026-11-20 | Reports: sales by day, items, GST summary, staff, bills register, CSV; Overview revenue now counts bills (section 13) |
 | 2026-11-20 | Part payments and equal split (sections 10, 13) |
 | 2026-11-20 | Discounts with a per-role maximum (sections 10, 11) |

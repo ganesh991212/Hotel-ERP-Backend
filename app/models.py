@@ -15,6 +15,7 @@ from sqlalchemy import (
     Index,
     Integer,
     LargeBinary,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -466,6 +467,11 @@ class Bill(Base):
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     print_count: Mapped[int] = mapped_column(Integer, server_default="0")
     void_reason: Mapped[str | None] = mapped_column(Text)
+    # Split by items: guest bills of one visit share split_group_id (= the first guest bill's id, which the visit's
+    # orders point to); guest_no of guest_count. All NULL for an ordinary bill.
+    split_group_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("bills.id"), index=True)
+    guest_no: Mapped[int | None] = mapped_column(SmallInteger)
+    guest_count: Mapped[int | None] = mapped_column(SmallInteger)
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     created_at: Mapped[datetime] = created()
 

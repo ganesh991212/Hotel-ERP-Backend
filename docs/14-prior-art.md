@@ -58,10 +58,15 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
 2. **Discounts do not follow the item** after a split.
 3. Splitting after printing leaves the original bill alive, so the same food is billed twice.
 
-### Our choice (to build)
+### Our choice (built 2026-11-20; details in docs/03 "Split by items")
 - Before (or instead of) the table bill, staff open **Split by items**: drag or tap items into Guest 1, Guest 2, ...
   A shared item can be split into N equal portions (the line value is shared to the paisa).
 - Each guest's part becomes its **own GST bill with its own number**, tax recalculated per line on that bill
   (never divided), discounts applied per bill. The visit is paid when all its bills are paid.
 - If a single table bill was already issued, splitting cancels it (it stays in the register) and issues the guest
   bills: the same food is never on two live bills.
+- Chosen over seat-based ordering (Lightspeed): our waiters and QR diners do not record seats, so assigning items at
+  the bill is the only split that works with the orders we have. A shared dish is split equally, not by custom
+  percentages (rarely needed; Square's portion count is the same idea).
+- Not yet: a discount per guest bill (Toast's "discount does not follow the item" mistake is avoided by not carrying
+  a whole-bill discount into the split at all; a guest discount comes later).

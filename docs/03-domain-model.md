@@ -120,11 +120,29 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   `payment_method` = the single method, or `MIXED`. Paying more than is due is refused (`overpayment`); change is
   given outside the app.
 - Equal split: shares of what is due that add up to the paisa (first shares take the leftover paise); each guest pays
-  theirs as a part. Split **by items** (a separate GST invoice per guest) is not built yet.
+  theirs as a part. Split **by items** gives each guest a GST invoice of their own (below).
 - A part entered by mistake can be removed while the bill is unpaid (audited); a paid bill's takings are final.
 - A bill with parts paid cannot be voided by hand (`has_payments`). When a bill is replaced (items added, discount),
   its payments move to the replacement; if they would exceed the new total, the replacement is refused.
 - "My work" counts the money each person received (payments), not the bills they raised.
+
+## Split by items (added 2026-11-20; prior art in docs/14)
+- A table visit can be billed as 2 to 20 **guest bills**. Staff say who had what: whole units of a line per guest, or
+  a line shared equally by some guests (its value split to the paisa; printed as "Naan (1/3 share)", qty 1 at the
+  share's price, so qty x price = line total still holds).
+- Each guest bill is a normal GST invoice with its **own number**; tax is calculated on its own lines (never a share
+  of a total), service charge on its own subtotal. Guest totals can differ from one whole bill by a few paise of
+  rounding; each invoice is right on its own.
+- `bills.split_group_id` (migration 0009) = the first guest bill's id for every guest bill of the visit; `guest_no`
+  of `guest_count`. The visit's orders point to the first guest bill (one bill per order still holds).
+- An ordinary unpaid bill for the visit is cancelled as **replaced** (refused if part paid). Food ordered after a
+  split gets a bill of its own; the guest bills are untouched.
+- Each guest pays their own bill (in parts if they like). The table stays BILL_PENDING and the QR session open until
+  the last guest bill is paid.
+- Cancelling: a split is cancelled as a whole (all guest bills VOID, the food back to unbilled) and only while no
+  guest has paid (`split_partly_paid`). Cancelling an order on an unpaid split does the same.
+- Later: a discount per guest bill (today: discount before splitting is not carried; discount a guest bill by
+  cancelling and re-splitting is not offered).
 
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.
