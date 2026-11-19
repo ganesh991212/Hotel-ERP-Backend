@@ -1,16 +1,17 @@
 from datetime import timedelta
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, func, or_, select
 
 from app.core.deps import Ctx, HotelCtx
 from app.core.errors import forbidden, not_found
+from app.core.listing import ListParams
 from app.core.security import now
 from app.floor.router import current_outlet
 from app.kitchen import service as kitchen
-from app.models import DiningTable, Order
+from app.models import DiningTable, Hotel, Order
 from app.ordering.service import (
     OPEN_STATES,
     Actor,
@@ -98,9 +99,18 @@ async def list_orders(
     scope: str = Query("open", pattern="^(open|attention|today|all)$"),
     table_id: UUID | None = None,
     status: str | None = Query(None, pattern="^(PLACED|CONFIRMED|ASSIGNED|PREPARING|READY|SERVED|CANCELLED)$"),
+    page: ListParams = Depends(),
     ctx: Ctx = HotelCtx("order.view"),
 ) -> list[dict]:
-    q = select(Order).order_by(Order.created_at.desc()).limit(200)
+    """Newest first. `from`/`to` (hotel-local days, max 31), `q` (order number or table), `limit`/`offset`."""
+    q = select(Order).order_by(Order.created_at.desc(), Order.id).limit(page.limit).offset(page.offset)
+    if page.date_from:
+        hotel = await ctx.db.get(Hotel, ctx.hotel_id)
+        q = q.where(*page.dates(Order.created_at, hotel.timezone))
+    if page.q:
+        term = page.q.lstrip("#")
+        tables = select(DiningTable.id).where(DiningTable.label.ilike(f"%{term}%"))
+        q = q.where(or_(Order.table_id.in_(tables), *([Order.number == int(term)] if term.isdigit() else [])))
     if scope == "open":
         q = q.where(Order.status.in_(OPEN_STATES))
     elif scope == "attention":

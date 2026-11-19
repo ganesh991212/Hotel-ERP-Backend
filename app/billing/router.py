@@ -2,15 +2,16 @@ import base64
 from datetime import timedelta
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.billing import service
 from app.core.deps import Ctx, HotelCtx
 from app.core.errors import not_found
+from app.core.listing import ListParams
 from app.core.security import now
-from app.models import Bill, PrintLog
+from app.models import Bill, DiningTable, Hotel, PrintLog
 from app.printing import escpos
 
 router = APIRouter(tags=["bills"])
@@ -42,25 +43,38 @@ async def _get(ctx: Ctx, bill_id: UUID) -> Bill:
 
 @router.post("/bills", status_code=201)
 async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
-    b = await service.create_bill(
+    b, replaced = await service.create_bill(
         ctx.db,
         hotel_id=ctx.hotel_id,
         table_id=body.table_id,
         user_id=ctx.user_id,
         include_unserved=body.include_unserved,
     )
-    await ctx.audit("bill.create", "bill", b.id, after={"invoice_no": b.invoice_no, "total_minor": b.total_minor})
+    after = {"invoice_no": b.invoice_no, "total_minor": b.total_minor, "replaced": replaced}
+    await ctx.audit("bill.create", "bill", b.id, after=after)
     ctx.emit(f"outlet:{b.outlet_id}", {"type": "bill.created", "table_id": str(b.table_id)})
-    return await service.bill_json(ctx.db, b)
+    return {**await service.bill_json(ctx.db, b), "replaced_invoice_nos": replaced}
 
 
 @router.get("/bills")
 async def list_bills(
     scope: str = Query("today", pattern="^(today|open|all)$"),
     table_id: UUID | None = None,
+    status: str | None = Query(None, pattern="^(ISSUED|PAID|VOID)$"),
+    page: ListParams = Depends(),
     ctx: Ctx = HotelCtx("bill.manage"),
 ) -> list[dict]:
-    q = select(Bill).order_by(Bill.created_at.desc()).limit(100)
+    """The bills register, newest first. `from`/`to` (hotel-local days, max 31), `q` (invoice number or table),
+    `status`, `limit`/`offset`."""
+    q = select(Bill).order_by(Bill.created_at.desc(), Bill.id).limit(page.limit).offset(page.offset)
+    if page.date_from:
+        hotel = await ctx.db.get(Hotel, ctx.hotel_id)
+        q = q.where(*page.dates(Bill.created_at, hotel.timezone))
+    if status:
+        q = q.where(Bill.status == status)
+    if page.q:
+        tables = select(DiningTable.id).where(DiningTable.label.ilike(f"%{page.q}%"))
+        q = q.where(or_(Bill.invoice_no.ilike(f"%{page.q}%"), Bill.table_id.in_(tables)))
     if scope == "today":
         q = q.where(Bill.created_at >= now() - timedelta(hours=24))
     elif scope == "open":

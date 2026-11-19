@@ -64,6 +64,14 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
   order.create: served, tables, avg ready-to-table, orders taken), `billing` (bill.manage: bills raised, collected
   by method, unpaid now). Each average comes with the team average; no other person's name or numbers.
 
+## Lists by date, and billing a visit (added 2026-11-20)
+- `GET /orders` and `GET /bills` take `from`/`to` (hotel-local `YYYY-MM-DD`, at most 31 days), `q` (orders: order
+  number, with or without `#`, or table; bills: invoice number or table), `limit` (max 200) and `offset`. Newest
+  first. Bills also take `status` (ISSUED|PAID|VOID). Indexed on `(hotel_id, created_at)` (migration 0005).
+  Nothing is deleted: GST records are kept for 72 months; old days are simply not loaded until asked for.
+- `POST /bills` returns `replaced_invoice_nos`: the unpaid bills it cancelled because the guest ordered more
+  (docs/03 "Billing a table visit").
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

@@ -280,6 +280,7 @@ class Order(Base):
         UniqueConstraint("outlet_id", "number"),
         UniqueConstraint("hotel_id", "client_ref"),
         Index("ix_orders_outlet_status", "outlet_id", "status"),
+        Index("ix_orders_hotel_created", "hotel_id", "created_at"),
     )
     id: Mapped[uuid.UUID] = pk()
     hotel_id: Mapped[uuid.UUID] = hotel_fk()
@@ -433,7 +434,10 @@ class Bill(Base):
     Correction = VOID (audited, reason required) and re-issue; credit notes come with Phase 5."""
 
     __tablename__ = "bills"
-    __table_args__ = (UniqueConstraint("hotel_id", "fy", "number"),)
+    __table_args__ = (
+        UniqueConstraint("hotel_id", "fy", "number"),
+        Index("ix_bills_hotel_created", "hotel_id", "created_at"),
+    )
     id: Mapped[uuid.UUID] = pk()
     hotel_id: Mapped[uuid.UUID] = hotel_fk()
     outlet_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("outlets.id"))
