@@ -81,6 +81,8 @@ async def print_kot(order_id: UUID, body: KotIn, ctx: Ctx = HotelCtx("kot.print"
     out = await _kot(ctx, o, o.kot_print_count)
     if body.paper_mm:
         out["escpos_b64"] = base64.b64encode(escpos.render(out["blocks"], body.paper_mm)).decode()
+        for t in out["tickets"]:  # network printers get each station's slip as raw bytes too
+            t["escpos_b64"] = base64.b64encode(escpos.render(t["blocks"], body.paper_mm)).decode()
     return out
 
 

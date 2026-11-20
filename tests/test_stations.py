@@ -50,7 +50,10 @@ async def test_one_ticket_per_station_and_the_order_keeps_its_route(client, hs):
         ("Naan", "Tandoor"),
         ("Chai", "Bar"),
     ]
-    kot = (await client.post(f"{API}/orders/{o['id']}/kot", headers=a, json={"send_to_kitchen": False})).json()
+    kot = (
+        await client.post(f"{API}/orders/{o['id']}/kot", headers=a, json={"send_to_kitchen": False, "paper_mm": 80})
+    ).json()
+    assert all(t["escpos_b64"] for t in kot["tickets"]), "network printers get each slip as raw bytes"
     tickets = {t["station"]: " ".join(str(b) for b in t["blocks"]) for t in kot["tickets"]}
     assert list(tickets) == ["Kitchen", "Tandoor", "Bar"]
     assert "Biryani" in tickets["Kitchen"] and "Naan" not in tickets["Kitchen"]
