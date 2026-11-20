@@ -166,7 +166,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 
 | # | Module | Weight | Ours | Score | Status |
 |---|---|---|---|---|---|
-| 1 | Point of sale / billing | 10 | 95% | 9.5 | Mostly done |
+| 1 | Point of sale / billing | 10 | 98% | 9.8 | Mostly done (customer on bill: with CRM) |
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
 | 3 | Tables / floor plan | 6 | 100% | 6.0 | Done |
 | 4 | Kitchen display | 8 | 100% | 8.0 | Done |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **62.9** | |
+| | **Total** | **100** | | **63.2** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -200,7 +200,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] Part payments (cash + UPI...) and split equally per guest
 - [x] Split by items (a separate GST bill per guest; shared dishes split equally; own invoice number and tax)
 - [x] Hold / resume an order (server-saved cart, re-priced on resume, sent once)
-- [ ] Keyboard shortcuts for a counter PC
+- [x] Keyboard shortcuts for a counter PC (/ search, Enter adds, Ctrl+Enter send, Alt+H hold, T takeaway, Alt+P print, Alt+C/U/K pay, ? list)
 - [ ] Customer name/phone on the bill (feeds CRM)
 
 ### 2. Orders (6)

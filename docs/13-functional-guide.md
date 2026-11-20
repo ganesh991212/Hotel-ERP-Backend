@@ -379,6 +379,20 @@ thermal printer (installed app). Printed documents are always in English.
 
 ## 18. Language, devices, sign-in
 
+- **Keyboard shortcuts** (counter PC with a keyboard; press **?** anywhere on the Floor, in an order or a bill for
+  the list):
+  | Key | Does |
+  |---|---|
+  | `/` | Search the menu |
+  | Enter (in the search) | Add the top dish shown; the search clears for the next one |
+  | Ctrl + Enter | Send to kitchen |
+  | Alt + H | Hold the order |
+  | T | New takeaway (Floor) |
+  | Alt + P | Print the bill (bill window) |
+  | Alt + C / Alt + U / Alt + K | Pay what is due by cash / UPI / card (bill window) |
+  Single keys (`/`, T, ?) do nothing while you are typing in a box; Alt and Ctrl keys always work. No F-keys and no
+  Ctrl + P, so the browser never reloads or opens its own print dialog mid-bill.
+
 - Screens in **English, Telugu, Hindi** (globe button); prints in English.
 - Works on phones, tablets, computers and kitchen TVs (web today; Android/iOS builds from the same code).
 - Sign-in with email and password. **Change password** in the profile menu (signs out your other devices).
@@ -413,6 +427,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Keyboard shortcuts for a counter PC (section 18) |
 | 2026-11-20 | Profit & loss by month; Overview month net now excludes GST (sections 13) |
 | 2026-11-20 | Company GST (B2B) bills; B2B list in the GST report (sections 10, 13) |
 | 2026-11-20 | Target time per dish, "Delayed" on the kitchen screen, on time % (sections 7, 13) |

@@ -546,3 +546,31 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
 - Until inventory exists, the P&L says **food cost is only what was entered as expenses** (avoids 3); prime cost and
   COGS % come with inventory (parked).
 - CSV download like the other reports.
+
+## Keyboard shortcuts for a counter PC (checklist item 1) - 2026-11-20
+
+### How others do it
+- **Petpooja**: a keyboard billing view; item **short codes** typed at the counter instead of tapping
+  (https://www.petpooja.com/billing, https://blog.petpooja.com/glossary/quick-billing-shortcut/,
+  https://amd.petpooja.com/restaurant-billing-software). Its published pages do not list default keys.
+- **Odoo POS add-ons**: F1 product screen, F2 payment screen, keys for quantity and discount
+  (https://apps.odoo.com/apps/modules/17.0/sh_pos_keyboard_shortcut, https://apps.odoo.com/apps/modules/17.0/nf_pos_keyboard_shortcuts,
+  https://webkul.com/blog/odoo-pos-keyboard-shortcuts/).
+- **Paloma365, NamaSoft, WCPOS**: F-key maps, often user-configurable
+  (https://dashboard.palomapos.com/docs/en/pos-classic/hotkeys, https://docs.namasoft.com/en/platform/shortcuts.html,
+  https://docs.wcpos.com/settings/store/hotkeys.md).
+
+### Their mistakes
+1. **F-keys and Ctrl keys that the browser owns** (F1 help, F5 reload, F11 full screen, Ctrl+P print dialog, Ctrl+H
+   history) in a web POS: pressing one reloads the page mid-bill or opens the wrong dialog.
+2. **Single-letter keys that fire while typing** a guest's name or a note.
+3. Shortcuts nobody knows exist: a printed sheet, never shown in the app.
+4. Every vendor's map is different, so staff moving between tills relearn everything.
+
+### Our choice
+- Keys the browser leaves alone: `/` search, **Enter** (in search) adds the top dish, **Ctrl+Enter** send to
+  kitchen, **Alt+H** hold, **T** new takeaway on the Floor, in the bill window **Alt+P** print and **Alt+C / Alt+U /
+  Alt+K** pay the whole amount due by cash / UPI / card. No F-keys, no Ctrl+P (avoids 1).
+- Plain keys (`/`, `T`, `?`) do nothing while a text field has focus; modifier keys always work (avoids 2).
+- **?** opens the list; buttons show their key in the tooltip (avoids 3).
+- No per-item short codes yet: search-and-Enter covers most of it without a new menu field to maintain.
