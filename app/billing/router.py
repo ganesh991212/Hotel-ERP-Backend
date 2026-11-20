@@ -48,6 +48,22 @@ class BillIn(BaseModel):
         return self
 
 
+class SplitLineIn(BaseModel):
+    """One grouped line of the table: `qty` = whole units per guest (one number per guest, adding up to the line's
+    quantity), or `shared` = guest numbers (from 1) who share the whole line equally."""
+
+    key: str = Field(max_length=200)
+    qty: list[int] | None = Field(default=None, max_length=20)
+    shared: list[int] | None = Field(default=None, min_length=2, max_length=20)
+
+
+class SplitIn(BaseModel):
+    table_id: UUID
+    guests: int = Field(ge=2, le=20)
+    lines: list[SplitLineIn] = Field(min_length=1, max_length=500)
+    include_unserved: bool = False
+
+
 class SettleIn(BaseModel):
     method: str = Field(pattern="^(CASH|UPI|CARD)$")
 
@@ -110,6 +126,36 @@ async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
     await ctx.audit("bill.create", "bill", b.id, after=after)
     ctx.emit(f"outlet:{b.outlet_id}", {"type": "bill.created", "table_id": str(b.table_id)})
     return {**await service.bill_json(ctx.db, b), "replaced_invoice_nos": replaced}
+
+
+@router.get("/bills/split-preview")
+async def split_preview(table_id: UUID, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
+    """The table visit's items, grouped, ready to be shared out between guests (split by items)."""
+    return await service.split_preview(ctx.db, table_id)
+
+
+@router.post("/bills/split", status_code=201)
+async def split_by_items(body: SplitIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
+    """One GST bill per guest for the table visit (docs/03 "Split by items"). Prices, tax and service charge are
+    worked out here per guest bill; the client only says who had what."""
+    bills, replaced = await service.split_by_items(
+        ctx.db,
+        hotel_id=ctx.hotel_id,
+        table_id=body.table_id,
+        user_id=ctx.user_id,
+        guests=body.guests,
+        specs=[service.SplitSpec(key=x.key, qty=x.qty, shared=x.shared) for x in body.lines],
+        include_unserved=body.include_unserved,
+    )
+    after = {
+        "guests": body.guests,
+        "invoices": [b.invoice_no for b in bills],
+        "totals_minor": [b.total_minor for b in bills],
+        "replaced": replaced,
+    }
+    await ctx.audit("bill.split", "bill", bills[0].id, after=after)
+    ctx.emit(f"outlet:{bills[0].outlet_id}", {"type": "bill.created", "table_id": str(body.table_id)})
+    return {"bills": [await service.bill_json(ctx.db, b) for b in bills], "replaced_invoice_nos": replaced}
 
 
 @router.get("/bills")

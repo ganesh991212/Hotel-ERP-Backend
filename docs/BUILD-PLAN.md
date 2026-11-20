@@ -166,14 +166,14 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 
 | # | Module | Weight | Ours | Score | Status |
 |---|---|---|---|---|---|
-| 1 | Point of sale / billing | 10 | 85% | 8.5 | Mostly done |
+| 1 | Point of sale / billing | 10 | 90% | 9.0 | Mostly done |
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
 | 3 | Tables / floor plan | 6 | 55% | 3.3 | Partial |
 | 4 | Kitchen display | 8 | 80% | 6.4 | Mostly done |
 | 5 | Menu and pricing | 7 | 50% | 3.5 | Partial |
 | 6 | Live dashboard | 6 | 70% | 4.2 | Mostly done |
-| 7 | Reports | 7 | 15% | 1.1 | Missing most |
-| 8 | Finance and GST | 7 | 40% | 2.8 | Partial |
+| 7 | Reports | 7 | 80% | 5.6 | Mostly done |
+| 8 | Finance and GST | 7 | 55% | 3.9 | Partial |
 | 9 | Inventory | 7 | 0% | 0 | Missing |
 | 10 | Recipes and food cost | 5 | 0% | 0 | Missing |
 | 11 | Purchases and suppliers | 4 | 0% | 0 | Missing |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **41.2** | |
+| | **Total** | **100** | | **47.3** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -198,7 +198,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] Takeaway / counter orders (no table): name/phone, token = order number, billed per order
 - [x] Discounts (amount or %, per role maximum, reason, audited; GST on the discounted value)
 - [x] Part payments (cash + UPI...) and split equally per guest
-- [ ] Split by items (a separate GST bill per guest)
+- [x] Split by items (a separate GST bill per guest; shared dishes split equally; own invoice number and tax)
 - [ ] Hold / resume an order; keyboard shortcuts for a counter PC
 - [ ] Customer name/phone on the bill (feeds CRM)
 
@@ -235,14 +235,18 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [ ] Gross profit and food cost % (needs 10)
 
 ### 7. Reports (7)
-- [ ] Day-by-day sales table (orders, gross, discounts, tax, net, payment modes)
-- [ ] Item-wise and category-wise sales
-- [ ] Staff-wise sales
-- [ ] Export CSV / PDF (also the bills register for the accountant)
+- [x] Day-by-day sales table (bills, gross, discounts, taxable, CGST/SGST, total, paid/unpaid, cancelled kept
+      apart, money received by method, unbilled food warning); Overview revenue uses the same definition
+- [x] Item-wise sales
+- [ ] Category-wise sales (needs the menu category stored on bill lines)
+- [x] Staff-wise: bills, discounts given, money received, cancellations (plan feature REPORTS_ADVANCED)
+- [x] Export CSV for every report, plus the bills register for the accountant
+- [ ] Export PDF
 
 ### 8. Finance and GST (7)
 - [x] GST invoices; expenses with global and hotel categories; month revenue minus expenses
-- [ ] GST summary for filing (GSTR-1 style: B2C totals by rate, HSN/SAC)
+- [x] GST summary for filing (GSTR-1 style: B2C totals by rate, SAC 996331, documents issued/cancelled)
+- [ ] B2B invoices (customer GSTIN on the bill)
 - [ ] Day close / cash drawer reconciliation (expected vs counted)
 - [ ] Profit and loss by month
 
@@ -293,7 +297,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 
 ### Next up (weight x gap / effort)
 1. POS: takeaway + discounts + split/part payment (+6 points, medium)
-2. Reports: day-by-day + item-wise + CSV export, incl. bills register (+5, small)
+2. ~~Reports: day-by-day + item-wise + CSV export, incl. bills register~~ (done 2026-11-20, +5.6 with GST summary)
 3. Menu: variants/add-ons, happy hour, combos (+3.5, medium)
 4. Finance: GST summary + day close (+3, medium)
 5. Tables: covers, time seated, reserved/cleaning + reservations/waitlist (+5, medium)

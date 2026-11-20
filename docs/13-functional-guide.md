@@ -141,6 +141,14 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   is paid. **Split equally** shows each guest's share (2 to 20 guests), and each pays theirs. A bill with money taken
   cannot be voided until those parts are removed; if the guest orders more, the money already paid moves to the new
   bill.
+- **Split by items** (Floor or Orders > table > Bill > Split by items): choose how many guests, then for each dish
+  tap who had it: give units to guests (2 Naan: one each) or mark it **Shared** by some guests (its price is shared
+  equally, to the paisa). Every dish must be given out and every guest must get something. Each guest then gets a GST
+  bill of their own with its own number and its own tax, printed "Guest 2 of 3". If the table already had one bill,
+  it is cancelled and replaced (not if money was already taken on it, and not if it has a discount: cancel that bill
+  first; guest bills cannot be discounted yet). Each guest pays their own bill; the table is
+  free only when every guest has paid. Food ordered after splitting gets its own bill. To redo a split, cancel any
+  guest bill: the whole split is cancelled (only while nobody has paid).
 - **Settle**: Cash, UPI or Card for whatever is still due. Paying frees the table and ends the guests' QR session.
 - **Print / Print again**: every copy after the first is marked **DUPLICATE** and logged with who printed it.
 - **Void** (permission `bill.void`, reason required): withdraws a bill; its orders can be billed again.
@@ -182,7 +190,8 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 
 ## 13. Overview and "My work"
 
-- **Hotel Overview** (owners and managers): orders and revenue today, average ticket, open orders by status, tables
+- **Hotel Overview** (owners and managers): orders today, revenue today (issued bills, not cancelled: the same
+  number the Reports show), average bill, food served but not billed yet (a warning), open orders by status, tables
   busy, orders by hour, last 7 days, channels, top items, month revenue / expenses / net, average times (waiting for a
   chef, cooking, ready-to-table, total), each chef's completed orders and queue, each server's served orders and
   speed, live orders.
@@ -191,6 +200,33 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   - Server: orders served, tables served, average ready-to-table time, orders taken and their value, ready now.
   - Billing staff: bills raised, money they received by Cash/UPI/Card (part payments count for whoever took them),
     unpaid bills now.
+
+### Reports (owners and managers: permission "See sales reports")
+
+Open **Reports** from the Overview. Pick a day or a date range (up to 92 days; days are the hotel's own calendar
+days). Every report says at the top what it counts. Every report has **Download CSV** (opens in Excel, amounts in
+rupees).
+
+- **Sales by day**: one row per day and a total row. Bills, then the money ladder: Gross (menu value), minus
+  Discounts, = Taxable, plus CGST + SGST and service charge, = Total. Then Paid and Unpaid (bills issued but not
+  paid yet), and Cancelled bills with their value, never mixed into sales. A bill replaced because the table ordered
+  more is counted once (the new bill), and shown only as a "replaced" count. **Money received** shows Cash, UPI and
+  Card actually taken that day (part payments included), so the cash drawer can be checked against it.
+  **Not billed yet**: food ordered in the period that is on no bill (including food whose bill was cancelled). It is a
+  warning to act on, not sales.
+- **Items**: each dish as printed on the bill: quantity sold, gross, discount, taxable. Biggest seller first.
+  Cancelled bills are left out.
+- **GST summary**: taxable value, CGST and SGST per GST rate for the period (B2C, intra-state), SAC 996331, and
+  the documents issued (first and last invoice number, how many, how many cancelled) as GSTR-1 asks. The tax per rate
+  is exactly what was printed on each bill, so it always matches the bills.
+- **Staff** (Pro plan): for each person: bills raised and their value, discounts given, money received by method,
+  bills they cancelled by hand.
+- **Bills register** (CSV only): every bill in the period, cancelled ones included, with date, time, table or
+  takeaway, status, the full ladder, amount paid, method and the cancel or discount reason. This is the file to send
+  to the accountant.
+
+What happens: reports are read-only and computed on the server from the bills; nothing is stored or changed.
+Servers and chefs cannot open them.
 
 ## 14. Settings (hotel admin)
 
@@ -278,6 +314,8 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Split by items: one GST bill per guest (section 10) |
+| 2026-11-20 | Reports: sales by day, items, GST summary, staff, bills register, CSV; Overview revenue now counts bills (section 13) |
 | 2026-11-20 | Part payments and equal split (sections 10, 13) |
 | 2026-11-20 | Discounts with a per-role maximum (sections 10, 11) |
 | 2026-11-20 | Takeaway / counter orders (section 6, 10, 17) |

@@ -36,9 +36,21 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
     is_today = cast(local, Date) == today
     billable = Order.status != "CANCELLED"
 
-    count_today, revenue_today = (
-        await db.execute(select(func.count(), func.coalesce(func.sum(Order.total_minor), 0)).where(is_today, billable))
+    count_today = (await db.execute(select(func.count()).where(is_today, billable))).scalar_one()
+    # Revenue = issued, not-cancelled bills on the hotel's day: the same definition as Reports (docs/14), so the
+    # Overview and the reports never disagree. Food on no bill yet is shown separately, never as revenue.
+    bill_day = cast(func.timezone(tz, Bill.created_at), Date)
+    live_bill = Bill.status.in_(("ISSUED", "PAID"))
+    bills_today, revenue_today = (
+        await db.execute(
+            select(func.count(), func.coalesce(func.sum(Bill.total_minor), 0)).where(bill_day == today, live_bill)
+        )
     ).one()
+    unbilled_today = (
+        await db.execute(
+            select(func.coalesce(func.sum(Order.total_minor), 0)).where(is_today, billable, Order.bill_id.is_(None))
+        )
+    ).scalar_one()
     by_status = dict(
         (await db.execute(select(Order.status, func.count()).where(is_today).group_by(Order.status))).all()
     )
@@ -66,9 +78,9 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
     week = dict(
         (
             await db.execute(
-                select(cast(local, Date), func.coalesce(func.sum(Order.total_minor), 0))
-                .where(cast(local, Date) >= week_start, billable)
-                .group_by(cast(local, Date))
+                select(bill_day, func.coalesce(func.sum(Bill.total_minor), 0))
+                .where(bill_day >= week_start, live_bill)
+                .group_by(bill_day)
             )
         ).all()
     )
@@ -86,9 +98,7 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
 
     month_start = today.replace(day=1)
     revenue_month = (
-        await db.execute(
-            select(func.coalesce(func.sum(Order.total_minor), 0)).where(cast(local, Date) >= month_start, billable)
-        )
+        await db.execute(select(func.coalesce(func.sum(Bill.total_minor), 0)).where(bill_day >= month_start, live_bill))
     ).scalar_one()
     expenses_month = (
         await db.execute(
@@ -193,7 +203,9 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         "hotel": {"name": hotel.name},
         "orders_today": int(count_today),
         "revenue_today_minor": int(revenue_today),
-        "avg_ticket_minor": int(revenue_today) // count_today if count_today else 0,
+        "bills_today": int(bills_today),
+        "unbilled_today_minor": int(unbilled_today),
+        "avg_ticket_minor": int(revenue_today) // bills_today if bills_today else 0,  # per bill, like Reports
         "avg_prep_minutes": round(float(avg_prep), 1) if avg_prep is not None else None,
         "by_status": {k: int(v) for k, v in by_status.items()},
         "by_channel": by_channel,

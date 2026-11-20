@@ -25,6 +25,7 @@ from app.platform.router import billing
 from app.platform.router import router as platform
 from app.printing.router import router as printing
 from app.realtime.router import router as realtime
+from app.reports.router import router as reports
 
 
 @asynccontextmanager
@@ -61,6 +62,7 @@ for r in (
     printing,
     devices,
     branding,
+    reports,
 ):
     app.include_router(r, prefix="/api/v1")
 app.include_router(realtime)
