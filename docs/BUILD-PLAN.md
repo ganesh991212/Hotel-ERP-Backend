@@ -140,7 +140,7 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] Confirmed QR orders alert chefs (`order.confirmed`; was silent)
 - [x] Orders list filters for the admin Orders screen
 - [ ] Screens: "Next:" line per order, Bill pending tables, Orders screen, workflow settings
-- [ ] Stations (bar / kitchen split): waiting on decision
+- [x] Stations (bar / kitchen split): decided 2026-11-20, split tickets and screens
 - [ ] Automatic KOT printing: installed app + network printer only (browsers cannot print silently)
 
 ## Staff self-service (added 2026-11-19)
@@ -169,7 +169,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 1 | Point of sale / billing | 10 | 90% | 9.0 | Mostly done |
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
 | 3 | Tables / floor plan | 6 | 100% | 6.0 | Done |
-| 4 | Kitchen display | 8 | 80% | 6.4 | Mostly done |
+| 4 | Kitchen display | 8 | 90% | 7.2 | Mostly done |
 | 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
 | 6 | Live dashboard | 6 | 70% | 4.2 | Mostly done |
 | 7 | Reports | 7 | 80% | 5.6 | Mostly done |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **57.5** | |
+| | **Total** | **100** | | **58.3** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -218,7 +218,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 ### 4. Kitchen display (8)
 - [x] Live board, chef pick-up / auto-assign / paper KOT, strict queue, timers
 - [x] Loud alerts, no-pickup alert, ready notifications
-- [ ] Stations (bar, tandoor, Chinese...) with per-station routing
+- [x] Stations (bar, tandoor, Chinese...): a ticket and a screen per station (owner chose split tickets/screens; per-station "ready" deferred)
 - [ ] Target time per dish with "Delayed" flag
 
 ### 5. Menu and pricing (7)

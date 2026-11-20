@@ -322,3 +322,30 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   **actual average wait** next to the quote field, so quotes follow reality (helps 3). Seat from the waitlist the
   same way. Text-when-ready comes with WhatsApp (item 16).
 - Guest names and phones are hotel data: only staff with order access see them; they never appear in logs.
+
+## Kitchen stations (checklist item 4) - 2026-11-20
+
+Owner's decision: **split tickets and screens**; one chef still owns the order and marks it ready, so the strict
+queue (rule 10) and assignment (rule 5) don't change. Full per-station item tracking stays deferred.
+
+### How others do it
+- **Toast**: each item is assigned prep stations with routing rules; a "preview menu item routing" screen shows where
+  an item goes. **UrbanPiper, Bento, TableTrack**: a KOT per kitchen station / printer. **Odoo (Cerevantix)**: product
+  categories mapped to stations; each station prints only its own items. **LS Central**: routing per item; an item
+  with a route on any station becomes a "kitchen item".
+
+### Their mistakes (Toast's own troubleshooting pages)
+1. Items routed to the **wrong station** (routing rules hard to see).
+2. The **same order prints twice** when an item is assigned to more than one prep station.
+3. **Drinks still print in the kitchen**: printer lists per station drift from the item mapping.
+4. Orders show on the screen but **don't print** when a station has no printer set.
+
+### Our choice
+- **One station per dish**: the category sets it ("Beverages -> Bar"), a dish may override it; never two (avoids 2).
+  Dishes with no station go to the main **Kitchen**, so nothing is ever lost (avoids 4).
+- The **menu shows each dish's station** next to it, so routing is visible where it is set (avoids 1 and 3).
+- The order line keeps the station it was sent to (snapshot), so changing the menu later doesn't move tickets.
+- **KOT**: one ticket per station, each listing only that station's dishes, with the table and order number on
+  every ticket; the full ticket is still available.
+- **Kitchen screen**: a station picker ("All", "Kitchen", "Bar"...) shows each device only its station's dishes;
+  remembered on that device. The order is still accepted and marked ready by its chef.

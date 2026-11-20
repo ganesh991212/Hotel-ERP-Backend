@@ -108,6 +108,11 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 
 ## 8. Menu
 
+- **Kitchen stations** (Menu > Stations): add stations such as Bar, Tandoor or Chinese. Give a category a station
+  ("Drinks -> Bar") and, if needed, one dish a different one. Each dish shows where it goes; dishes without a station
+  go to the main Kitchen. The kitchen ticket prints one slip per station (each with the order number and table), and
+  each kitchen screen can show just its station. The order is still taken and marked ready by one chef.
+
 - Categories and items: name, price, tax rate, veg / non-veg / egg mark, preparation time, availability.
 - **Sold out** switch (chefs and servers may use it): the item disappears from QR ordering instantly and cannot be
   ordered.
@@ -379,6 +384,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Kitchen stations: a ticket and a screen per station (sections 7, 8) |
 | 2026-11-20 | Bookings and walk-in waitlist (section 6) |
 | 2026-11-20 | Move and merge tables (section 6) |
 | 2026-11-20 | Table visits: seat with guests, timer, Cleaning / Reserved; covers in Reports (section 6) |

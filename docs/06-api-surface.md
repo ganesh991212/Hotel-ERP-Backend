@@ -173,6 +173,13 @@ response; design in docs/14 "Reports"):
 - A booking: `id, kind, status, name, phone, guests, booked_for, quoted_minutes, waited_minutes, table, note,
   no_shows_before`. Tables add `next_booking {at, name, guests}`.
 
+## Kitchen stations (added 2026-11-20)
+- `GET /stations`; `POST /stations {name}`, `PUT /stations/{id}`, `DELETE /stations/{id}` (`menu.manage`; error
+  `station_exists`, also for "Kitchen"). Categories and items accept `station_id` (item `null` = follow the category).
+  `GET /items` returns `station_id` (own) and `station {id, name}` (effective; null = main kitchen).
+- Order items return `station`. `GET`/`POST /orders/{id}/kot` add `tickets [{station, blocks}]` when the order spans
+  several stations.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

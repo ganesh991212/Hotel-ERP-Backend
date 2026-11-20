@@ -228,5 +228,13 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Each booking shows `no_shows_before` (earlier no-shows with the same phone). The day view gives today's actual
   average wait of seated walk-ins (`avg_wait_minutes_today`) to guide quotes.
 
+## Kitchen stations (added 2026-11-20; prior art in docs/14)
+- `kitchen_stations(name, sort)` (RLS, migration 0018); `menu_categories.station_id`, `menu_items.station_id`
+  (dish overrides category; ON DELETE SET NULL). A dish goes to exactly one station; none = the main "Kitchen" (a
+  reserved name).
+- `order_items.station_id`, `station_name`: snapshot when ordered. KOT: `tickets[]` (one per station, each with
+  only its dishes and the order number and table) when an order spans several stations; `blocks` is the full ticket.
+- Display and print only: assignment, the strict queue and "ready" stay per order (docs/04).
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

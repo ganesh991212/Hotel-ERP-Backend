@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 
-from app.catalog.options import options_for, with_options
+from app.catalog.options import options_for, station_for_items, station_json, with_options
 from app.catalog.price_rules import hotel_now, offers_now
 from app.core.deps import Ctx, HotelCtx, count
 from app.core.errors import bad_request, not_found
@@ -25,6 +25,7 @@ class CategoryOut(BaseModel):
     available_from: str | None = None
     available_to: str | None = None
     open_now: bool = True
+    station_id: UUID | None = None  # its dishes' kitchen station (docs/03 "Kitchen stations")
 
 
 class CategoryIn(BaseModel):
@@ -33,6 +34,7 @@ class CategoryIn(BaseModel):
     days: int = Field(default=127, ge=1, le=127)
     available_from: time | None = None
     available_to: time | None = None
+    station_id: UUID | None = None
 
     @model_validator(mode="after")
     def _hours(self) -> "CategoryIn":
@@ -52,6 +54,7 @@ def category_out(c: MenuCategory, at) -> CategoryOut:
         available_from=c.available_from.strftime("%H:%M") if c.available_from else None,
         available_to=c.available_to.strftime("%H:%M") if c.available_to else None,
         open_now=in_window(c.days, c.available_from, c.available_to, at),
+        station_id=c.station_id,
     )
 
 
@@ -73,6 +76,8 @@ class ItemOut(BaseModel):
     components: list[dict] = []  # a combo's dishes (docs/03 "Combos"); empty for ordinary items
     # A happy-hour rule live right now for this dish (a badge; the price comes from the quote).
     offer: dict | None = None
+    station_id: UUID | None = None  # the dish's own station (overrides its category's)
+    station: dict | None = None  # where it actually goes: own, else category's; None = main kitchen
 
 
 class ItemIn(BaseModel):
@@ -85,6 +90,7 @@ class ItemIn(BaseModel):
     est_prep_minutes: int = Field(default=10, ge=1, le=240)
     is_available: bool = True
     sort: int = 0
+    station_id: UUID | None = None
 
 
 class ItemPatch(BaseModel):
@@ -95,6 +101,7 @@ class ItemPatch(BaseModel):
     price_minor: int | None = Field(default=None, ge=0, le=100_000_000)
     est_prep_minutes: int | None = Field(default=None, ge=1, le=240)
     sort: int | None = None
+    station_id: UUID | None = None  # send null to follow the category again
 
 
 class AvailabilityIn(BaseModel):
@@ -150,7 +157,17 @@ async def list_items(ctx: Ctx = HotelCtx()) -> list[ItemOut]:
     rows = (await ctx.db.execute(select(MenuItem).order_by(MenuItem.sort, MenuItem.name))).scalars().all()
     opts = await options_for(ctx.db)
     offers = await offers_now(ctx.db, rows)
-    return [ItemOut(**{**with_options(_item_out(i).model_dump(), opts, i.id), "offer": offers.get(i.id)}) for i in rows]
+    where = await station_for_items(ctx.db, list(rows))
+    return [
+        ItemOut(
+            **{
+                **with_options(_item_out(i).model_dump(), opts, i.id),
+                "offer": offers.get(i.id),
+                "station": station_json(where[i.id]) if where[i.id] else None,
+            }
+        )
+        for i in rows
+    ]
 
 
 @router.post("/items", response_model=ItemOut, status_code=201)
@@ -173,6 +190,8 @@ async def patch_item(item_id: UUID, body: ItemPatch, ctx: Ctx = HotelCtx("menu.m
     before = {"price_minor": i.price_minor, "name": i.name}
     for f, v in body.model_dump(exclude_none=True).items():
         setattr(i, f, v)
+    if "station_id" in body.model_fields_set:  # null is meaningful: back to the category's station
+        i.station_id = body.station_id
     await ctx.audit("item.update", "item", i.id, before=before, after={"price_minor": i.price_minor, "name": i.name})
     return _item_out(i)
 

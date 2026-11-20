@@ -293,6 +293,7 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
                 "addons": i.addons or [],
                 "price_rule": i.price_rule,
                 "components": i.components or [],
+                "station": {"id": str(i.station_id), "name": i.station_name} if i.station_name else None,
                 "list_unit_price_minor": i.list_unit_price_minor,
             }
             for i in items
@@ -393,10 +394,13 @@ async def create_order(
     number = (
         await db.execute(select(func.coalesce(func.max(Order.number), 0) + 1).where(Order.outlet_id == outlet.id))
     ).scalar_one()
-    prep = {
-        i.id: i.est_prep_minutes
-        for i in (await db.execute(select(MenuItem).where(MenuItem.id.in_({ln.item_id for ln in lines})))).scalars()
-    }
+    menu_items = list(
+        (await db.execute(select(MenuItem).where(MenuItem.id.in_({ln.item_id for ln in lines})))).scalars()
+    )
+    prep = {i.id: i.est_prep_minutes for i in menu_items}
+    from app.catalog.options import station_for_items
+
+    stations = await station_for_items(db, menu_items)  # snapshot: where each dish's ticket goes
     o = Order(
         hotel_id=hotel_id,
         outlet_id=outlet.id,
@@ -436,6 +440,8 @@ async def create_order(
             addons=[a.__dict__ for a in p.addons] or None,
             list_unit_price_minor=p.list_unit_price_minor,
             price_rule=p.price_rule,
+            station_id=st.id if (st := stations.get(UUID(p.item_id))) else None,
+            station_name=st.name if st else None,
             components=[{"item_id": i, "name": n, "qty": q} for i, n, q in p.components] or None,
         )
         db.add(it)

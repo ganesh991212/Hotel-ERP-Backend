@@ -13,7 +13,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import Ctx, HotelCtx
 from app.core.errors import bad_request, not_found
 from app.floor.router import current_outlet, outlet_channel
-from app.models import Addon, AddonGroup, MenuItem, MenuItemAddonGroup, MenuItemComponent, MenuItemVariant
+from app.models import (
+    Addon,
+    AddonGroup,
+    KitchenStation,
+    MenuCategory,
+    MenuItem,
+    MenuItemAddonGroup,
+    MenuItemComponent,
+    MenuItemVariant,
+)
 
 router = APIRouter(tags=["catalog"])
 
@@ -364,3 +373,75 @@ async def set_components(item_id: UUID, body: ComponentsIn, ctx: Ctx = HotelCtx(
         }
         for c in body.components
     ]
+
+
+# ---------- kitchen stations (docs/03 "Kitchen stations") ----------
+
+
+class StationIn(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+
+
+def station_json(s: KitchenStation) -> dict:
+    return {"id": str(s.id), "name": s.name}
+
+
+@router.get("/stations")
+async def list_stations(ctx: Ctx = HotelCtx()) -> list[dict]:
+    rows = (await ctx.db.execute(select(KitchenStation).order_by(KitchenStation.sort, KitchenStation.name))).scalars()
+    return [station_json(s) for s in rows]
+
+
+async def _unique_station(ctx: Ctx, name: str, exclude: UUID | None = None) -> None:
+    q = select(KitchenStation.id).where(func.lower(KitchenStation.name) == name.lower())
+    if exclude:
+        q = q.where(KitchenStation.id != exclude)
+    if (await ctx.db.execute(q)).first() or name.lower() == "kitchen":
+        # "Kitchen" is the main kitchen every dish without a station goes to.
+        raise bad_request("station_exists", "A station with this name already exists")
+
+
+@router.post("/stations", status_code=201)
+async def create_station(body: StationIn, ctx: Ctx = HotelCtx("menu.manage")) -> dict:
+    name = body.name.strip()
+    await _unique_station(ctx, name)
+    n = (await ctx.db.execute(select(func.count()).select_from(KitchenStation))).scalar_one()
+    s = KitchenStation(hotel_id=ctx.hotel_id, name=name, sort=n)
+    ctx.db.add(s)
+    await ctx.db.flush()
+    await ctx.audit("station.create", "station", s.id, after={"name": s.name})
+    return station_json(s)
+
+
+@router.put("/stations/{station_id}")
+async def rename_station(station_id: UUID, body: StationIn, ctx: Ctx = HotelCtx("menu.manage")) -> dict:
+    s = await ctx.db.get(KitchenStation, station_id)
+    if not s:
+        raise not_found("Station")
+    name = body.name.strip()
+    await _unique_station(ctx, name, exclude=s.id)
+    s.name = name
+    await ctx.audit("station.rename", "station", s.id, after={"name": s.name})
+    return station_json(s)
+
+
+@router.delete("/stations/{station_id}", status_code=204)
+async def delete_station(station_id: UUID, ctx: Ctx = HotelCtx("menu.manage")) -> None:
+    """Its dishes go back to the main kitchen; tickets already sent keep their station."""
+    s = await ctx.db.get(KitchenStation, station_id)
+    if not s:
+        raise not_found("Station")
+    await ctx.audit("station.delete", "station", s.id, before={"name": s.name})
+    await ctx.db.delete(s)
+
+
+async def station_for_items(db: AsyncSession, items: list[MenuItem]) -> dict[UUID, KitchenStation | None]:
+    """Each dish's station: its own, else its category's, else None (the main kitchen). One station per dish."""
+    cats = {
+        c.id: c.station_id
+        for c in (
+            await db.execute(select(MenuCategory).where(MenuCategory.id.in_({i.category_id for i in items})))
+        ).scalars()
+    }
+    stations = {s.id: s for s in (await db.execute(select(KitchenStation))).scalars()}
+    return {i.id: stations.get(i.station_id or cats.get(i.category_id)) for i in items}

@@ -90,6 +90,11 @@ unbilled or the table's bill is ISSUED (unpaid); `FREE` otherwise. Settling the 
 **Counter mode and timings:** counter orders have `served_at = ready_at`; they are left out of the "serving"
 average so they do not pull it to zero.
 
-Deferred: **stations** (bar/kitchen split per item: needs a station per menu item and item-level tracking; waiting
-on whether hotels have a separate bar); **automatic KOT printing** (browsers cannot print without a click; possible
+**Stations (decided 2026-11-20 by the owner: split tickets and screens).** Each dish goes to one station (its own,
+else its category's, else the main Kitchen); the order line keeps it. The KOT returns one ticket per station and the
+kitchen screen can show one station's dishes, but the order is still owned by one chef and marked ready as a whole,
+so the eligibility rule above ("station matches") is not used and the strict queue is unchanged. Per-station item
+tracking (each station marking its own dishes ready) stays deferred.
+
+Deferred: **automatic KOT printing** (browsers cannot print without a click; possible
 later in the installed Android/desktop app with a network printer).

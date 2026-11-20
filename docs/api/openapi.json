@@ -3573,6 +3573,241 @@
     }
    }
   },
+  "/api/v1/stations": {
+   "get": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "List Stations",
+    "operationId": "list_stations_api_v1_stations_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response List Stations Api V1 Stations Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Create Station",
+    "operationId": "create_station_api_v1_stations_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StationIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Create Station Api V1 Stations Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/stations/{station_id}": {
+   "put": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Rename Station",
+    "operationId": "rename_station_api_v1_stations__station_id__put",
+    "parameters": [
+     {
+      "name": "station_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Station Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StationIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Rename Station Api V1 Stations  Station Id  Put"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Delete Station",
+    "description": "Its dishes go back to the main kitchen; tickets already sent keep their station.",
+    "operationId": "delete_station_api_v1_stations__station_id__delete",
+    "parameters": [
+     {
+      "name": "station_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Station Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/price-rules": {
    "get": {
     "tags": [
@@ -8568,6 +8803,18 @@
       "type": "boolean",
       "title": "Open Now",
       "default": true
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
      }
     },
     "type": "object",
@@ -9337,6 +9584,18 @@
       "type": "integer",
       "title": "Sort",
       "default": 0
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
      }
     },
     "type": "object",
@@ -9436,6 +9695,30 @@
        }
       ],
       "title": "Offer"
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
+     },
+     "station": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station"
      }
     },
     "type": "object",
@@ -9539,6 +9822,18 @@
        }
       ],
       "title": "Sort"
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
      }
     },
     "type": "object",
@@ -10541,6 +10836,21 @@
     "title": "SplitLineIn",
     "description": "One grouped line of the table: `qty` = whole units per guest (one number per guest, adding up to the line's\nquantity), or `shared` = guest numbers (from 1) who share the whole line equally."
    },
+   "StationIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Name"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "StationIn"
+   },
    "StatusIn": {
     "properties": {
      "status": {
@@ -11154,6 +11464,18 @@
        }
       ],
       "title": "Available To"
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
      }
     },
     "type": "object",

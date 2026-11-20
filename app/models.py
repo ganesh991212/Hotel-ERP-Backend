@@ -268,6 +268,17 @@ class TableSession(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class KitchenStation(Base):
+    """A section of the kitchen that gets its own ticket and screen (Bar, Tandoor, Chinese...)."""
+
+    __tablename__ = "kitchen_stations"
+    __table_args__ = (UniqueConstraint("hotel_id", "name", name="uq_kitchen_stations_name"),)
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    name: Mapped[str] = mapped_column(String(40))
+    sort: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
 class MenuCategory(Base):
     __tablename__ = "menu_categories"
     id: Mapped[uuid.UUID] = pk()
@@ -279,6 +290,9 @@ class MenuCategory(Base):
     days: Mapped[int] = mapped_column(SmallInteger, server_default="127")
     available_from: Mapped[time | None] = mapped_column(Time)
     available_to: Mapped[time | None] = mapped_column(Time)
+    station_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kitchen_stations.id", ondelete="SET NULL")
+    )
 
 
 class MenuItem(Base):
@@ -296,6 +310,10 @@ class MenuItem(Base):
     est_prep_minutes: Mapped[int] = mapped_column(Integer, server_default="10")
     is_available: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     sort: Mapped[int] = mapped_column(Integer, server_default="0")
+    # Overrides the category's station for this dish (docs/03 "Kitchen stations").
+    station_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kitchen_stations.id", ondelete="SET NULL")
+    )
 
 
 class MenuItemVariant(Base):
@@ -461,6 +479,9 @@ class OrderItem(Base):
     addons: Mapped[list | None] = mapped_column(JSONB)
     # Combo contents when ordered: [{"item_id", "name", "qty"}] per unit (docs/03 "Combos").
     components: Mapped[list | None] = mapped_column(JSONB)
+    # The kitchen station the dish was sent to (snapshot); NULL = the main kitchen.
+    station_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    station_name: Mapped[str | None] = mapped_column(String(40))
     # Position on the order as entered (KOT and order screens list items in this order).
     line_no: Mapped[int] = mapped_column(SmallInteger, server_default="0")
     # Happy hour (docs/03): the dish/size price before the rule, and the rule's name; NULL when no rule applied.
@@ -759,4 +780,5 @@ TENANT_TABLES = [
     "menu_item_components",
     "day_closes",
     "bookings",
+    "kitchen_stations",
 ]

@@ -30,13 +30,37 @@ def _local(ts: datetime | None, tz: str) -> str:
 CHANNEL = {"QR": "QR order", "WAITER": "Server", "ADMIN": "Admin", "TAKEAWAY": "Takeaway"}
 
 
+MAIN_KITCHEN = "Kitchen"
+
+
+def kot_stations(order: dict) -> list[str]:
+    """Stations on this order, in the order their dishes appear; dishes without one go to the main kitchen."""
+    seen: list[str] = []
+    for it in order["items"]:
+        if it.get("status") == "CANCELLED":
+            continue
+        name = (it.get("station") or {}).get("name") or MAIN_KITCHEN
+        if name not in seen:
+            seen.append(name)
+    return seen
+
+
 def kot_blocks(
-    *, hotel_name: str, order: dict, tz: str, copy_no: int, printed_by: str | None, created_at: datetime | None
+    *,
+    hotel_name: str,
+    order: dict,
+    tz: str,
+    copy_no: int,
+    printed_by: str | None,
+    created_at: datetime | None,
+    station: str | None = None,
 ) -> list[tuple]:
+    """The kitchen ticket; with `station`, only that station's dishes (one ticket per station, docs/14)."""
     table = (order.get("table") or {}).get("label")
     where = f"Table {table}" if table else "TAKEAWAY"
+    title = "KOT" if copy_no <= 1 else f"KOT REPRINT {copy_no}"
     blocks: list[tuple] = [
-        ("title", "KOT" if copy_no <= 1 else f"KOT REPRINT {copy_no}"),
+        ("title", f"{title} - {station.upper()}" if station else title),
         ("center", hotel_name),
         ("divider",),
         ("total", f"Order #{order['number']}", where),
@@ -45,6 +69,8 @@ def kot_blocks(
     ]
     for it in order["items"]:
         if it.get("status") == "CANCELLED":
+            continue
+        if station and ((it.get("station") or {}).get("name") or MAIN_KITCHEN) != station:
             continue
         blocks.append(("bold", f"{it['qty']} x {it['name']}"))
         for c in it.get("components") or []:  # a combo's dishes, so the kitchen sees what to make
