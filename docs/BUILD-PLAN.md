@@ -251,6 +251,9 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [ ] Profit and loss by month
 
 ### 9. Inventory (7)
+> **Parked 2026-11-20 (owner's decision):** not built until it is planned with the owner. Before planning, confirm
+> with 3-5 restaurants that they will keep stock counts up to date; inventory, recipes (item 10) and purchases
+> (item 11) only pay off if counts are kept. Plan together; see the explanation in the session notes.
 - [ ] Ingredients, units, stock levels, reorder level, low-stock alerts
 - [ ] Auto-deduct stock from sales (needs 10)
 - [ ] Wastage entries; stock counts
@@ -301,7 +304,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 3. ~~Menu: variants/add-ons, happy hour, combos~~ (done 2026-11-20, +3.5 with serving hours)
 4. Finance: GST summary + day close (+3, medium)
 5. ~~Tables: covers, time seated, reserved/cleaning + reservations/waitlist~~ (done 2026-11-20, +5.7)
-6. Inventory + recipes + purchases (+16, large; confirm demand first)
+6. Inventory + recipes + purchases (+16, large; **parked by the owner 2026-11-20 until planned together**)
 7. Integrations: online bill payment, WhatsApp (+3, needs accounts and approvals)
 
 ## Phase 8: Rooms
