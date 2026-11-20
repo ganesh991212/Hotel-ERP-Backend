@@ -156,7 +156,8 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   one composite supply). Rates still come from effective-dated tax rules (rule 7).
 - Order lines snapshot `variant_id`, `variant_name`, `addons` [{id, name, price_minor, qty}]; `name` reads
   "Biryani (Half)". Bill lines read "Biryani (Half) + Raita, 2 x Cheese", so different add-ons never merge.
-- Lines are matched by position when an order is created: the same dish can be on one order twice.
+- Lines are matched by position when an order is created: the same dish can be on one order twice. Each item keeps
+  its `line_no` (migration 0012), and orders, KOTs and screens list items in the order they were entered.
 - All four tables have `hotel_id` and RLS (migration 0010).
 
 ## Happy hour (added 2026-11-20; prior art in docs/14)

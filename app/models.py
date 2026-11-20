@@ -410,6 +410,8 @@ class OrderItem(Base):
     variant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     variant_name: Mapped[str | None] = mapped_column(String(40))
     addons: Mapped[list | None] = mapped_column(JSONB)
+    # Position on the order as entered (KOT and order screens list items in this order).
+    line_no: Mapped[int] = mapped_column(SmallInteger, server_default="0")
     # Happy hour (docs/03): the dish/size price before the rule, and the rule's name; NULL when no rule applied.
     list_unit_price_minor: Mapped[int | None] = mapped_column(BigInteger)
     price_rule: Mapped[str | None] = mapped_column(String(60))

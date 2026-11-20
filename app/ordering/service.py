@@ -215,7 +215,11 @@ def totals_json(t: pricing.Totals) -> dict:
 
 
 async def order_json(db: AsyncSession, o: Order) -> dict:
-    items = (await db.execute(select(OrderItem).where(OrderItem.order_id == o.id))).scalars().all()
+    items = (
+        (await db.execute(select(OrderItem).where(OrderItem.order_id == o.id).order_by(OrderItem.line_no)))
+        .scalars()
+        .all()
+    )
     table = await db.get(DiningTable, o.table_id) if o.table_id else None
     asg = (
         await db.execute(
@@ -368,8 +372,9 @@ async def create_order(
     db.add(o)
     await db.flush()
     # Lines are matched by position: the same dish can be on an order twice (Half and Full).
-    for ln, p in zip(lines, totals.lines, strict=True):
+    for line_no, (ln, p) in enumerate(zip(lines, totals.lines, strict=True)):
         it = OrderItem(
+            line_no=line_no,
             hotel_id=hotel_id,
             order_id=o.id,
             item_id=UUID(p.item_id),
