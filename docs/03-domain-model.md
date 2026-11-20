@@ -248,6 +248,15 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   (`attendance.manage`) needs a reason, keeps the punched times once in `original_*`, and is audited.
 - Permission `attendance.manage` (HOTEL_ADMIN, MANAGER).
 
+## Shift rota (added 2026-11-20; prior art in docs/14)
+
+- `shift_plans(id, hotel_id, user_id, day, starts_at, ends_at, note?, created_by)`, RLS per hotel. `day` is the
+  hotel-local day the shift starts; an end time before the start runs into the next day (max 16 h). Overlapping
+  shifts for one person are refused (`shift_overlap`).
+- State (server, pure `shift_state`): the first clock-in from 2 h before the start to the end counts. On time within
+  10 minutes; otherwise LATE with minutes. No clock-in: UPCOMING until start + 10 min, then NOT_IN (minutes late),
+  NO_SHOW after the end. WORKING = clocked in on time and still in.
+
 ## B2B invoices (added 2026-11-20; prior art in docs/14)
 
 - `bills.buyer_name`, `buyer_gstin`, `buyer_address` (name and GSTIN together or neither): the registered buyer on a

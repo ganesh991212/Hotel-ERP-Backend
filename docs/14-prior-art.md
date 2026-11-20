@@ -635,3 +635,39 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
 - For chefs, **clocking in puts them on shift and clocking out takes them off** (their queued orders go back to the
   board, as with the kitchen switch), so routing follows who is actually there (avoids 4).
 - Hours per person per day for a date range, from the server. Planned shifts (rota, lateness) come next.
+
+## Shift rota and lateness (checklist item 13) - 2026-11-20
+
+### How others do it
+- **7shifts** (works with Toast, Square, Clover, Lightspeed...): schedules, time-off requests, shift swaps, open
+  shifts, logbook (https://www.fourth.com/article/best-restaurant-scheduling-software,
+  https://www.7shifts.com/blog/best-scheduling-software-for-toast-pos/, https://www.capterra.com/p/123038/7shifts-Restaurant-Scheduling/).
+- **Sling (Toast)**: scheduling with time tracking and warnings for overlapping shifts and late arrivals
+  (https://www.g2.com/compare/7shifts-vs-toast).
+- **Homebase**: open shifts, swaps, GPS clock-in verification (vendor page:
+  https://www.joinhomebase.com/compare/homebase-vs-7shifts, https://www.joinhomebase.com/blog/restaurant-shift-scheduling-software).
+- Others: https://joinhomebase.com/7shifts, https://www.joinhomebase.com/blog/7shifts-vs-hotschedules,
+  https://pushoperations.com/blog/the-top-scheduling-tools-for-franchise-operators-a-practical-comparison,
+  https://www.capterra.co.uk/compare/123038/1038214/7shifts-restaurant-scheduling/vs/square-team-management,
+  https://www.getapp.ca/compare/101735/113137/7shifts/vs/square-for-restaurants,
+  https://www.capterra.com.sg/compare/123038/183267/7shifts-restaurant-scheduling/vs/square-point-of-sale,
+  https://www.touchbistro.com/?p=36309, https://wf.joinhomebase.com/blog/best-restaurant-scheduling-software.
+
+### Their mistakes
+1. A **separate scheduling app** whose numbers do not match the POS (a 7shifts reviewer: labour from the schedule did
+   not match Toast's) (https://www.capterra.com/p/123038/7shifts-Restaurant-Scheduling/reviews/1827063/).
+2. **Overnight shifts** (6 pm to 2 am) entered as two shifts or as a negative length. [Likely]
+3. **Double-booking** the same person on overlapping shifts. Sling warns about it; many spreadsheets do not.
+4. **Lateness judged by a different clock** than the one staff punch, so arguments follow. [Likely]
+5. Re-typing the same week every week. [Likely]
+
+### Our choice
+- The rota lives **in the same app and database** as attendance; lateness is computed on the server by comparing
+  the planned start with the person's **own clock-in** (avoids 1, 4).
+- A shift is a day + start + end in the hotel's time zone; an end before the start **runs past midnight** into the
+  next day (avoids 2).
+- Overlapping shifts for one person are **refused** (avoids 3).
+- **Copy last week** fills the next week from the previous one, skipping anything that would overlap (avoids 5).
+- Each planned shift shows **Upcoming, Working, On time, Late N min** (more than 10 minutes after the start) or
+  **No-show** (no clock-in by the end); words and an icon, never colour alone.
+- Staff see their own next shifts on My work. Swaps, open shifts and labour cost come later, if owners ask.

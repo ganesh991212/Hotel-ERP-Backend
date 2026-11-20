@@ -32,6 +32,7 @@ from app.printing.router import router as printing
 from app.realtime.router import router as realtime
 from app.reports.router import router as reports
 from app.staff.attendance import router as attendance
+from app.staff.rota import router as rota
 
 
 @asynccontextmanager
@@ -75,6 +76,7 @@ for r in (
     bookings,
     held_orders,
     attendance,
+    rota,
 ):
     app.include_router(r, prefix="/api/v1")
 app.include_router(realtime)

@@ -343,6 +343,15 @@ Servers and chefs cannot open them.
   clock-out time with a **reason**; the original punch is kept and the change is recorded with your name. Nobody
   can fix their own hours unless they manage attendance.
 
+### Rota (planned shifts)
+
+- **Attendance > Rota** (managers): a week at a time (arrows for previous / next). **Add shift**: person, day, start,
+  end; an end before the start means the shift ends after midnight ("18:00 – 02:00 (+1)"). The same person cannot
+  have two shifts at once. **Copy last week** fills this week from the week before, skipping anything already there.
+- Each shift shows, from the person's own clock-in: **Upcoming**, **On shift**, **On time** (within 10 minutes),
+  **Late 12 min**, **Not in · 25 min late** (started, not clocked in yet) or **No-show**; an icon and words.
+- Staff see **My next shifts** on My work.
+
 ## 14. Settings (hotel admin)
 
 | Tab | Setting | Effect |
@@ -443,6 +452,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Shift rota with lateness and no-shows (section 13) |
 | 2026-11-20 | Attendance: clock in / out, corrections with a reason (sections 11, 13) |
 | 2026-11-20 | Reports as PDF (section 13) |
 | 2026-11-20 | Keyboard shortcuts for a counter PC (section 18) |

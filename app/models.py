@@ -290,6 +290,20 @@ class Attendance(Base):
     original_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class ShiftPlan(Base):
+    """A planned shift on the rota (docs/14 "Shift rota"). Matched with the person's own clock-in for lateness."""
+
+    __tablename__ = "shift_plans"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
+    day: Mapped[date] = mapped_column(Date)  # hotel-local day the shift starts
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    note: Mapped[str | None] = mapped_column(String(80))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+
+
 class TableSession(Base):
     __tablename__ = "table_sessions"
     id: Mapped[uuid.UUID] = pk()
@@ -823,5 +837,6 @@ TENANT_TABLES = [
     "bookings",
     "held_orders",
     "attendance",
+    "shift_plans",
     "kitchen_stations",
 ]
