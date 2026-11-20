@@ -33,6 +33,11 @@ Happy hour (built 2026-11-20; docs/03 "Happy hour"):
 - `GET /items` and the diner menu add `offer`: `{name, percent_bp, until}` while a rule is live for the dish (a badge;
   the price is the quote's). Order items return `price_rule` and `list_unit_price_minor`.
 
+Combos (built 2026-11-20; docs/03 "Combos"):
+- `PUT /items/{id}/components {components: [{item_id, qty}]}` (`menu.manage`; empty = ordinary item). Errors
+  `bad_combo`. `GET /items` and the diner menu return `components[]` `{item_id, name, qty, is_available}`; order items
+  return `components[]`. `DELETE /items/{id}` refuses a dish used in a combo (`item_in_combo`, `details.combos`).
+
 ## Diner (token = table QR, then table-session token)
 `GET /d/{qr_token}` (outlet + menu, cacheable), `POST /d/{qr_token}/session`, `POST /d/orders`, `GET /d/orders/{id}`, `POST /d/orders/{id}/rating`, `POST /d/call-waiter`, `POST /d/bill-request`
 

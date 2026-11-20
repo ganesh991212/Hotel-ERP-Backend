@@ -122,6 +122,11 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   add-ons. Add-ons are taxed at the dish's GST rate. The kitchen ticket prints the add-ons under the dish; the bill
   line reads "Biryani (Half) + Raita, 2 x Cheese".
 - Changing a price later never changes an order already placed or its bill.
+- **Combos** (Menu > item > ⋮ > Combo): turn a dish into a combo by listing what it contains, e.g. "Thali ₹300" =
+  1 Biryani + 2 Naan. It keeps its own price and tax. For a choice ("choose your drink"), attach an add-on group
+  with ₹0 options (and a surcharge for the pricier ones), set to "choose 1". The kitchen ticket lists every dish in
+  the combo with its quantity. A combo can't be ordered while one of its dishes is sold out (diners see it sold out).
+  A dish used in a combo can't be deleted until it is taken out of the combo.
 - **Happy hour** (Menu > Happy hour): a name, percent off, the days, a start and end time (it can run past
   midnight, e.g. Saturday 10 pm to 1 am) and which categories (or the whole menu). While it runs, the dishes show a
   "Happy hour −20%" badge for staff and on the QR menu, and the price is lowered automatically for every order,
@@ -331,6 +336,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Combos (section 8) |
 | 2026-11-20 | Happy hour (section 8) |
 | 2026-11-20 | Menu sizes (half/full) and add-ons (section 8) |
 | 2026-11-20 | Split by items: one GST bill per guest (section 10) |

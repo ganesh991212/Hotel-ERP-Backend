@@ -3219,6 +3219,81 @@
     }
    }
   },
+  "/api/v1/items/{item_id}/components": {
+   "put": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Set Components",
+    "description": "Make an item a combo (docs/03 \"Combos\"). Its price, GST code and add-on groups stay its own; its preparation\ntime becomes the slowest dish's. Orders already placed keep their own copy.",
+    "operationId": "set_components_api_v1_items__item_id__components_put",
+    "parameters": [
+     {
+      "name": "item_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Item Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ComponentsIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response Set Components Api V1 Items  Item Id  Components Put"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/price-rules": {
    "get": {
     "tags": [
@@ -7577,6 +7652,45 @@
     ],
     "title": "CheckoutIn"
    },
+   "ComponentIn": {
+    "properties": {
+     "item_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Item Id"
+     },
+     "qty": {
+      "type": "integer",
+      "maximum": 20.0,
+      "minimum": 1.0,
+      "title": "Qty",
+      "default": 1
+     }
+    },
+    "type": "object",
+    "required": [
+     "item_id"
+    ],
+    "title": "ComponentIn"
+   },
+   "ComponentsIn": {
+    "properties": {
+     "components": {
+      "items": {
+       "$ref": "#/components/schemas/ComponentIn"
+      },
+      "type": "array",
+      "maxItems": 12,
+      "title": "Components"
+     }
+    },
+    "type": "object",
+    "required": [
+     "components"
+    ],
+    "title": "ComponentsIn",
+    "description": "The combo's dishes. Empty = an ordinary item again. At least two dishes (or one dish twice) otherwise."
+   },
    "DinerOrderIn": {
     "properties": {
      "items": {
@@ -8275,6 +8389,15 @@
       },
       "type": "array",
       "title": "Addon Groups",
+      "default": []
+     },
+     "components": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Components",
       "default": []
      },
      "offer": {

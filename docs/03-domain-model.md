@@ -172,5 +172,16 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - `quote` now uses the hotel's local date for the GST rate lookup too (it used the server's UTC date, which was a day
   behind between 00:00 and 05:30 IST).
 
+## Combos (added 2026-11-20; prior art in docs/14)
+- A combo is an ordinary `menu_items` row with `menu_item_components(combo_item_id, component_item_id, qty, sort)`
+  (RLS, migration 0013): its own price, category, GST code, sold-out switch, sizes, add-on groups and happy hour.
+  Choice slots ("choose your drink") are add-on groups (min 1, max 1; ₹0 or a surcharge).
+- At least two dishes (or one dish twice); no combo inside a combo; a dish in a combo can't be deleted
+  (`item_in_combo`). Saving components sets the combo's preparation time to its slowest dish.
+- Ordering: refused while any component is sold out (`item_unavailable`); diners see such a combo as sold out.
+  Priced and taxed as one supply at the combo's price and GST code.
+- Order lines snapshot `components` [{item_id, name, qty per combo}]; the KOT prints each dish x quantity under the
+  combo. Bills and reports show the combo as one line; per-component stock comes with inventory (item 9).
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

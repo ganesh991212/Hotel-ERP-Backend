@@ -19,6 +19,7 @@ from app.models import (
     HotelTaxProfile,
     MenuItem,
     MenuItemAddonGroup,
+    MenuItemComponent,
     MenuItemVariant,
     Order,
     OrderItem,
@@ -55,11 +56,12 @@ class LineIn:
 
 @dataclass
 class _Choices:
-    """The menu's variants and add-on groups for the items in one order."""
+    """The menu's variants, add-on groups and combo contents for the items in one order."""
 
     variants: dict[UUID, list[MenuItemVariant]]
     groups: dict[UUID, list[AddonGroup]]  # item -> its groups
     addons: dict[UUID, Addon]  # addon id -> addon (only groups linked to these items)
+    components: dict[UUID, list[tuple[MenuItem, int]]]  # combo -> (dish, qty per combo)
 
 
 async def _choices(db: AsyncSession, item_ids: set[UUID]) -> _Choices:
@@ -85,7 +87,17 @@ async def _choices(db: AsyncSession, item_ids: set[UUID]) -> _Choices:
     addons = {}
     if group_ids:
         addons = {a.id: a for a in (await db.execute(select(Addon).where(Addon.group_id.in_(group_ids)))).scalars()}
-    return _Choices(variants, groups, addons)
+    components: dict[UUID, list[tuple[MenuItem, int]]] = {}
+    for c, part in (
+        await db.execute(
+            select(MenuItemComponent, MenuItem)
+            .join(MenuItem, MenuItem.id == MenuItemComponent.component_item_id)
+            .where(MenuItemComponent.combo_item_id.in_(item_ids))
+            .order_by(MenuItemComponent.sort)
+        )
+    ).all():
+        components.setdefault(c.combo_item_id, []).append((part, c.qty))
+    return _Choices(variants, groups, addons, components)
 
 
 def _choose(item: MenuItem, ln: "LineIn", c: _Choices) -> tuple[int, str, MenuItemVariant | None, tuple]:
@@ -180,6 +192,11 @@ async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
         if not 1 <= ln.qty <= s.max_qty_per_line:
             raise bad_request("bad_quantity", "Quantity out of range", {"item_id": str(item.id)})
         base, name, variant, picks = _choose(item, ln, choices)
+        parts = choices.components.get(item.id, [])
+        # A combo can't be sold while one of its dishes has run out.
+        out = next((p for p, _ in parts if not p.is_available), None)
+        if out is not None:
+            raise conflict("item_unavailable", f"{out.name} in {item.name} is sold out", {"item_id": str(item.id)})
         # Happy hour takes its percent off the dish/size price only; add-ons keep their price.
         rule = pricing.best_rule(price_rules, local_now, str(item.category_id))
         unit = pricing.unit_price(pricing.after_rule(base, rule), picks)
@@ -195,13 +212,18 @@ async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
                 addons=picks,
                 list_unit_price_minor=base if rule else None,
                 price_rule=rule.name if rule else None,
+                components=tuple((str(p.id), p.name, q) for p, q in parts),
             )
         )
     return pricing.price(price_lines, profile.service_charge_bp if profile else 0)
 
 
 def _line_json(p: pricing.PricedLine) -> dict:
-    return {**p.__dict__, "addons": [a.__dict__ for a in p.addons]}
+    return {
+        **p.__dict__,
+        "addons": [a.__dict__ for a in p.addons],
+        "components": [{"item_id": i, "name": n, "qty": q} for i, n, q in p.components],
+    }
 
 
 def totals_json(t: pricing.Totals) -> dict:
@@ -252,6 +274,7 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
                 "variant_name": i.variant_name,
                 "addons": i.addons or [],
                 "price_rule": i.price_rule,
+                "components": i.components or [],
                 "list_unit_price_minor": i.list_unit_price_minor,
             }
             for i in items
@@ -391,6 +414,7 @@ async def create_order(
             addons=[a.__dict__ for a in p.addons] or None,
             list_unit_price_minor=p.list_unit_price_minor,
             price_rule=p.price_rule,
+            components=[{"item_id": i, "name": n, "qty": q} for i, n, q in p.components] or None,
         )
         db.add(it)
         await db.flush()

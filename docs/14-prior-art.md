@@ -147,3 +147,33 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
 - The price is decided when the order is placed: a cart quoted at 6:59 and sent at 7:01 gets the 7:01 price; the
   order shows exactly what was charged.
 - A bill discount still works on top (it is a separate, audited decision with the role's limit).
+
+## Combos (checklist item 5) - 2026-11-20
+
+### How others do it
+- **Petpooja**: a combo bills at one set price while each component stays linked to its own recipe, so stock comes
+  off per component (vendor blog).
+- **Square** (combos): the ticket and KDS show the combo's parts, each routed to its station, marked "part of Burger
+  Combo"; the item-sales report lists the individual items sold in combos.
+- **Lightspeed**: a base price sets the combo's minimum; chosen items can add a charge.
+- **GoFrugal ServQuick**: combos cannot track inventory at all (disabled by default).
+
+### Their mistakes
+1. A bundle that reaches the kitchen as **one line** ("3-course prix fixe" shows as one ticket item; Square forum), so
+   the cooks don't see what to make.
+2. **Combos missing from accounting exports** (Square: not supported by QuickBooks/Xero/Zoho integrations).
+3. **No stock tracking for combos** (GoFrugal), or a combo still sold when one of its parts has run out.
+4. Choice slots ("pick your drink") built as a separate, special mechanism with its own rules to learn.
+
+### Our choice
+- A combo is an **ordinary menu item** (own price, category, GST code, sold-out switch) with a list of component
+  dishes and quantities. It reuses everything items already have: sizes, add-on groups, happy hour.
+- **Choices reuse add-on groups**: "Choose your drink" is a group with Coke ₹0 / Lime soda ₹0 / Lassi +₹20, min 1,
+  max 1 (avoids 4).
+- The **KOT prints every component** under the combo (avoids 1); the order line keeps a snapshot of the components.
+- A combo **can't be ordered while any of its fixed components is sold out** (server check; avoids the second half of
+  3); its preparation time is the slowest component's.
+- Priced and taxed as one supply at the combo's own price and GST code (restaurant food, composite supply). The bill
+  and reports show the combo as one line at its real price, so CSV exports carry it like any item (avoids 2).
+  Per-component stock comes with inventory (checklist item 9), which will read the same snapshot.
+- No combos inside combos (keeps the ticket and stock readable).

@@ -9,7 +9,7 @@ from app.catalog.price_rules import offers_now
 from app.core.deps import Ctx, HotelCtx, count
 from app.core.errors import bad_request, not_found
 from app.floor.router import current_outlet, outlet_channel
-from app.models import MenuCategory, MenuItem, OrderItem
+from app.models import MenuCategory, MenuItem, MenuItemComponent, OrderItem
 
 router = APIRouter(tags=["catalog"])
 
@@ -40,6 +40,7 @@ class ItemOut(BaseModel):
     # /items/{id}/addon-groups.
     variants: list[dict] = []
     addon_groups: list[dict] = []
+    components: list[dict] = []  # a combo's dishes (docs/03 "Combos"); empty for ordinary items
     # A happy-hour rule live right now for this dish (a badge; the price comes from the quote).
     offer: dict | None = None
 
@@ -160,4 +161,17 @@ async def delete_item(item_id: UUID, ctx: Ctx = HotelCtx("menu.manage")) -> None
         raise not_found("Item")
     if (await ctx.db.execute(select(OrderItem.id).where(OrderItem.item_id == i.id).limit(1))).first():
         raise bad_request("item_has_orders", "Items with order history can be marked unavailable, not deleted")
+    in_combo = (
+        (
+            await ctx.db.execute(
+                select(MenuItem.name)
+                .join(MenuItemComponent, MenuItemComponent.combo_item_id == MenuItem.id)
+                .where(MenuItemComponent.component_item_id == i.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if in_combo:
+        raise bad_request("item_in_combo", "Remove it from its combos first", {"combos": list(in_combo)})
     await ctx.db.delete(i)

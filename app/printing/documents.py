@@ -47,6 +47,8 @@ def kot_blocks(
         if it.get("status") == "CANCELLED":
             continue
         blocks.append(("bold", f"{it['qty']} x {it['name']}"))
+        for c in it.get("components") or []:  # a combo's dishes, so the kitchen sees what to make
+            blocks.append(("text", f"   - {c['qty'] * it['qty']} x {c['name']}"))
         for a in it.get("addons") or []:  # add-ons under the dish, for the chef
             blocks.append(("text", f"   + {a['qty']} x {a['name']}" if a.get("qty", 1) > 1 else f"   + {a['name']}"))
         if it.get("note"):

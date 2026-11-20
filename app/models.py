@@ -282,6 +282,23 @@ class MenuItemVariant(Base):
     sort: Mapped[int] = mapped_column(Integer, server_default="0")
 
 
+class MenuItemComponent(Base):
+    """A combo is an ordinary item with components (docs/03 "Combos"); no combos inside combos."""
+
+    __tablename__ = "menu_item_components"
+    __table_args__ = (UniqueConstraint("combo_item_id", "component_item_id", name="uq_combo_component"),)
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    combo_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("menu_items.id", ondelete="CASCADE"), index=True
+    )
+    component_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("menu_items.id", ondelete="RESTRICT"), index=True
+    )
+    qty: Mapped[int] = mapped_column(Integer, server_default="1")
+    sort: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
 class AddonGroup(Base):
     """A reusable set of add-ons ("Extras", "Choose your bread") with how many may be picked in total."""
 
@@ -410,6 +427,8 @@ class OrderItem(Base):
     variant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     variant_name: Mapped[str | None] = mapped_column(String(40))
     addons: Mapped[list | None] = mapped_column(JSONB)
+    # Combo contents when ordered: [{"item_id", "name", "qty"}] per unit (docs/03 "Combos").
+    components: Mapped[list | None] = mapped_column(JSONB)
     # Position on the order as entered (KOT and order screens list items in this order).
     line_no: Mapped[int] = mapped_column(SmallInteger, server_default="0")
     # Happy hour (docs/03): the dish/size price before the rule, and the rule's name; NULL when no rule applied.
@@ -681,4 +700,5 @@ TENANT_TABLES = [
     "addons",
     "menu_item_addon_groups",
     "price_rules",
+    "menu_item_components",
 ]

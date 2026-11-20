@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import Ctx, HotelCtx
 from app.core.errors import bad_request, not_found
 from app.floor.router import current_outlet, outlet_channel
-from app.models import Addon, AddonGroup, MenuItem, MenuItemAddonGroup, MenuItemVariant
+from app.models import Addon, AddonGroup, MenuItem, MenuItemAddonGroup, MenuItemComponent, MenuItemVariant
 
 router = APIRouter(tags=["catalog"])
 
@@ -50,6 +50,17 @@ async def options_for(db: AsyncSession) -> dict[UUID, dict]:
     addons: dict[UUID, list[Addon]] = {}
     for a in (await db.execute(select(Addon).order_by(Addon.sort, Addon.name))).scalars():
         addons.setdefault(a.group_id, []).append(a)
+    comps = (
+        await db.execute(
+            select(MenuItemComponent, MenuItem)
+            .join(MenuItem, MenuItem.id == MenuItemComponent.component_item_id)
+            .order_by(MenuItemComponent.sort)
+        )
+    ).all()
+    for c, part in comps:
+        out.setdefault(c.combo_item_id, {"variants": [], "addon_groups": []}).setdefault("components", []).append(
+            {"item_id": str(part.id), "name": part.name, "qty": c.qty, "is_available": part.is_available}
+        )
     links = (await db.execute(select(MenuItemAddonGroup).order_by(MenuItemAddonGroup.sort))).scalars()
     for ln in links:
         g = groups[ln.group_id]
@@ -65,12 +76,19 @@ def for_diner(item: dict) -> dict:
     variants = [v for v in item["variants"] if v["is_available"]]
     groups = [{**g, "addons": [a for a in g["addons"] if a["is_available"]]} for g in item["addon_groups"]]
     sold_out = bool(item["variants"]) and not variants
+    # A combo is sold out while any of its dishes is (the server refuses it anyway).
+    sold_out = sold_out or any(not c["is_available"] for c in item.get("components", []))
     return {**item, "variants": variants, "addon_groups": groups, "is_available": item["is_available"] and not sold_out}
 
 
 def with_options(item: dict, opts: dict[UUID, dict], item_id: UUID) -> dict:
     o = opts.get(item_id, {})
-    return {**item, "variants": o.get("variants", []), "addon_groups": o.get("addon_groups", [])}
+    return {
+        **item,
+        "variants": o.get("variants", []),
+        "addon_groups": o.get("addon_groups", []),
+        "components": o.get("components", []),
+    }
 
 
 # ---------- variants ----------
@@ -282,3 +300,67 @@ async def set_item_groups(item_id: UUID, body: ItemGroupsIn, ctx: Ctx = HotelCtx
     await ctx.db.flush()
     await ctx.audit("item.addon_groups", "item", item_id, after={"groups": [groups[g].name for g in ids]})
     return [await _group_out(ctx.db, groups[g]) for g in ids]
+
+
+# ---------- combos ----------
+
+
+class ComponentIn(BaseModel):
+    item_id: UUID
+    qty: int = Field(default=1, ge=1, le=20)
+
+
+class ComponentsIn(BaseModel):
+    """The combo's dishes. Empty = an ordinary item again. At least two dishes (or one dish twice) otherwise."""
+
+    components: list[ComponentIn] = Field(max_length=12)
+
+
+@router.put("/items/{item_id}/components")
+async def set_components(item_id: UUID, body: ComponentsIn, ctx: Ctx = HotelCtx("menu.manage")) -> list[dict]:
+    """Make an item a combo (docs/03 "Combos"). Its price, GST code and add-on groups stay its own; its preparation
+    time becomes the slowest dish's. Orders already placed keep their own copy."""
+    combo = await _item(ctx, item_id)
+    ids = [c.item_id for c in body.components]
+    if len(set(ids)) != len(ids):
+        raise bad_request("bad_combo", "List each dish once and use its quantity")
+    if item_id in ids:
+        raise bad_request("bad_combo", "A combo can't contain itself")
+    if body.components and sum(c.qty for c in body.components) < 2:
+        raise bad_request("bad_combo", "A combo needs at least two dishes")
+    parts = {i.id: i for i in (await ctx.db.execute(select(MenuItem).where(MenuItem.id.in_(ids)))).scalars()}
+    if len(parts) != len(ids):
+        raise not_found("Item")
+    nested = (
+        await ctx.db.execute(
+            select(MenuItemComponent.combo_item_id).where(MenuItemComponent.combo_item_id.in_(ids)).limit(1)
+        )
+    ).first()
+    used_in = (
+        await ctx.db.execute(
+            select(MenuItemComponent.id).where(MenuItemComponent.component_item_id == item_id).limit(1)
+        )
+    ).first()
+    if body.components and (nested or used_in):
+        raise bad_request("bad_combo", "No combos inside combos")
+    await ctx.db.execute(delete(MenuItemComponent).where(MenuItemComponent.combo_item_id == item_id))
+    for sort, c in enumerate(body.components):
+        ctx.db.add(
+            MenuItemComponent(
+                hotel_id=ctx.hotel_id, combo_item_id=item_id, component_item_id=c.item_id, qty=c.qty, sort=sort
+            )
+        )
+    if body.components:
+        combo.est_prep_minutes = max(parts[c.item_id].est_prep_minutes for c in body.components)
+    await ctx.db.flush()
+    after = {"components": [[parts[c.item_id].name, c.qty] for c in body.components]}
+    await ctx.audit("item.components", "item", item_id, after=after)
+    return [
+        {
+            "item_id": str(c.item_id),
+            "name": parts[c.item_id].name,
+            "qty": c.qty,
+            "is_available": parts[c.item_id].is_available,
+        }
+        for c in body.components
+    ]

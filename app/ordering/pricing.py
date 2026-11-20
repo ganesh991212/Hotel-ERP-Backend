@@ -70,6 +70,7 @@ class PriceLine:
     addons: tuple[AddonPick, ...] = ()
     list_unit_price_minor: int | None = None  # dish/size before happy hour
     price_rule: str | None = None
+    components: tuple[tuple[str, str, int], ...] = ()  # combo contents: (item id, name, qty per unit)
 
 
 @dataclass(frozen=True)
@@ -86,6 +87,7 @@ class PricedLine:
     addons: tuple[AddonPick, ...] = ()
     list_unit_price_minor: int | None = None  # dish/size before happy hour
     price_rule: str | None = None
+    components: tuple[tuple[str, str, int], ...] = ()  # combo contents: (item id, name, qty per unit)
 
 
 def unit_price(base_minor: int, addons: tuple[AddonPick, ...]) -> int:
@@ -146,6 +148,7 @@ def price(lines: list[PriceLine], service_charge_bp: int = 0) -> Totals:
                 addons=ln.addons,
                 list_unit_price_minor=ln.list_unit_price_minor,
                 price_rule=ln.price_rule,
+                components=ln.components,
             )
         )
     subtotal = sum(p.line_total_minor for p in priced)
