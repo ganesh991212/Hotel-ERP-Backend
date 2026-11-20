@@ -168,7 +168,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 |---|---|---|---|---|---|
 | 1 | Point of sale / billing | 10 | 90% | 9.0 | Mostly done |
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
-| 3 | Tables / floor plan | 6 | 85% | 5.1 | Mostly done |
+| 3 | Tables / floor plan | 6 | 100% | 6.0 | Done |
 | 4 | Kitchen display | 8 | 80% | 6.4 | Mostly done |
 | 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
 | 6 | Live dashboard | 6 | 70% | 4.2 | Mostly done |
@@ -179,13 +179,13 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 11 | Purchases and suppliers | 4 | 0% | 0 | Missing |
 | 12 | Customers (CRM) | 4 | 0% | 0 | Missing |
 | 13 | Staff, shifts, attendance | 4 | 50% | 2.0 | Partial |
-| 14 | Reservations and waitlist | 3 | 0% | 0 | Missing |
+| 14 | Reservations and waitlist | 3 | 100% | 3.0 | Done |
 | 15 | Delivery (own riders) | 2 | 0% | 0 | Missing |
 | 16 | Integrations | 6 | 25% | 1.5 | Partial |
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **53.6** | |
+| | **Total** | **100** | | **57.5** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -212,7 +212,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] Areas, live status (free / occupied / bill pending), amount owed, QR per table
 - [x] Time seated and guest count (covers) per table; covers and average per guest in Reports
 - [x] Reserved and Cleaning states (Cleaning automatic after payment)
-- [ ] Waitlist (with 14)
+- [x] Waitlist (with 14)
 - [x] Move / merge tables (whole visit incl. QR diner sessions; before billing only)
 
 ### 4. Kitchen display (8)
@@ -271,8 +271,8 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [ ] Cash handover per shift
 
 ### 14. Reservations and waitlist (3)
-- [ ] Bookings (name, phone, guests, time, table, notes) and today's arrivals
-- [ ] Walk-in waitlist with quoted wait and "Seat" action
+- [x] Bookings (name, phone, guests, time, table, notes) and today's arrivals; overlap warning; no-shows remembered
+- [x] Walk-in waitlist with quoted wait and "Seat" action; today's actual average wait
 
 ### 15. Delivery with own riders (2)
 - [ ] Phone/website delivery orders, riders, assign, picked up / delivered, COD cash with riders
@@ -300,7 +300,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 2. ~~Reports: day-by-day + item-wise + CSV export, incl. bills register~~ (done 2026-11-20, +5.6 with GST summary)
 3. ~~Menu: variants/add-ons, happy hour, combos~~ (done 2026-11-20, +3.5 with serving hours)
 4. Finance: GST summary + day close (+3, medium)
-5. Tables: covers, time seated, reserved/cleaning + reservations/waitlist (+5, medium)
+5. ~~Tables: covers, time seated, reserved/cleaning + reservations/waitlist~~ (done 2026-11-20, +5.7)
 6. Inventory + recipes + purchases (+16, large; confirm demand first)
 7. Integrations: online bill payment, WhatsApp (+3, needs accounts and approvals)
 

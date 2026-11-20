@@ -153,6 +153,17 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 - The number of guests is kept on the bill once per visit (also when the bill is split by guest), so Reports show
   **covers** and the **average spend per guest** correctly.
 
+### Bookings and waitlist (Floor > Bookings)
+- **Book**: name, phone, guests, date and time, and a table if you want to keep one, plus a note. If that table has
+  another booking within an hour and a half, the app warns first. Tables show "Booked 8:00 pm · Sharma" from two
+  hours before.
+- **Today**: every booking for the day by time. When the party arrives, tap **Seat**: the table's visit starts with
+  their guest count. Mark **No-show** or **Cancelled** otherwise. A new booking from a phone number that didn't turn
+  up before shows "1 no-show before".
+- **Waitlist** for walk-ins: name, phone, guests and the wait you told them. Each party shows how long it has
+  waited; today's real average wait is shown so the next quote is honest. Tap **Seat** and pick a table when one is
+  free.
+
 ## 9. Tables and QR codes
 
 - Add tables with a label (like T1), area (Indoor, Patio...) and seats; deactivate when not in use.
@@ -368,6 +379,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Bookings and walk-in waitlist (section 6) |
 | 2026-11-20 | Move and merge tables (section 6) |
 | 2026-11-20 | Table visits: seat with guests, timer, Cleaning / Reserved; covers in Reports (section 6) |
 | 2026-11-20 | Close the day: cash drawer count with over/short and history (section 13) |

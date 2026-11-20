@@ -96,6 +96,7 @@ class TableOut(BaseModel):
     seated_at: datetime | None = None
     guests: int | None = None
     hold_note: str | None = None
+    next_booking: dict | None = None  # a booking on this table starting within two hours (docs/03 "Bookings")
     unbilled_orders: int = 0
     unbilled_total_minor: int = 0  # unbilled served orders + issued-but-unpaid bills; computed by the server
 
@@ -178,9 +179,13 @@ async def list_tables(ctx: Ctx = HotelCtx("order.view")) -> list[TableOut]:
             )
         ).all()
     )
+    from app.floor.bookings import next_bookings
+
+    upcoming = await next_bookings(ctx)
     out = []
     for t in tables:
         row = _table_out(t, counts.get(t.id, 0))
+        row.next_booking = upcoming.get(t.id)
         n, total = unbilled.get(t.id, (0, 0))
         row.unbilled_orders = n
         row.unbilled_total_minor = int(total) + int(owing.get(t.id, 0))

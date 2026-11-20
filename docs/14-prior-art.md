@@ -292,3 +292,33 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   ("bill it again after moving" isn't needed: cancel or settle that bill first), so an invoice never changes table
   after it was issued and nothing paid is merged (avoids 1).
 - Audited (who, from, to).
+
+## Reservations and waitlist (checklist items 14 and 3) - 2026-11-20
+
+### How others do it
+- **Restroworks**: reservation management to "book more covers, cut no-shows" (vendor page).
+- **Eat App / Tablein / NowBookIt / TouchBistro** (vendor blogs): bookings from several channels into one book;
+  waitlist apps text the guest when the table is ready; confirmation prompts to reduce no-shows; some ask a deposit
+  after repeated no-shows (e.g. three in six months).
+- Indian platforms (Dineout, EazyDiner) and Toast Tables: no usable public detail found.
+
+### Their mistakes
+1. **Double bookings from channels that sync slowly**: two guests claim one table through different sources in the
+   minutes before the book updates (Eat App).
+2. **No-shows** cost the table and lengthen walk-in waits; repeat no-shows aren't visible to the host.
+3. **Quoted waits that don't match reality** frustrate walk-ins (common complaint; no hard data found).
+4. Reservations kept apart from the floor, so the host can't see that a table is booked in 30 minutes.
+
+### Our choice
+- One book inside the app (staff take phone and walk-in bookings; online channels later, writing into the same book),
+  so there is nothing to sync (avoids 1). A booking on a table that overlaps another booking of that table (within
+  the hotel's 90-minute slot) warns and needs a second tap.
+- **Today's arrivals** list with time, name, phone, guests, table and note; the floor shows "Booked 8:00 pm" on a
+  table with a booking in the next two hours (avoids 4). **Seat** turns the booking into a table visit with its guest
+  count.
+- **No-show** and **Cancelled** are recorded; when a new booking uses a phone number with earlier no-shows, the app
+  shows "2 no-shows before" (avoids 2). Deposits come with online payments (item 16).
+- **Waitlist** for walk-ins: name, phone, guests, quoted minutes; shows how long each party has waited, and today's
+  **actual average wait** next to the quote field, so quotes follow reality (helps 3). Seat from the waitlist the
+  same way. Text-when-ready comes with WhatsApp (item 16).
+- Guest names and phones are hotel data: only staff with order access see them; they never appear in logs.

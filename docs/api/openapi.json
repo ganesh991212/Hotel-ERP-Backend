@@ -2205,7 +2205,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/SeatIn"
+        "$ref": "#/components/schemas/app__floor__router__SeatIn"
        }
       }
      }
@@ -7948,6 +7948,277 @@
     }
    }
   },
+  "/api/v1/bookings": {
+   "post": {
+    "tags": [
+     "bookings"
+    ],
+    "summary": "Create",
+    "operationId": "create_api_v1_bookings_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BookingIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Create Api V1 Bookings Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "bookings"
+    ],
+    "summary": "Day",
+    "description": "The day's book (hotel-local, default today), the live waitlist, and today's actual average wait so quotes\nfollow reality.",
+    "operationId": "day_api_v1_bookings_get",
+    "parameters": [
+     {
+      "name": "date",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Day Api V1 Bookings Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bookings/{booking_id}/seat": {
+   "post": {
+    "tags": [
+     "bookings"
+    ],
+    "summary": "Seat",
+    "description": "The party arrived (or their table is ready): start the table visit with the booking's guest count.",
+    "operationId": "seat_api_v1_bookings__booking_id__seat_post",
+    "parameters": [
+     {
+      "name": "booking_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Booking Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__floor__bookings__SeatIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Seat Api V1 Bookings  Booking Id  Seat Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bookings/{booking_id}/status": {
+   "post": {
+    "tags": [
+     "bookings"
+    ],
+    "summary": "Set Status",
+    "operationId": "set_status_api_v1_bookings__booking_id__status_post",
+    "parameters": [
+     {
+      "name": "booking_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Booking Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StatusIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Set Status Api V1 Bookings  Booking Id  Status Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/health": {
    "get": {
     "summary": "Health",
@@ -8137,6 +8408,101 @@
     "type": "object",
     "title": "BillIn",
     "description": "A table's bill for this visit (`table_id`), or one takeaway order's bill (`order_id`)."
+   },
+   "BookingIn": {
+    "properties": {
+     "kind": {
+      "type": "string",
+      "pattern": "^(BOOKING|WAITLIST)$",
+      "title": "Kind"
+     },
+     "name": {
+      "type": "string",
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "phone": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 20,
+        "pattern": "^[0-9+ -]*$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone"
+     },
+     "guests": {
+      "type": "integer",
+      "maximum": 99.0,
+      "minimum": 1.0,
+      "title": "Guests"
+     },
+     "booked_for": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Booked For"
+     },
+     "quoted_minutes": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 600.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quoted Minutes"
+     },
+     "table_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Table Id"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 200
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "allow_overlap": {
+      "type": "boolean",
+      "title": "Allow Overlap",
+      "default": false
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind",
+     "name",
+     "guests"
+    ],
+    "title": "BookingIn"
    },
    "BrandingIn": {
     "properties": {
@@ -9927,25 +10293,6 @@
     "title": "RuleIn",
     "description": "`days`: Monday = 1, Tuesday = 2, Wednesday = 4 ... Sunday = 64 (127 = every day). Times are the hotel's local\ntimes; an end before the start crosses midnight. `category_ids` null = the whole menu."
    },
-   "SeatIn": {
-    "properties": {
-     "guests": {
-      "anyOf": [
-       {
-        "type": "integer",
-        "maximum": 99.0,
-        "minimum": 1.0
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Guests"
-     }
-    },
-    "type": "object",
-    "title": "SeatIn"
-   },
    "SettingsIn": {
     "properties": {
      "name": {
@@ -10194,6 +10541,20 @@
     "title": "SplitLineIn",
     "description": "One grouped line of the table: `qty` = whole units per guest (one number per guest, adding up to the line's\nquantity), or `shared` = guest numbers (from 1) who share the whole line equally."
    },
+   "StatusIn": {
+    "properties": {
+     "status": {
+      "type": "string",
+      "pattern": "^(CANCELLED|NO_SHOW)$",
+      "title": "Status"
+     }
+    },
+    "type": "object",
+    "required": [
+     "status"
+    ],
+    "title": "StatusIn"
+   },
    "TableIn": {
     "properties": {
      "label": {
@@ -10309,6 +10670,18 @@
        }
       ],
       "title": "Hold Note"
+     },
+     "next_booking": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Next Booking"
      },
      "unbilled_orders": {
       "type": "integer",
@@ -10803,6 +11176,43 @@
      "name"
     ],
     "title": "CategoryIn"
+   },
+   "app__floor__bookings__SeatIn": {
+    "properties": {
+     "table_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Table Id"
+     }
+    },
+    "type": "object",
+    "title": "SeatIn"
+   },
+   "app__floor__router__SeatIn": {
+    "properties": {
+     "guests": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 99.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Guests"
+     }
+    },
+    "type": "object",
+    "title": "SeatIn"
    },
    "app__ordering__router__ReasonIn": {
     "properties": {

@@ -163,6 +163,16 @@ response; design in docs/14 "Reports"):
 - `POST /tables/{id}/move {to_table_id}` and `POST /tables/{id}/merge {from_table_ids}` (`order.create`); errors
   `table_has_bill`, `table_in_use`, `nothing_to_move`, `same_table`. Return the target table.
 
+## Bookings (added 2026-11-20)
+- `GET /bookings?date=` (`order.view`; hotel-local day, default today): `bookings[]` (that day, by time),
+  `waitlist[]` (waiting now), `avg_wait_minutes_today`.
+- `POST /bookings {kind: BOOKING|WAITLIST, name, phone?, guests, booked_for? (with zone), quoted_minutes?, table_id?,
+  note?, allow_overlap?}` (`order.create`) -> 201; errors `table_booked` (details name, booked_for), `past_time`.
+- `POST /bookings/{id}/seat {table_id?}`; `POST /bookings/{id}/status {status: CANCELLED|NO_SHOW}`; errors
+  `table_in_use`, `table_has_bill`, `table_required`, `bad_booking_state`.
+- A booking: `id, kind, status, name, phone, guests, booked_for, quoted_minutes, waited_minutes, table, note,
+  no_shows_before`. Tables add `next_booking {at, name, guests}`.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

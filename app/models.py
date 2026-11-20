@@ -235,6 +235,28 @@ class DiningTable(Base):
     hold_note: Mapped[str | None] = mapped_column(String(80))
 
 
+class Booking(Base):
+    """A reservation (BOOKING, with a time) or a walk-in on the waitlist (WAITLIST, with a quoted wait)."""
+
+    __tablename__ = "bookings"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    kind: Mapped[str] = mapped_column(String(8))
+    status: Mapped[str] = mapped_column(String(10))
+    name: Mapped[str] = mapped_column(String(80))
+    phone: Mapped[str | None] = mapped_column(String(20))
+    guests: Mapped[int] = mapped_column(SmallInteger)
+    booked_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    quoted_minutes: Mapped[int | None] = mapped_column(SmallInteger)
+    table_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("dining_tables.id", ondelete="SET NULL")
+    )
+    note: Mapped[str | None] = mapped_column(String(200))
+    seated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    created_at: Mapped[datetime] = created()
+
+
 class TableSession(Base):
     __tablename__ = "table_sessions"
     id: Mapped[uuid.UUID] = pk()
@@ -736,4 +758,5 @@ TENANT_TABLES = [
     "price_rules",
     "menu_item_components",
     "day_closes",
+    "bookings",
 ]

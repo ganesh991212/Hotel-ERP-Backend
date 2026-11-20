@@ -217,5 +217,16 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   (`table_has_bill`), so invoices never change table and nothing paid is merged; a busy target needs merge
   (`table_in_use`).
 
+## Bookings (added 2026-11-20; prior art in docs/14)
+- `bookings` (RLS, migration 0017): kind BOOKING (with `booked_for`) or WAITLIST (with `quoted_minutes`); status
+  BOOKED / WAITING -> SEATED | CANCELLED | NO_SHOW (no-show only for bookings). Name, phone (hotel data; not written to
+  the audit log), guests, optional table, note.
+- A booking on a table overlapping another BOOKED booking of that table within 90 minutes warns (`table_booked`) and
+  needs `allow_overlap`. Times in the past (over an hour) are refused; times must carry a time zone.
+- Seat: the table must be free (no visit, no unbilled orders, no issued bill); it starts the table visit with the
+  booking's guests and clears any hold. Tables show `next_booking` for bookings starting within two hours.
+- Each booking shows `no_shows_before` (earlier no-shows with the same phone). The day view gives today's actual
+  average wait of seated walk-ins (`avg_wait_minutes_today`) to guide quotes.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.
