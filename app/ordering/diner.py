@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
 from app.catalog.options import for_diner, options_for, with_options
+from app.catalog.price_rules import offers_now
 from app.core.config import get_settings
 from app.core.db import platform_session, tenant_session
 from app.core.deps import load_entitlements
@@ -69,6 +70,7 @@ async def menu(qr_token: str) -> dict:
         cats = (await db.execute(select(MenuCategory).order_by(MenuCategory.sort, MenuCategory.name))).scalars().all()
         items = (await db.execute(select(MenuItem).order_by(MenuItem.sort, MenuItem.name))).scalars().all()
         opts = await options_for(db)
+        offers = await offers_now(db, items)
         return {
             "hotel": {"name": hotel.name},
             # serve_mode tells the diner page whether to say "on its way" or "collect at the counter".
@@ -90,6 +92,7 @@ async def menu(qr_token: str) -> dict:
                                     "price_minor": i.price_minor,
                                     "is_available": i.is_available,
                                     "est_prep_minutes": i.est_prep_minutes,
+                                    "offer": offers.get(i.id),
                                 },
                                 opts,
                                 i.id,

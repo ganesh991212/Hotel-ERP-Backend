@@ -27,6 +27,12 @@ Variants and add-ons (built 2026-11-20; docs/03 "Variants and add-ons"):
   Errors: `variant_required`, `bad_variant`, `bad_addon`, `addon_count` (`details.group/min/max`), `item_unavailable`.
   Order items return `variant_name` and `addons[]`.
 
+Happy hour (built 2026-11-20; docs/03 "Happy hour"):
+- `GET /price-rules`; `POST`/`PUT /price-rules/{id}` `{name, percent_bp 1..9000, days 1..127 (Mon=1 ... Sun=64),
+  start_time "HH:MM", end_time, category_ids | null, is_active}` (`menu.manage`); `DELETE /price-rules/{id}`.
+- `GET /items` and the diner menu add `offer`: `{name, percent_bp, until}` while a rule is live for the dish (a badge;
+  the price is the quote's). Order items return `price_rule` and `list_unit_price_minor`.
+
 ## Diner (token = table QR, then table-session token)
 `GET /d/{qr_token}` (outlet + menu, cacheable), `POST /d/{qr_token}/session`, `POST /d/orders`, `GET /d/orders/{id}`, `POST /d/orders/{id}/rating`, `POST /d/call-waiter`, `POST /d/bill-request`
 

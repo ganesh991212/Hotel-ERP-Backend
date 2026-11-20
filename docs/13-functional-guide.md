@@ -122,6 +122,13 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   add-ons. Add-ons are taxed at the dish's GST rate. The kitchen ticket prints the add-ons under the dish; the bill
   line reads "Biryani (Half) + Raita, 2 x Cheese".
 - Changing a price later never changes an order already placed or its bill.
+- **Happy hour** (Menu > Happy hour): a name, percent off, the days, a start and end time (it can run past
+  midnight, e.g. Saturday 10 pm to 1 am) and which categories (or the whole menu). While it runs, the dishes show a
+  "Happy hour −20%" badge for staff and on the QR menu, and the price is lowered automatically for every order,
+  whoever takes it. It takes the percent off the dish or size price; add-ons keep their price. If two offers overlap,
+  the guest gets the better one (they never add up). The bill line reads "Naan (Happy hour)", and the item report
+  shows happy-hour sales as their own row. Switch an offer off without deleting it; deleting it never changes past
+  orders.
 
 ## 9. Tables and QR codes
 
@@ -324,6 +331,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Happy hour (section 8) |
 | 2026-11-20 | Menu sizes (half/full) and add-ons (section 8) |
 | 2026-11-20 | Split by items: one GST bill per guest (section 10) |
 | 2026-11-20 | Reports: sales by day, items, GST summary, staff, bills register, CSV; Overview revenue now counts bills (section 13) |

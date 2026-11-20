@@ -1,8 +1,8 @@
 """Order creation and state machine. Prices are computed here, never accepted from clients (rule 4)."""
 
 from dataclasses import dataclass
-from datetime import date
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +15,7 @@ from app.models import (
     AddonGroup,
     Assignment,
     DiningTable,
+    Hotel,
     HotelTaxProfile,
     MenuItem,
     MenuItemAddonGroup,
@@ -23,6 +24,7 @@ from app.models import (
     OrderItem,
     OrderItemEvent,
     Outlet,
+    PriceRule,
     TaxRule,
     User,
 )
@@ -87,7 +89,7 @@ async def _choices(db: AsyncSession, item_ids: set[UUID]) -> _Choices:
 
 
 def _choose(item: MenuItem, ln: "LineIn", c: _Choices) -> tuple[int, str, MenuItemVariant | None, tuple]:
-    """Validate one line's variant and add-ons against the menu; returns (unit price, name, variant, picks).
+    """Validate one line's variant and add-ons against the menu; returns (dish/size price, name, variant, picks).
     The same rules for every channel: waiter, admin and QR diner (docs/14)."""
     item_ref = {"item_id": str(item.id)}
     variants = c.variants.get(item.id, [])
@@ -124,7 +126,7 @@ def _choose(item: MenuItem, ln: "LineIn", c: _Choices) -> tuple[int, str, MenuIt
             )
     base = variant.price_minor if variant else item.price_minor
     name = f"{item.name} ({variant.name})" if variant else item.name
-    return pricing.unit_price(base, tuple(picks)), name, variant, tuple(picks)
+    return base, name, variant, tuple(picks)
 
 
 @dataclass
@@ -152,7 +154,21 @@ async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
         pricing.TaxRuleRow(r.code, r.rate_bp, r.valid_from, r.valid_to)
         for r in (await db.execute(select(TaxRule))).scalars()
     ]
-    today = date.today()
+    # The hotel's own clock: GST rate dates and happy hour both follow the hotel's day, not the server's.
+    tz = (await db.execute(select(Hotel.timezone))).scalar_one()
+    local_now = now().astimezone(ZoneInfo(tz)).replace(tzinfo=None)
+    today = local_now.date()
+    price_rules = [
+        pricing.PriceRuleRow(
+            r.name,
+            r.percent_bp,
+            r.days,
+            r.start_time,
+            r.end_time,
+            frozenset(str(c) for c in r.category_ids) if r.category_ids is not None else None,
+        )
+        for r in (await db.execute(select(PriceRule).where(PriceRule.is_active))).scalars()
+    ]
     choices = await _choices(db, ids)
     price_lines = []
     for ln in lines:
@@ -163,7 +179,10 @@ async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
             raise conflict("item_unavailable", f"{item.name} is sold out", {"item_id": str(item.id)})
         if not 1 <= ln.qty <= s.max_qty_per_line:
             raise bad_request("bad_quantity", "Quantity out of range", {"item_id": str(item.id)})
-        unit, name, variant, picks = _choose(item, ln, choices)
+        base, name, variant, picks = _choose(item, ln, choices)
+        # Happy hour takes its percent off the dish/size price only; add-ons keep their price.
+        rule = pricing.best_rule(price_rules, local_now, str(item.category_id))
+        unit = pricing.unit_price(pricing.after_rule(base, rule), picks)
         price_lines.append(
             pricing.PriceLine(
                 str(item.id),
@@ -174,6 +193,8 @@ async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
                 variant_id=str(variant.id) if variant else None,
                 variant_name=variant.name if variant else None,
                 addons=picks,
+                list_unit_price_minor=base if rule else None,
+                price_rule=rule.name if rule else None,
             )
         )
     return pricing.price(price_lines, profile.service_charge_bp if profile else 0)
@@ -226,6 +247,8 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
                 "status": i.status,
                 "variant_name": i.variant_name,
                 "addons": i.addons or [],
+                "price_rule": i.price_rule,
+                "list_unit_price_minor": i.list_unit_price_minor,
             }
             for i in items
         ],
@@ -361,6 +384,8 @@ async def create_order(
             variant_id=UUID(p.variant_id) if p.variant_id else None,
             variant_name=p.variant_name,
             addons=[a.__dict__ for a in p.addons] or None,
+            list_unit_price_minor=p.list_unit_price_minor,
+            price_rule=p.price_rule,
         )
         db.add(it)
         await db.flush()

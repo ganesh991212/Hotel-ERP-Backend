@@ -248,6 +248,8 @@ async def _grouped(db: AsyncSession, orders: list[Order]) -> tuple[dict[tuple, l
     for it in items:
         # Add-ons are part of the line's name, so "Biryani (Half) + Raita" and "+ Salad" never merge.
         name = f"{it.name} + {addons_label(it.addons)}" if it.addons else it.name
+        if it.price_rule:  # happy-hour sales stay their own line (and their own row in the item report)
+            name = f"{name} ({it.price_rule})"
         key = (name, it.unit_price_minor, it.tax_rate_bp)
         grouped[key][0] += it.qty
         grouped[key][1] += it.line_total_minor

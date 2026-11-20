@@ -4,7 +4,7 @@ Money columns end in _minor (integer paise). Timestamps are UTC.
 """
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from sqlalchemy import (
     BigInteger,
@@ -18,11 +18,12 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    Time,
     UniqueConstraint,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -318,6 +319,23 @@ class MenuItemAddonGroup(Base):
     sort: Mapped[int] = mapped_column(Integer, server_default="0")
 
 
+class PriceRule(Base):
+    """Happy hour: percent off the dish/size price on some days, in a time window (may cross midnight), for some
+    categories (NULL = whole menu). Applied on the server for every channel (docs/03 "Happy hour")."""
+
+    __tablename__ = "price_rules"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    name: Mapped[str] = mapped_column(String(60))
+    percent_bp: Mapped[int] = mapped_column(Integer)
+    days: Mapped[int] = mapped_column(SmallInteger, server_default="127")  # Monday = 1 ... Sunday = 64
+    start_time: Mapped[time] = mapped_column(Time)
+    end_time: Mapped[time] = mapped_column(Time)
+    category_ids: Mapped[list[uuid.UUID] | None] = mapped_column(ARRAY(UUID(as_uuid=True)))
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    created_at: Mapped[datetime] = created()
+
+
 class TaxRule(Base):
     """Effective-dated tax rates in basis points. Never constants in code (rule 7)."""
 
@@ -392,6 +410,9 @@ class OrderItem(Base):
     variant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     variant_name: Mapped[str | None] = mapped_column(String(40))
     addons: Mapped[list | None] = mapped_column(JSONB)
+    # Happy hour (docs/03): the dish/size price before the rule, and the rule's name; NULL when no rule applied.
+    list_unit_price_minor: Mapped[int | None] = mapped_column(BigInteger)
+    price_rule: Mapped[str | None] = mapped_column(String(60))
 
 
 class OrderItemEvent(Base):
@@ -657,4 +678,5 @@ TENANT_TABLES = [
     "addon_groups",
     "addons",
     "menu_item_addon_groups",
+    "price_rules",
 ]

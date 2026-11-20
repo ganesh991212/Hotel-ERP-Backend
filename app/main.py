@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.billing.router import router as bills
 from app.branding.router import router as branding
 from app.catalog.options import router as menu_options
+from app.catalog.price_rules import router as price_rules
 from app.catalog.router import router as catalog
 from app.core.config import get_settings
 from app.core.errors import ApiError, ServerErrorsAsJson, api_error_handler
@@ -54,6 +55,7 @@ for r in (
     floor,
     catalog,
     menu_options,
+    price_rules,
     orders,
     kitchen,
     diner,

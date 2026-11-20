@@ -159,5 +159,17 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Lines are matched by position when an order is created: the same dish can be on one order twice.
 - All four tables have `hotel_id` and RLS (migration 0010).
 
+## Happy hour (added 2026-11-20; prior art in docs/14)
+- `price_rules(name, percent_bp 1..9000, days bitmask Mon=1..Sun=64, start_time, end_time, category_ids[] | NULL,
+  is_active)`, RLS (migration 0011). Times are the hotel's local time; end before start crosses midnight and belongs
+  to the day it started (Sat 22:00-01:00 covers Sunday 00:30).
+- Applied in `ordering.service.quote` for every channel at the moment the order is priced: the single best live rule
+  for the dish's category takes its percent off the **dish/size price**; add-ons keep their price; rules never stack.
+  A cart quoted at 6:59 and sent at 7:01 gets the 7:01 price.
+- Order lines snapshot `list_unit_price_minor` (before the rule) and `price_rule` (its name). Bill lines read
+  "Naan (Happy hour)", so the item report shows happy-hour sales as their own row with real amounts.
+- `quote` now uses the hotel's local date for the GST rate lookup too (it used the server's UTC date, which was a day
+  behind between 00:00 and 05:30 IST).
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

@@ -116,3 +116,34 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   staff (no separate "visible to POS" flag to forget; mistake 3).
 - Composer: pick the variant first (one tap, required), add-ons on the same sheet (mistake 6 avoided by showing
   both at once, not as successive prompts).
+
+## Happy hour (checklist item 5) - 2026-11-20
+
+### How others do it
+- **Petpooja**: time-based pricing and time-based menus (set a window once; items appear/disappear on schedule).
+  (Vendor material; steps not public.)
+- **Toast**: either "time-specific pricing" on items/groups, or a separate happy-hour menu with menu-specific prices.
+- **Heartland / Lavu**: pricing rules with a start and end time, targeting items by tag; the POS applies the discount
+  in the window and reverts after.
+
+### Their mistakes
+1. **Online and third-party channels don't get the happy-hour price** (Toast's own support: partners "do not read
+   time-based prices"; ChowNow always shows the base price; Toast Order & Pay users add the discount by hand).
+2. **Reports hide it**: Toast's product mix averages the prices (100 beers at $10 + 50 at $5 shows $8.33), so the
+   owner can't see what happy hour sold or cost.
+3. **Staff must remember** to ring the happy-hour version of an item (Toast's own guidance), so errors are common.
+4. **Copies leak**: a shallow-copied happy-hour menu group changes the original item's pricing (Toast).
+5. **Sizes block it**: size pricing can't be combined with happy-hour pricing (Toast forum).
+6. **Timed menu bugs**: ordering from a timed menu fails outside its window (Toast forum, "may not be a priority").
+
+### Our choice
+- A **price rule**, not a copy of the menu (avoids 4): name, percent off, days of the week, start and end time (may
+  cross midnight, e.g. 22:00-01:00), and the categories it covers (none = whole menu). Owners switch it on/off.
+- Applied **on the server, automatically, for every channel** (waiter, admin, QR diner) at the hotel's local time
+  (avoids 1 and 3). If two rules overlap, the guest gets the single best one; rules never stack.
+- Applies to the dish or size price (works with sizes; avoids 5); add-ons keep their price.
+- **Recorded on the order line** (list price, rule name), and the bill line reads "Fresh Lime Soda (Happy hour)", so the
+  item report shows happy-hour sales as their own row with real amounts, never an average (avoids 2).
+- The price is decided when the order is placed: a cart quoted at 6:59 and sent at 7:01 gets the 7:01 price; the
+  order shows exactly what was charged.
+- A bill discount still works on top (it is a separate, audited decision with the role's limit).
