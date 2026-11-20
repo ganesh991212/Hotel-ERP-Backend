@@ -38,6 +38,12 @@ Combos (built 2026-11-20; docs/03 "Combos"):
   `bad_combo`. `GET /items` and the diner menu return `components[]` `{item_id, name, qty, is_available}`; order items
   return `components[]`. `DELETE /items/{id}` refuses a dish used in a combo (`item_in_combo`, `details.combos`).
 
+Serving hours (built 2026-11-20; docs/03 "Serving hours"):
+- `POST`/`PUT /categories` accept `days` (1..127), `available_from`, `available_to` ("HH:MM", both or neither);
+  categories return them with `open_now`. The diner menu adds `open_now` and `hours` per section.
+- `POST /orders` accepts `allow_outside_hours` (staff); otherwise dishes outside their hours give `outside_hours`.
+  Diner quote and order always refuse them.
+
 ## Diner (token = table QR, then table-session token)
 `GET /d/{qr_token}` (outlet + menu, cacheable), `POST /d/{qr_token}/session`, `POST /d/orders`, `GET /d/orders/{id}`, `POST /d/orders/{id}/rating`, `POST /d/call-waiter`, `POST /d/bill-request`
 
@@ -56,7 +62,8 @@ response; design in docs/14 "Reports"):
 - `GET /reports/sales`: per day and in total: bills, gross, discount, taxable, CGST, SGST, other tax, service charge,
   round off, total; paid / unpaid; cancelled (by hand) and replaced bills kept apart; money received by CASH/UPI/CARD
   by the day it was taken; `unbilled` (orders on no live bill: a warning, never sales).
-- `GET /reports/items`: per item name as billed: qty, gross, discount, taxable.
+- `GET /reports/items`: per item name as billed: category, qty, gross, discount, taxable; plus `categories[]`
+  (items, qty, gross, discount, taxable, share %) from the same lines. `GET /reports/categories.csv` exports them.
 - `GET /reports/gst`: by GST rate: taxable, CGST, SGST (per bill as printed, then summed); SAC 996331; documents
   issued per type and FY (first/last number, total, cancelled, net) for GSTR-1 table 13.
 - `GET /reports/staff` (also plan feature `REPORTS_ADVANCED`): per person: bills, billed value, discounts given,
@@ -137,6 +144,42 @@ response; design in docs/14 "Reports"):
   `lines_changed` (open the split again), `orders_not_served`, `has_payments`, `bill_discounted`, `nothing_to_bill`. Audited `bill.split`.
 - Bill JSON adds `split`: null, or `{group_id, guest_no, guest_count, bills: [{id, invoice_no, guest_no, status,
   total_minor, due_minor}]}`. Voiding a guest bill voids the whole split (`split_partly_paid` once anyone paid).
+
+## Day close (added 2026-11-20)
+- `GET /day-close?date=` (`dayclose.manage`; default today): `cash_sales_minor`, `upi_minor`, `card_minor`,
+  `cash_paid_out_minor`, `carried_float_minor` (null before the first close), `opening_float_minor`,
+  `expected_minor`, `unpaid_bills {count, total_minor}` (a warning), `closed` (the saved close or null). With
+  `counted_minor` (+ `float_kept_minor`, `opening_float_minor`) it adds `check {difference_minor, result,
+  deposit_minor}` so the app shows Over / Short live without money arithmetic.
+- `POST /day-close {date?, counted_minor, float_kept_minor, opening_float_minor? (first close only), note?}` -> 201
+  the close: `difference_minor`, `result` OVER | SHORT | EXACT, `deposit_minor`, `closed_by`,
+  `cash_after_close_minor`. Errors `note_required` (any difference), `already_closed`, `future_day`, `bad_float`.
+- `GET /day-closes?from=&to=` (default last 30 days): `closes[]`, `net_difference_minor`, `short_days`, `over_days`.
+
+## Table visits (added 2026-11-20)
+- `POST /tables/{id}/seat {guests?}` and `POST /tables/{id}/hold {state: FREE|RESERVED|CLEANING, note?}`
+  (`order.create`); error `table_in_use`. Tables return `state` (FREE | SEATED | OCCUPIED | BILL_PENDING | CLEANING |
+  RESERVED), `seated_at`, `guests`, `hold_note`. Bills return `guests`. Sales report rows add `covers`,
+  `avg_per_cover_minor`.
+- `POST /tables/{id}/move {to_table_id}` and `POST /tables/{id}/merge {from_table_ids}` (`order.create`); errors
+  `table_has_bill`, `table_in_use`, `nothing_to_move`, `same_table`. Return the target table.
+
+## Bookings (added 2026-11-20)
+- `GET /bookings?date=` (`order.view`; hotel-local day, default today): `bookings[]` (that day, by time),
+  `waitlist[]` (waiting now), `avg_wait_minutes_today`.
+- `POST /bookings {kind: BOOKING|WAITLIST, name, phone?, guests, booked_for? (with zone), quoted_minutes?, table_id?,
+  note?, allow_overlap?}` (`order.create`) -> 201; errors `table_booked` (details name, booked_for), `past_time`.
+- `POST /bookings/{id}/seat {table_id?}`; `POST /bookings/{id}/status {status: CANCELLED|NO_SHOW}`; errors
+  `table_in_use`, `table_has_bill`, `table_required`, `bad_booking_state`.
+- A booking: `id, kind, status, name, phone, guests, booked_for, quoted_minutes, waited_minutes, table, note,
+  no_shows_before`. Tables add `next_booking {at, name, guests}`.
+
+## Kitchen stations (added 2026-11-20)
+- `GET /stations`; `POST /stations {name}`, `PUT /stations/{id}`, `DELETE /stations/{id}` (`menu.manage`; error
+  `station_exists`, also for "Kitchen"). Categories and items accept `station_id` (item `null` = follow the category).
+  `GET /items` returns `station_id` (own) and `station {id, name}` (effective; null = main kitchen).
+- Order items return `station`. `GET`/`POST /orders/{id}/kot` add `tickets [{station, blocks}]` when the order spans
+  several stations.
 
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.

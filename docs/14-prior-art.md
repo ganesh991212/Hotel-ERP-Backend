@@ -177,3 +177,237 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   and reports show the combo as one line at its real price, so CSV exports carry it like any item (avoids 2).
   Per-component stock comes with inventory (checklist item 9), which will read the same snapshot.
 - No combos inside combos (keeps the ticket and stock readable).
+
+## Time-based menus (checklist item 5) - 2026-11-20
+
+### How others do it
+- **Petpooja**: time-based menus; set the window once and items appear/disappear on schedule (vendor material).
+- **Toast**: menus with availability times. **Square**: menu availability for the POS, plus separate "timed
+  categories" for online ordering.
+
+### Their mistakes (forum reports)
+1. **Works at the till, not online** (Square: menu availability "only works on our POS, not in our online stores";
+   you must also set up timed categories). Two settings for one idea.
+2. **Staff locked out with no override**: a Toast lunch menu (12-3 pm) can't be used for an order taken at 5 pm for
+   tomorrow; support's fix was to change the menu's hours, place the order, then change them back.
+3. **Delivery platforms ignore the times** ("most ordering platforms don't support time-specific menus"); sellers ask
+   how to hide breakfast after 11 am on DoorDash.
+
+### Our choice
+- **Serving hours on the category** (Breakfast 07:00-11:00, chosen days; a window may cross midnight), one setting
+  for every channel (avoids 1). No hours = served all day.
+- **QR diners**: outside the hours the section is shown with "Served 07:00-11:00" and its dishes can't be ordered; the
+  server refuses them (`outside_hours`).
+- **Staff**: warn-and-allow, as with billing: the server answers `outside_hours` with the dishes, the app asks
+  "Breakfast is over: order anyway?", and staff can send it (avoids 2). Diners can never override.
+- Uses the same time logic as happy hour (hotel's local time, days bitmask, crossing midnight), so the two never
+  disagree. Online platforms (checklist item 16) will receive the same hours when they are built (3).
+
+## Day close / cash drawer (checklist item 8) - 2026-11-20
+
+### How others do it
+- **Petpooja**: the night audit / day-end report has a cash position: expected vs counted drawer cash, over or short;
+  payments split by card, UPI, cash, online. Advice: count and sign over each drawer at handover, because "an
+  unexplained shortfall discovered later has no clear owner" (vendor blog).
+- **Toast**: after the count, the result is labelled cash over / short / no difference; above a threshold a manager
+  must approve, and staff add a short comment (45 characters). A Z report alone does not close the day.
+- Common formula: expected = opening float + cash sales - cash paid out; difference = counted - expected.
+
+### Their mistakes (Square seller forums, mostly)
+1. **Cash rung on another device is missing** from the drawer report (drawer tracked per device).
+2. **Day boundary vs shifts**: a 24/7 shop's cash for a shift didn't match its sales until the close-of-day time was
+   changed.
+3. **The difference was hidden** from the close screen by an update (only visible later in history).
+4. Cash refunds, reopened sales and tips handled differently in drawer vs sales reports, so owners stop trusting the
+   drawer report.
+5. **Small nightly shortfalls go unnoticed** when reconciling only monthly.
+
+### Our choice
+- **One drawer per hotel day, computed on the server** from what was actually recorded on every device: cash
+  payments (`bill_payments`, part payments included) and cash expenses that day (avoids 1 and 4: the same numbers as
+  Reports).
+- **Hotel's calendar day**, stated on screen; cash taken after the day was closed is shown on that close as "cash
+  after close" instead of silently changing it (helps 2).
+- Close screen shows expected, counted and the **difference with "over" / "short" labels**, before and after saving
+  (avoids 3). Any difference needs a note (Toast-style); the close is final and audited.
+- **Opening float carries over**: tomorrow's opening float is the cash kept in the drawer at today's close, so it
+  can't be edited to hide a gap. The rest is the bank deposit.
+- **History with a running over/short total and a count of short days**, so a pattern of small shortfalls is visible
+  (avoids 5).
+- New permission **"Count cash and close the day"** (admin, manager, cashier by default; servers don't have it).
+- Warns (doesn't block) when bills are still unpaid for the day.
+
+## Tables: guests (covers), time seated, Reserved / Cleaning (checklist item 3) - 2026-11-20
+
+### How others do it
+- **Toast Tables**: statuses include Seated (set when a party is seated) and Dirty (set by "Mark as dirty" or
+  automatically when the party leaves); the table tile shows the guest count and a timer. The timer counts how long
+  the **check** has been open, not how long the guests have been seated.
+- Table-management guides describe multi-state floors (available, reserved, seated, ordered, paying, dirty...).
+- Petpooja / Square: table management is listed as a feature; no public detail on statuses (searches came back
+  generic).
+
+### Their mistakes
+1. **Split checks copy the guest count to every check** (Toast forum; staff reply: no fix, adjust by hand), so covers
+   and "average per cover" are inflated whenever a table splits.
+2. **Timer measures the check, not the seating**: a party that sat 20 minutes before ordering looks quicker than it
+   was.
+3. Too many manual statuses for staff to keep up with on a busy floor (generic guides list up to 11).
+
+### Our choice
+- **Seat a table** with the number of guests (optional); the first order seats it automatically (QR diners too), so
+  the timer starts when guests sit down or first order, whichever is first (avoids 2).
+- **Guests are counted once per visit**: the bill keeps the visit's guest count; when a visit is split by items, only
+  the first guest bill carries it (avoids 1). Reports show covers per day and the average spend per cover, computed
+  on the server.
+- **States stay few and mostly automatic** (avoids 3): Free -> Seated -> Ordering -> Bill pending -> **Cleaning**
+  (set automatically when the last bill is paid) -> Free (one tap "Clean"). **Reserved** is the only manual state, with
+  a short note ("8 pm, 4 people"); seating or ordering on it clears it.
+
+## Move / merge tables (checklist item 3) - 2026-11-20
+
+### How others do it
+- **Lightspeed**: tables with ordered items can be transferred to another table or merged.
+- **Papaya**: merging combines two tables into one bill; the merged table's unpaid items go to the destination
+  bill; **blocked if a part payment exists** (move items instead).
+- **Eats365 / eZee**: transfer the whole table, or individual KOTs / items, to another table; complimentary items
+  can't be transferred (Eats365).
+- **Dish / Odoo**: "move order" moves the table's open order to another table.
+(Vendor help pages; no Petpooja or Toast specifics found.)
+
+### Their mistakes / gaps
+1. Merge silently fails or is blocked late when part of a bill is already paid; staff learn the rule at the till.
+2. Three overlapping actions (move order, move KOT, move items) for what the waiter thinks of as "they changed
+   tables".
+3. Not covered in any of them: a **QR diner** whose phone still points at the old table keeps ordering to it after
+   the move.
+
+### Our choice
+- Two actions only: **Move** (the whole visit goes to a free table) and **Merge** (other tables' visits join this
+  one: one party, one bill). Moving single items between guests is already "split by items" at billing time.
+- Everything moves together: open orders (wherever they are in the kitchen; screens and tickets show the new table),
+  the guest count (summed on merge), the timer (earliest start kept) and the **QR diner sessions**, so diners keep
+  ordering and tracking on the new table (avoids 3). The old table turns Cleaning.
+- **Before billing only**: if a table already has an issued bill, the action is refused up front with a clear reason
+  ("bill it again after moving" isn't needed: cancel or settle that bill first), so an invoice never changes table
+  after it was issued and nothing paid is merged (avoids 1).
+- Audited (who, from, to).
+
+## Reservations and waitlist (checklist items 14 and 3) - 2026-11-20
+
+### How others do it
+- **Restroworks**: reservation management to "book more covers, cut no-shows" (vendor page).
+- **Eat App / Tablein / NowBookIt / TouchBistro** (vendor blogs): bookings from several channels into one book;
+  waitlist apps text the guest when the table is ready; confirmation prompts to reduce no-shows; some ask a deposit
+  after repeated no-shows (e.g. three in six months).
+- Indian platforms (Dineout, EazyDiner) and Toast Tables: no usable public detail found.
+
+### Their mistakes
+1. **Double bookings from channels that sync slowly**: two guests claim one table through different sources in the
+   minutes before the book updates (Eat App).
+2. **No-shows** cost the table and lengthen walk-in waits; repeat no-shows aren't visible to the host.
+3. **Quoted waits that don't match reality** frustrate walk-ins (common complaint; no hard data found).
+4. Reservations kept apart from the floor, so the host can't see that a table is booked in 30 minutes.
+
+### Our choice
+- One book inside the app (staff take phone and walk-in bookings; online channels later, writing into the same book),
+  so there is nothing to sync (avoids 1). A booking on a table that overlaps another booking of that table (within
+  the hotel's 90-minute slot) warns and needs a second tap.
+- **Today's arrivals** list with time, name, phone, guests, table and note; the floor shows "Booked 8:00 pm" on a
+  table with a booking in the next two hours (avoids 4). **Seat** turns the booking into a table visit with its guest
+  count.
+- **No-show** and **Cancelled** are recorded; when a new booking uses a phone number with earlier no-shows, the app
+  shows "2 no-shows before" (avoids 2). Deposits come with online payments (item 16).
+- **Waitlist** for walk-ins: name, phone, guests, quoted minutes; shows how long each party has waited, and today's
+  **actual average wait** next to the quote field, so quotes follow reality (helps 3). Seat from the waitlist the
+  same way. Text-when-ready comes with WhatsApp (item 16).
+- Guest names and phones are hotel data: only staff with order access see them; they never appear in logs.
+
+## Kitchen stations (checklist item 4) - 2026-11-20
+
+Owner's decision: **split tickets and screens**; one chef still owns the order and marks it ready, so the strict
+queue (rule 10) and assignment (rule 5) don't change. Full per-station item tracking stays deferred.
+
+### How others do it
+- **Toast**: each item is assigned prep stations with routing rules; a "preview menu item routing" screen shows where
+  an item goes. **UrbanPiper, Bento, TableTrack**: a KOT per kitchen station / printer. **Odoo (Cerevantix)**: product
+  categories mapped to stations; each station prints only its own items. **LS Central**: routing per item; an item
+  with a route on any station becomes a "kitchen item".
+
+### Their mistakes (Toast's own troubleshooting pages)
+1. Items routed to the **wrong station** (routing rules hard to see).
+2. The **same order prints twice** when an item is assigned to more than one prep station.
+3. **Drinks still print in the kitchen**: printer lists per station drift from the item mapping.
+4. Orders show on the screen but **don't print** when a station has no printer set.
+
+### Our choice
+- **One station per dish**: the category sets it ("Beverages -> Bar"), a dish may override it; never two (avoids 2).
+  Dishes with no station go to the main **Kitchen**, so nothing is ever lost (avoids 4).
+- The **menu shows each dish's station** next to it, so routing is visible where it is set (avoids 1 and 3).
+- The order line keeps the station it was sent to (snapshot), so changing the menu later doesn't move tickets.
+- **KOT**: one ticket per station, each listing only that station's dishes, with the table and order number on
+  every ticket; the full ticket is still available.
+- **Kitchen screen**: a station picker ("All", "Kitchen", "Bar"...) shows each device only its station's dishes;
+  remembered on that device. The order is still accepted and marked ready by its chef.
+
+## Live dashboard: vs same day last week, payment mix (checklist item 6) - 2026-11-20
+
+### How others do it
+- **Square** (Restaurants daily sales): "week over week" is the change against the **same day last week**; when that
+  day has no data it shows **no change at all** rather than a number.
+  (https://squareup.com/help/us/en/article/8579-review-daily-sales-for-your-restaurant)
+- **Toast**: hour-by-hour sales against the same day last week, for daypart staffing.
+  (https://pos.toasttab.com/th-us/blog/on-the-line/restaurant-pos-reports)
+- **Petpooja**: a daily revenue tracker records how guests paid (cash / UPI / card) beside covers; it warns that one
+  day is a weak baseline (weather, a local holiday) and that the comparison that means most is your own pattern.
+  (https://blog.petpooja.com/operations-workflows/important-restaurant-analytics-you-must-know/,
+  https://blog.petpooja.com/templates-checklist/restaurant-daily-revenue-tracker-template/)
+- **Atlas** (sales trends): compares windows that don't line up (a whole earlier period against a partial current one).
+  (https://help.atlas.kitchen/reports/sales/sales-trends-beta)
+
+### Their mistakes
+1. **Partial day against a whole day**: at 2 pm "today" is compared with all of last Tuesday, so every morning looks
+   like a collapse.
+2. **"-100%" or "+inf%"** when last week had no sales (a new outlet, a holiday closure).
+3. Payment mix computed from **bill totals** instead of money received, so part-paid and unpaid bills distort it, and
+   the dashboard disagrees with the cash drawer.
+4. Hour-level comparison of a single day is noise presented as signal.
+
+### Our choice
+- Compare **today so far** with the **same weekday last week up to the same hotel-local time** (avoids 1). Revenue uses
+  the same bill definition as Reports and the Overview revenue tile.
+- No sales last week up to that time -> the server sends `null` and the app says "No sales to compare", never a
+  percentage (avoids 2). The server computes the change; the app only shows it, with an up/down icon and words, not
+  colour alone.
+- Payment mix = **money received today by method** (`bill_payments`), the same definition as Reports and Day close,
+  so the Overview, the reports and the drawer agree (avoids 3).
+- No hour-by-hour comparison; the 7-day chart already shows the pattern (avoids 4).
+
+## Category-wise sales (checklist item 7) - 2026-11-20
+
+### How others do it
+- **Petpooja**: category-wise sales built from the same billing data as its other sales reports
+  (https://blog.petpooja.com/glossary/item-category/, https://www.petpooja.com/reporting).
+- **Toast**: "sales categories" are set in the menu builder, separate from menu groups; a change applies **only to future
+  sales**, and support can back-fill at most two weeks
+  (https://support.toasttab.com/en/article/Sales-Categories-1492812477858?lang=en_US).
+- **Square**: past sales keep the category they had; owners who fix categories still see the old ones in earlier
+  reports, and deleted categories linger there
+  (https://www.sellercommunity.com/t5/Questions-How-To/Updating-Categorie-Do-Reports-update-with-the-changes-made/m-p/5447).
+- **Lightspeed (ShopKeep)**: a sales-by-category report with the same totals as the item report
+  (https://shopkeep-support.lightspeedhq.com/support/reporting/sales-by-category-report).
+
+### Their mistakes
+1. Owners are **surprised** that a category fix does not change old reports, and nothing on screen says why.
+2. Category totals that **don't add up** to the item report or the sales report (different bases: ordered vs billed,
+   before vs after discount).
+3. Back-filling history from today's menu silently **rewrites** what was sold under which heading.
+
+### Our choice
+- The category is **snapshotted** on the order line when ordered and copied to the bill line, like the name and the
+  price: a bill never changes later. The report says so in its basis line (avoids 1).
+- Category rows are computed from the **same bill lines** as the item report (issued, not cancelled; gross, discount,
+  taxable), so categories sum exactly to the item totals (avoids 2).
+- Bills issued before this change have no category; they show as **"Not recorded"** rather than being guessed from
+  today's menu, except where the order line's own dish could be matched exactly (avoids 3).
+- One table under the item report, plus a CSV; no separate screen.

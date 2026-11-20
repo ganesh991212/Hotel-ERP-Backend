@@ -227,6 +227,34 @@ class DiningTable(Base):
     qr_token: Mapped[str] = mapped_column(String(40), unique=True)
     status: Mapped[str] = mapped_column(String(10), server_default="ACTIVE")
     created_at: Mapped[datetime] = created()
+    # The current visit (docs/03 "Table visits"): when guests sat down (or first ordered) and how many.
+    seated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    guests: Mapped[int | None] = mapped_column(SmallInteger)
+    # A manual or automatic hold while nobody is seated: RESERVED (with a note) or CLEANING (after payment).
+    hold_state: Mapped[str | None] = mapped_column(String(10))
+    hold_note: Mapped[str | None] = mapped_column(String(80))
+
+
+class Booking(Base):
+    """A reservation (BOOKING, with a time) or a walk-in on the waitlist (WAITLIST, with a quoted wait)."""
+
+    __tablename__ = "bookings"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    kind: Mapped[str] = mapped_column(String(8))
+    status: Mapped[str] = mapped_column(String(10))
+    name: Mapped[str] = mapped_column(String(80))
+    phone: Mapped[str | None] = mapped_column(String(20))
+    guests: Mapped[int] = mapped_column(SmallInteger)
+    booked_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    quoted_minutes: Mapped[int | None] = mapped_column(SmallInteger)
+    table_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("dining_tables.id", ondelete="SET NULL")
+    )
+    note: Mapped[str | None] = mapped_column(String(200))
+    seated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    created_at: Mapped[datetime] = created()
 
 
 class TableSession(Base):
@@ -240,6 +268,17 @@ class TableSession(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class KitchenStation(Base):
+    """A section of the kitchen that gets its own ticket and screen (Bar, Tandoor, Chinese...)."""
+
+    __tablename__ = "kitchen_stations"
+    __table_args__ = (UniqueConstraint("hotel_id", "name", name="uq_kitchen_stations_name"),)
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    name: Mapped[str] = mapped_column(String(40))
+    sort: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
 class MenuCategory(Base):
     __tablename__ = "menu_categories"
     id: Mapped[uuid.UUID] = pk()
@@ -247,6 +286,13 @@ class MenuCategory(Base):
     outlet_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("outlets.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(80))
     sort: Mapped[int] = mapped_column(Integer, server_default="0")
+    # Serving hours (docs/03 "Serving hours"): days bitmask Monday = 1 ... Sunday = 64; no times = all day.
+    days: Mapped[int] = mapped_column(SmallInteger, server_default="127")
+    available_from: Mapped[time | None] = mapped_column(Time)
+    available_to: Mapped[time | None] = mapped_column(Time)
+    station_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kitchen_stations.id", ondelete="SET NULL")
+    )
 
 
 class MenuItem(Base):
@@ -264,6 +310,10 @@ class MenuItem(Base):
     est_prep_minutes: Mapped[int] = mapped_column(Integer, server_default="10")
     is_available: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     sort: Mapped[int] = mapped_column(Integer, server_default="0")
+    # Overrides the category's station for this dish (docs/03 "Kitchen stations").
+    station_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kitchen_stations.id", ondelete="SET NULL")
+    )
 
 
 class MenuItemVariant(Base):
@@ -429,6 +479,10 @@ class OrderItem(Base):
     addons: Mapped[list | None] = mapped_column(JSONB)
     # Combo contents when ordered: [{"item_id", "name", "qty"}] per unit (docs/03 "Combos").
     components: Mapped[list | None] = mapped_column(JSONB)
+    # The kitchen station the dish was sent to (snapshot); NULL = the main kitchen.
+    station_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    station_name: Mapped[str | None] = mapped_column(String(40))
+    category_name: Mapped[str | None] = mapped_column(String(80))  # snapshot, for category-wise sales
     # Position on the order as entered (KOT and order screens list items in this order).
     line_no: Mapped[int] = mapped_column(SmallInteger, server_default="0")
     # Happy hour (docs/03): the dish/size price before the rule, and the rule's name; NULL when no rule applied.
@@ -535,6 +589,29 @@ class Expense(Base):
     created_at: Mapped[datetime] = created()
 
 
+class DayClose(Base):
+    """One cash-drawer close per hotel day (docs/03 "Day close"). Final once saved; figures are a snapshot."""
+
+    __tablename__ = "day_closes"
+    __table_args__ = (UniqueConstraint("hotel_id", "business_date", name="uq_day_closes_day"),)
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    business_date: Mapped[date] = mapped_column(Date)
+    opening_float_minor: Mapped[int] = mapped_column(BigInteger)
+    cash_sales_minor: Mapped[int] = mapped_column(BigInteger)
+    cash_paid_out_minor: Mapped[int] = mapped_column(BigInteger)
+    expected_minor: Mapped[int] = mapped_column(BigInteger)
+    counted_minor: Mapped[int] = mapped_column(BigInteger)
+    difference_minor: Mapped[int] = mapped_column(BigInteger)  # counted - expected: + over, - short
+    float_kept_minor: Mapped[int] = mapped_column(BigInteger)
+    deposit_minor: Mapped[int] = mapped_column(BigInteger)
+    upi_minor: Mapped[int] = mapped_column(BigInteger)
+    card_minor: Mapped[int] = mapped_column(BigInteger)
+    note: Mapped[str | None] = mapped_column(String(200))
+    closed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    closed_at: Mapped[datetime] = created()
+
+
 class Bill(Base):
     """Customer bill for a table. Numbered sequentially per hotel per financial year; immutable once issued.
     Correction = VOID (audited, reason required) and re-issue; credit notes come with Phase 5."""
@@ -564,6 +641,7 @@ class Bill(Base):
     discount_reason: Mapped[str | None] = mapped_column(String(200))
     discount_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     payment_method: Mapped[str | None] = mapped_column(String(8))  # CASH | UPI | CARD | MIXED (several parts)
+    guests: Mapped[int | None] = mapped_column(SmallInteger)  # covers: the visit's guests (first guest bill if split)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     print_count: Mapped[int] = mapped_column(Integer, server_default="0")
     void_reason: Mapped[str | None] = mapped_column(Text)
@@ -591,6 +669,7 @@ class BillLine(Base):
     tax_rate_bp: Mapped[int] = mapped_column(Integer)
     line_total_minor: Mapped[int] = mapped_column(BigInteger)
     discount_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")  # this line's share
+    category_name: Mapped[str | None] = mapped_column(String(80))  # snapshot from the order line; NULL = not recorded
 
 
 class PrintLog(Base):
@@ -701,4 +780,7 @@ TENANT_TABLES = [
     "menu_item_addon_groups",
     "price_rules",
     "menu_item_components",
+    "day_closes",
+    "bookings",
+    "kitchen_stations",
 ]

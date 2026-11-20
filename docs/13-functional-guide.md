@@ -108,6 +108,11 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 
 ## 8. Menu
 
+- **Kitchen stations** (Menu > Stations): add stations such as Bar, Tandoor or Chinese. Give a category a station
+  ("Drinks -> Bar") and, if needed, one dish a different one. Each dish shows where it goes; dishes without a station
+  go to the main Kitchen. The kitchen ticket prints one slip per station (each with the order number and table), and
+  each kitchen screen can show just its station. The order is still taken and marked ready by one chef.
+
 - Categories and items: name, price, tax rate, veg / non-veg / egg mark, preparation time, availability.
 - **Sold out** switch (chefs and servers may use it): the item disappears from QR ordering instantly and cannot be
   ordered.
@@ -127,6 +132,10 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   with ₹0 options (and a surcharge for the pricier ones), set to "choose 1". The kitchen ticket lists every dish in
   the combo with its quantity. A combo can't be ordered while one of its dishes is sold out (diners see it sold out).
   A dish used in a combo can't be deleted until it is taken out of the combo.
+- **Serving hours** (Menu > category > Edit): give a category its hours and days, e.g. Breakfast 7:00-11:00 every
+  day (a window can run past midnight). Outside them, the QR menu shows the section with "Served 7:00-11:00" and its
+  dishes can't be ordered. Staff get a warning ("Breakfast is over: order anyway?") and can still send the order for a
+  guest who arrived late. No hours = served all day.
 - **Happy hour** (Menu > Happy hour): a name, percent off, the days, a start and end time (it can run past
   midnight, e.g. Saturday 10 pm to 1 am) and which categories (or the whole menu). While it runs, the dishes show a
   "Happy hour −20%" badge for staff and on the QR menu, and the price is lowered automatically for every order,
@@ -134,6 +143,31 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   the guest gets the better one (they never add up). The bill line reads "Naan (Happy hour)", and the item report
   shows happy-hour sales as their own row. Switch an offer off without deleting it; deleting it never changes past
   orders.
+
+### Table visits (Floor)
+- **Seat** a table when guests sit down, with how many they are (you can change it later). The table shows
+  **Seated** and a timer from that moment. If nobody seats it, the first order (waiter or QR) starts the timer.
+- After ordering it shows Occupied, then Bill pending. When the last bill is paid the table turns **Cleaning**;
+  tap **Clean** when it is ready and it becomes Free.
+- **Reserved**: hold a free table with a short note ("8 pm, 4 people"). Seating guests or ordering clears it.
+- Guests who leave without ordering: tap **Free** to end the visit.
+- **Move**: the guests changed tables. Pick a free table: their orders (wherever they are in the kitchen), guest
+  count and timer go with them, and QR diners keep ordering on the new table. The old table turns Cleaning.
+- **Merge**: one party across several tables. Their orders and guests join this table, so they get one bill (split
+  it by guest at the end if they like). Both are only possible before the bill is made.
+- The number of guests is kept on the bill once per visit (also when the bill is split by guest), so Reports show
+  **covers** and the **average spend per guest** correctly.
+
+### Bookings and waitlist (Floor > Bookings)
+- **Book**: name, phone, guests, date and time, and a table if you want to keep one, plus a note. If that table has
+  another booking within an hour and a half, the app warns first. Tables show "Booked 8:00 pm · Sharma" from two
+  hours before.
+- **Today**: every booking for the day by time. When the party arrives, tap **Seat**: the table's visit starts with
+  their guest count. Mark **No-show** or **Cancelled** otherwise. A new booking from a phone number that didn't turn
+  up before shows "1 no-show before".
+- **Waitlist** for walk-ins: name, phone, guests and the wait you told them. Each party shows how long it has
+  waited; today's real average wait is shown so the next quote is honest. Tap **Seat** and pick a table when one is
+  free.
 
 ## 9. Tables and QR codes
 
@@ -213,7 +247,9 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 ## 13. Overview and "My work"
 
 - **Hotel Overview** (owners and managers): orders today, revenue today (issued bills, not cancelled: the same
-  number the Reports show), average bill, food served but not billed yet (a warning), open orders by status, tables
+  number the Reports show) with the change against **the same weekday last week up to the same time** (an up or
+  down arrow and the amount and percentage; "No sales to compare" when there were none then), **money received today
+  by cash / UPI / card** (the same figures as Reports and Close the day), average bill, food served but not billed yet (a warning), open orders by status, tables
   busy, orders by hour, last 7 days, channels, top items, month revenue / expenses / net, average times (waiting for a
   chef, cooking, ready-to-table, total), each chef's completed orders and queue, each server's served orders and
   speed, live orders.
@@ -222,6 +258,20 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   - Server: orders served, tables served, average ready-to-table time, orders taken and their value, ready now.
   - Billing staff: bills raised, money they received by Cash/UPI/Card (part payments count for whoever took them),
     unpaid bills now.
+
+### Close the day (cash drawer)
+
+Who: owner, manager, cashier (permission "Count the cash drawer and close the day"). Open **Close day** from the
+Overview at the end of the hotel day.
+- The screen shows what the drawer should hold, worked out by the server from everything recorded on every phone
+  and tablet: opening float + cash received (part payments included) - cash expenses paid from the drawer. UPI and
+  card received are shown too, and a warning if bills are still unpaid.
+- Count the cash and type the total, and how much stays in the drawer for tomorrow (the rest goes to the bank).
+  The difference is shown at once as **Over**, **Short** or **Exact**. Any difference needs a short reason.
+- Saving is final. Tomorrow's opening float is the cash you kept, so it can't be changed later. If cash is taken
+  on that day after closing, the close shows it as "cash after close".
+- **History** lists every close with the over/short and how many days were short in the period, so a pattern of
+  small shortfalls stands out.
 
 ### Reports (owners and managers: permission "See sales reports")
 
@@ -237,6 +287,10 @@ rupees).
   **Not billed yet**: food ordered in the period that is on no bill (including food whose bill was cancelled). It is a
   warning to act on, not sales.
 - **Items**: each dish as printed on the bill: quantity sold, gross, discount, taxable. Biggest seller first.
+  Above it, **By category** (Starters, Mains, Beverages...): dishes, quantity, gross, discount, taxable and share of
+  sales; the categories add up to the item totals. A dish counts under the category it had **when it was billed**:
+  moving it to another category later does not change past reports. Older bills that could not be matched show as
+  "Not recorded". Download it as CSV like the other reports.
   Cancelled bills are left out.
 - **GST summary**: taxable value, CGST and SGST per GST rate for the period (B2C, intra-state), SAC 996331, and
   the documents issued (first and last invoice number, how many, how many cancelled) as GSTR-1 asks. The tax per rate
@@ -336,6 +390,14 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Reports: sales by category (section 13) |
+| 2026-11-20 | Overview: vs same day last week and payment mix (section 13) |
+| 2026-11-20 | Kitchen stations: a ticket and a screen per station (sections 7, 8) |
+| 2026-11-20 | Bookings and walk-in waitlist (section 6) |
+| 2026-11-20 | Move and merge tables (section 6) |
+| 2026-11-20 | Table visits: seat with guests, timer, Cleaning / Reserved; covers in Reports (section 6) |
+| 2026-11-20 | Close the day: cash drawer count with over/short and history (section 13) |
+| 2026-11-20 | Serving hours for categories (breakfast / lunch / dinner) (section 8) |
 | 2026-11-20 | Combos (section 8) |
 | 2026-11-20 | Happy hour (section 8) |
 | 2026-11-20 | Menu sizes (half/full) and add-ons (section 8) |

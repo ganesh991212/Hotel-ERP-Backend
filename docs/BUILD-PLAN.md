@@ -140,7 +140,7 @@ Legend: [ ] todo, [x] done. Each task points at the doc section that defines it.
 - [x] Confirmed QR orders alert chefs (`order.confirmed`; was silent)
 - [x] Orders list filters for the admin Orders screen
 - [ ] Screens: "Next:" line per order, Bill pending tables, Orders screen, workflow settings
-- [ ] Stations (bar / kitchen split): waiting on decision
+- [x] Stations (bar / kitchen split): decided 2026-11-20, split tickets and screens
 - [ ] Automatic KOT printing: installed app + network printer only (browsers cannot print silently)
 
 ## Staff self-service (added 2026-11-19)
@@ -168,24 +168,24 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 |---|---|---|---|---|---|
 | 1 | Point of sale / billing | 10 | 90% | 9.0 | Mostly done |
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
-| 3 | Tables / floor plan | 6 | 55% | 3.3 | Partial |
-| 4 | Kitchen display | 8 | 80% | 6.4 | Mostly done |
-| 5 | Menu and pricing | 7 | 85% | 6.0 | Mostly done |
-| 6 | Live dashboard | 6 | 70% | 4.2 | Mostly done |
-| 7 | Reports | 7 | 80% | 5.6 | Mostly done |
-| 8 | Finance and GST | 7 | 55% | 3.9 | Partial |
+| 3 | Tables / floor plan | 6 | 100% | 6.0 | Done |
+| 4 | Kitchen display | 8 | 90% | 7.2 | Mostly done |
+| 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
+| 6 | Live dashboard | 6 | 90% | 5.4 | Mostly done (profit needs inventory) |
+| 7 | Reports | 7 | 90% | 6.3 | Mostly done (PDF left) |
+| 8 | Finance and GST | 7 | 70% | 4.9 | Mostly done |
 | 9 | Inventory | 7 | 0% | 0 | Missing |
 | 10 | Recipes and food cost | 5 | 0% | 0 | Missing |
 | 11 | Purchases and suppliers | 4 | 0% | 0 | Missing |
 | 12 | Customers (CRM) | 4 | 0% | 0 | Missing |
 | 13 | Staff, shifts, attendance | 4 | 50% | 2.0 | Partial |
-| 14 | Reservations and waitlist | 3 | 0% | 0 | Missing |
+| 14 | Reservations and waitlist | 3 | 100% | 3.0 | Done |
 | 15 | Delivery (own riders) | 2 | 0% | 0 | Missing |
 | 16 | Integrations | 6 | 25% | 1.5 | Partial |
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **49.8** | |
+| | **Total** | **100** | | **60.2** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -210,15 +210,15 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 
 ### 3. Tables / floor plan (6)
 - [x] Areas, live status (free / occupied / bill pending), amount owed, QR per table
-- [ ] Time seated and guest count (covers) per table
-- [ ] Reserved and Cleaning states
-- [ ] Waitlist (with 14)
-- [ ] Move / merge tables
+- [x] Time seated and guest count (covers) per table; covers and average per guest in Reports
+- [x] Reserved and Cleaning states (Cleaning automatic after payment)
+- [x] Waitlist (with 14)
+- [x] Move / merge tables (whole visit incl. QR diner sessions; before billing only)
 
 ### 4. Kitchen display (8)
 - [x] Live board, chef pick-up / auto-assign / paper KOT, strict queue, timers
 - [x] Loud alerts, no-pickup alert, ready notifications
-- [ ] Stations (bar, tandoor, Chinese...) with per-station routing
+- [x] Stations (bar, tandoor, Chinese...): a ticket and a screen per station (owner chose split tickets/screens; per-station "ready" deferred)
 - [ ] Target time per dish with "Delayed" flag
 
 ### 5. Menu and pricing (7)
@@ -226,19 +226,19 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] Variants (half/full) and add-ons (server-priced, snapshot on the order, add-ons at the dish GST rate)
 - [x] Combos (an item with component dishes; choices via add-on groups; KOT lists every dish)
 - [x] Happy hour (time + days + categories + %; server-applied on every channel; own report row)
-- [ ] Time-based menus (breakfast / lunch / dinner)
+- [x] Time-based menus (serving hours per category; diners refused, staff warned and may override)
 
 ### 6. Live dashboard (6)
 - [x] Orders, revenue, average ticket, by hour, 7 days, channels, top items, month net, timings, chefs, servers
-- [ ] Compare with the same day last week
-- [ ] Payment mix (cash / UPI / card)
+- [x] Compare with the same day last week (up to the same hotel-local time; no percentage when last week had no sales)
+- [x] Payment mix (cash / UPI / card): money received today, the same definition as Reports and Day close
 - [ ] Gross profit and food cost % (needs 10)
 
 ### 7. Reports (7)
 - [x] Day-by-day sales table (bills, gross, discounts, taxable, CGST/SGST, total, paid/unpaid, cancelled kept
       apart, money received by method, unbilled food warning); Overview revenue uses the same definition
 - [x] Item-wise sales
-- [ ] Category-wise sales (needs the menu category stored on bill lines)
+- [x] Category-wise sales (category snapshotted on order and bill lines; adds up to the item totals)
 - [x] Staff-wise: bills, discounts given, money received, cancellations (plan feature REPORTS_ADVANCED)
 - [x] Export CSV for every report, plus the bills register for the accountant
 - [ ] Export PDF
@@ -247,10 +247,13 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] GST invoices; expenses with global and hotel categories; month revenue minus expenses
 - [x] GST summary for filing (GSTR-1 style: B2C totals by rate, SAC 996331, documents issued/cancelled)
 - [ ] B2B invoices (customer GSTIN on the bill)
-- [ ] Day close / cash drawer reconciliation (expected vs counted)
+- [x] Day close / cash drawer reconciliation (expected vs counted; float carries over; over/short history)
 - [ ] Profit and loss by month
 
 ### 9. Inventory (7)
+> **Parked 2026-11-20 (owner's decision):** not built until it is planned with the owner. Before planning, confirm
+> with 3-5 restaurants that they will keep stock counts up to date; inventory, recipes (item 10) and purchases
+> (item 11) only pay off if counts are kept. Plan together; see the explanation in the session notes.
 - [ ] Ingredients, units, stock levels, reorder level, low-stock alerts
 - [ ] Auto-deduct stock from sales (needs 10)
 - [ ] Wastage entries; stock counts
@@ -271,8 +274,8 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [ ] Cash handover per shift
 
 ### 14. Reservations and waitlist (3)
-- [ ] Bookings (name, phone, guests, time, table, notes) and today's arrivals
-- [ ] Walk-in waitlist with quoted wait and "Seat" action
+- [x] Bookings (name, phone, guests, time, table, notes) and today's arrivals; overlap warning; no-shows remembered
+- [x] Walk-in waitlist with quoted wait and "Seat" action; today's actual average wait
 
 ### 15. Delivery with own riders (2)
 - [ ] Phone/website delivery orders, riders, assign, picked up / delivered, COD cash with riders
@@ -298,10 +301,10 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 ### Next up (weight x gap / effort)
 1. POS: takeaway + discounts + split/part payment (+6 points, medium)
 2. ~~Reports: day-by-day + item-wise + CSV export, incl. bills register~~ (done 2026-11-20, +5.6 with GST summary)
-3. Menu: variants/add-ons, happy hour, combos (+3.5, medium)
+3. ~~Menu: variants/add-ons, happy hour, combos~~ (done 2026-11-20, +3.5 with serving hours)
 4. Finance: GST summary + day close (+3, medium)
-5. Tables: covers, time seated, reserved/cleaning + reservations/waitlist (+5, medium)
-6. Inventory + recipes + purchases (+16, large; confirm demand first)
+5. ~~Tables: covers, time seated, reserved/cleaning + reservations/waitlist~~ (done 2026-11-20, +5.7)
+6. Inventory + recipes + purchases (+16, large; **parked by the owner 2026-11-20 until planned together**)
 7. Integrations: online bill payment, WhatsApp (+3, needs accounts and approvals)
 
 ## Phase 8: Rooms

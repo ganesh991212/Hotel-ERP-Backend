@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
 from app.catalog.options import for_diner, options_for, with_options
-from app.catalog.price_rules import offers_now
+from app.catalog.price_rules import hotel_now, offers_now
 from app.core.config import get_settings
 from app.core.db import platform_session, tenant_session
 from app.core.deps import load_entitlements
@@ -19,6 +19,7 @@ from app.core.errors import ApiError, forbidden, not_found
 from app.core.security import new_opaque_token, now, sha256
 from app.kitchen import service as kitchen
 from app.models import DiningTable, Hotel, MenuCategory, MenuItem, Order, Outlet, TableSession
+from app.ordering.pricing import in_window
 from app.ordering.router import LineModel, _lines, ensure_order_quota
 from app.ordering.service import OPEN_STATES, Actor, create_order, emit_order, order_json, quote, totals_json
 from app.realtime.publish import publish_all
@@ -71,6 +72,8 @@ async def menu(qr_token: str) -> dict:
         items = (await db.execute(select(MenuItem).order_by(MenuItem.sort, MenuItem.name))).scalars().all()
         opts = await options_for(db)
         offers = await offers_now(db, items)
+        at = await hotel_now(db)
+        open_now = {c.id: in_window(c.days, c.available_from, c.available_to, at) for c in cats}
         return {
             "hotel": {"name": hotel.name},
             # serve_mode tells the diner page whether to say "on its way" or "collect at the counter".
@@ -81,6 +84,9 @@ async def menu(qr_token: str) -> dict:
                 {
                     "id": str(c.id),
                     "name": c.name,
+                    # Outside its serving hours a section is shown with its hours and can't be ordered from.
+                    "open_now": open_now[c.id],
+                    "hours": f"{c.available_from:%H:%M}-{c.available_to:%H:%M}" if c.available_from else None,
                     "items": [
                         for_diner(
                             with_options(

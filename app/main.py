@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.billing.day_close import router as day_close
 from app.billing.router import router as bills
 from app.branding.router import router as branding
 from app.catalog.options import router as menu_options
@@ -15,6 +16,7 @@ from app.core.errors import ApiError, ServerErrorsAsJson, api_error_handler
 from app.dashboard.router import router as dashboard
 from app.expenses.router import platform as expense_platform
 from app.expenses.router import router as expenses
+from app.floor.bookings import router as bookings
 from app.floor.router import router as floor
 from app.iam.router import router as auth
 from app.iam.router import staff
@@ -67,6 +69,8 @@ for r in (
     devices,
     branding,
     reports,
+    day_close,
+    bookings,
 ):
     app.include_router(r, prefix="/api/v1")
 app.include_router(realtime)

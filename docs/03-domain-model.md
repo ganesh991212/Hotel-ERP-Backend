@@ -183,5 +183,60 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Order lines snapshot `components` [{item_id, name, qty per combo}]; the KOT prints each dish x quantity under the
   combo. Bills and reports show the combo as one line; per-component stock comes with inventory (item 9).
 
+## Serving hours (added 2026-11-20; prior art in docs/14)
+- `menu_categories.days` (Mon=1 ... Sun=64), `available_from`, `available_to` (both or neither; migration 0014).
+  No times = served all day on those days. Same window logic as happy hour (`pricing.in_window`): hotel-local time,
+  a window crossing midnight belongs to the day it started.
+- `quote` refuses dishes from a category outside its hours: `outside_hours` (409, details: items, category, hours).
+  QR diners can never override; staff orders may send `allow_outside_hours: true` after the app warned. The staff
+  composer's running quote always prices (only placing the order warns).
+- The diner menu marks such a section `open_now: false` with its `hours` (dishes keep their real sold-out state, so
+  the menu says "Served 07:00-11:00", not "Sold out").
+
+## Day close (added 2026-11-20; prior art in docs/14)
+- `day_closes` (RLS, migration 0015): one per hotel day, final once saved. A snapshot of opening float, cash sales
+  (`bill_payments` CASH on the hotel day, every device, part payments included), cash paid out (expenses paid in
+  CASH that day), expected = float + cash sales - paid out, counted, difference = counted - expected (+ over,
+  - short), cash kept in the drawer and the deposit (counted - kept), UPI and card received.
+- The opening float is the previous close's cash kept (typed only for the very first close), so it can't be edited
+  to hide a gap. Any difference needs a note. Future days can't be closed; a day can be closed once.
+- Cash taken on that day after the close is reported as `cash_after_close_minor`, never folded in.
+- Permission `dayclose.manage` (admin, manager, cashier; migration grants it to existing hotels' system roles).
+
+## Table visits (added 2026-11-20; prior art in docs/14)
+- `dining_tables.seated_at`, `guests`, `hold_state` (RESERVED | CLEANING), `hold_note` (migration 0016). State shown:
+  OCCUPIED (open orders) > BILL_PENDING (owes) > SEATED (seated, nothing ordered) > hold (CLEANING / RESERVED) > FREE.
+- Seating (`POST /tables/{id}/seat`) or the first order (any channel) starts the visit and clears a hold. Paying the
+  table's last open bill ends the visit and sets CLEANING; "Clean" (hold FREE) frees it. Reserved is manual, with a
+  short note; it can't be set while guests are seated. Guests who leave without ordering: hold FREE ends the visit.
+- Covers: `bills.guests` = the visit's guests, recorded on its bill (only the first guest bill when split; never on a
+  later extra bill). Reports: `covers` and `avg_per_cover_minor` (total of the bills that recorded guests / covers).
+- **Move** (`POST /tables/{id}/move`) sends the whole visit to a free table; **Merge** (`POST /tables/{id}/merge`)
+  brings other tables' visits into this one. Unbilled live orders, open QR diner sessions, guests (summed) and the
+  earliest seating time move; the source tables turn CLEANING. Refused while any involved table has an issued bill
+  (`table_has_bill`), so invoices never change table and nothing paid is merged; a busy target needs merge
+  (`table_in_use`).
+
+## Bookings (added 2026-11-20; prior art in docs/14)
+- `bookings` (RLS, migration 0017): kind BOOKING (with `booked_for`) or WAITLIST (with `quoted_minutes`); status
+  BOOKED / WAITING -> SEATED | CANCELLED | NO_SHOW (no-show only for bookings). Name, phone (hotel data; not written to
+  the audit log), guests, optional table, note.
+- A booking on a table overlapping another BOOKED booking of that table within 90 minutes warns (`table_booked`) and
+  needs `allow_overlap`. Times in the past (over an hour) are refused; times must carry a time zone.
+- Seat: the table must be free (no visit, no unbilled orders, no issued bill); it starts the table visit with the
+  booking's guests and clears any hold. Tables show `next_booking` for bookings starting within two hours.
+- Each booking shows `no_shows_before` (earlier no-shows with the same phone). The day view gives today's actual
+  average wait of seated walk-ins (`avg_wait_minutes_today`) to guide quotes.
+
+## Kitchen stations (added 2026-11-20; prior art in docs/14)
+- `kitchen_stations(name, sort)` (RLS, migration 0018); `menu_categories.station_id`, `menu_items.station_id`
+  (dish overrides category; ON DELETE SET NULL). A dish goes to exactly one station; none = the main "Kitchen" (a
+  reserved name).
+- `order_items.category_name` and `bill_lines.category_name`: the dish's menu category, snapshot when ordered and
+  copied to the bill line (category-wise sales; NULL on bills issued before 0019 that could not be matched exactly).
+- `order_items.station_id`, `station_name`: snapshot when ordered. KOT: `tickets[]` (one per station, each with
+  only its dishes and the order number and table) when an order spans several stations; `blocks` is the full ticket.
+- Display and print only: assignment, the strict queue and "ready" stay per order (docs/04).
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

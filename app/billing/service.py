@@ -116,6 +116,16 @@ async def create_bill(
         user_id=user_id,
         discount=discount,
     )
+    # Covers: the visit's guests, once. Food ordered after a split gets its own bill without counting guests again.
+    has_split = (
+        await db.execute(
+            select(Bill.id)
+            .where(Bill.table_id == table.id, Bill.split_group_id.is_not(None), Bill.status != "VOID")
+            .where(Bill.created_at >= (table.seated_at or now()))
+            .limit(1)
+        )
+    ).first()
+    bill.guests = None if has_split else table.guests
     for old in replaced:
         old.void_reason = f"{why}{REPLACED_MARK}{bill.invoice_no}"
     await _carry_payments(db, replaced, bill)
@@ -183,6 +193,7 @@ class GuestLine:
     unit_price_minor: int
     tax_rate_bp: int
     line_total_minor: int
+    source: str = ""  # the grouped line it came from (for its category), even when shared
 
 
 def apportion(total_minor: int, weights: list[int]) -> list[int]:
@@ -219,7 +230,7 @@ def allocate(
                 raise bad_request("bad_split", f"{name}: give out all {qty} exactly", {"key": spec.key, "qty": qty})
             for g, (q, value) in enumerate(zip(spec.qty, apportion(total, spec.qty), strict=True)):
                 if q:
-                    out[g].append(GuestLine(name, q, price, rate, value))
+                    out[g].append(GuestLine(name, q, price, rate, value, name))
         else:
             who = sorted(set(spec.shared or []))
             if len(who) < 2 or who[0] < 1 or who[-1] > guests or len(who) != len(spec.shared or []):
@@ -227,10 +238,27 @@ def allocate(
             label = f"{qty} x {name}" if qty > 1 else name
             for g, value in zip(who, split_equally(total, len(who)), strict=True):
                 # A share is one line priced at its part of the value: qty x price = line total still holds.
-                out[g - 1].append(GuestLine(f"{label} (1/{len(who)} share)", 1, value, rate, value))
+                out[g - 1].append(GuestLine(f"{label} (1/{len(who)} share)", 1, value, rate, value, name))
     empty = [g + 1 for g, lines in enumerate(out) if not lines]
     if empty:
         raise bad_request("guest_empty", "Every guest needs at least one item", {"guests": empty})
+    return out
+
+
+def line_name(it: OrderItem) -> str:
+    """The bill line's name for an order line."""
+    # Add-ons are part of the line's name, so "Biryani (Half) + Raita" and "+ Salad" never merge.
+    name = f"{it.name} + {addons_label(it.addons)}" if it.addons else it.name
+    if it.price_rule:  # happy-hour sales stay their own line (and their own row in the item report)
+        name = f"{name} ({it.price_rule})"
+    return name
+
+
+def categories(items: list[OrderItem]) -> dict[str, str | None]:
+    """Bill line name -> the category snapshotted on its order line (the first one, if a name repeats)."""
+    out: dict[str, str | None] = {}
+    for it in items:
+        out.setdefault(line_name(it), it.category_name)
     return out
 
 
@@ -246,11 +274,7 @@ async def _grouped(db: AsyncSession, orders: list[Order]) -> tuple[dict[tuple, l
     )
     grouped: dict[tuple, list[int]] = defaultdict(lambda: [0, 0])
     for it in items:
-        # Add-ons are part of the line's name, so "Biryani (Half) + Raita" and "+ Salad" never merge.
-        name = f"{it.name} + {addons_label(it.addons)}" if it.addons else it.name
-        if it.price_rule:  # happy-hour sales stay their own line (and their own row in the item report)
-            name = f"{name} ({it.price_rule})"
-        key = (name, it.unit_price_minor, it.tax_rate_bp)
+        key = (line_name(it), it.unit_price_minor, it.tax_rate_bp)
         grouped[key][0] += it.qty
         grouped[key][1] += it.line_total_minor
     return grouped, list(items)
@@ -337,7 +361,8 @@ async def split_by_items(
     unserved = sorted(o.number for o in [*orders, *already] if o.status != "SERVED")
     if unserved and not include_unserved:
         raise conflict("orders_not_served", "Some orders are not served yet", {"orders": unserved})
-    grouped, _ = await _grouped(db, [*orders, *already])
+    grouped, all_items = await _grouped(db, [*orders, *already])
+    cats = categories(all_items)
     parts = allocate({k: (v[0], v[1]) for k, v in grouped.items()}, guests, specs)  # validate before cancelling
 
     if open_bill:
@@ -371,6 +396,7 @@ async def split_by_items(
             guest_no=g,
             guest_count=guests,
             created_by=user_id,
+            guests=table.guests if not bills else None,  # covers counted once, on the first guest bill
         )
         # The first guest bill anchors the group (it refers to itself); the visit's orders point to it.
         bill.id = uuid4()
@@ -387,6 +413,7 @@ async def split_by_items(
                     unit_price_minor=x.unit_price_minor,
                     tax_rate_bp=x.tax_rate_bp,
                     line_total_minor=x.line_total_minor,
+                    category_name=cats.get(x.source),
                 )
             )
         bills.append(bill)
@@ -475,6 +502,7 @@ async def _issue(
     )
     db.add(bill)
     await db.flush()
+    cats = categories(items)
     for (name, price, rate), share in zip(keys, shares, strict=True):
         qty, line_total = grouped[(name, price, rate)]
         db.add(
@@ -487,6 +515,7 @@ async def _issue(
                 tax_rate_bp=rate,
                 line_total_minor=line_total,
                 discount_minor=share,
+                category_name=cats.get(name),
             )
         )
     for o in orders:
@@ -570,6 +599,7 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
         "table_id": str(bill.table_id) if bill.table_id else None,
         "customer_name": await _customer(db, bill),
         "subtotal_minor": bill.subtotal_minor,
+        "guests": bill.guests,
         "discount_minor": bill.discount_minor,
         "discount_reason": bill.discount_reason,
         "taxable_minor": bill.subtotal_minor - bill.discount_minor,
@@ -717,6 +747,10 @@ async def _mark_paid(db: AsyncSession, bill: Bill) -> None:
         )
     ).scalar_one()
     if bill.table_id and not still_owed:
+        # The visit is over: the table needs clearing before the next guests (one tap "Clean" frees it).
+        table = await db.get(DiningTable, bill.table_id)
+        if table is not None:
+            table.seated_at, table.guests, table.hold_state, table.hold_note = None, None, "CLEANING", None
         await db.execute(
             update(TableSession)
             .where(TableSession.table_id == bill.table_id, TableSession.closed_at.is_(None))

@@ -2164,6 +2164,285 @@
     }
    }
   },
+  "/api/v1/tables/{table_id}/seat": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Seat",
+    "description": "Guests sit down (or the count changes): the visit's timer starts at the first seating and the count is what\nthe bill will record as covers. Seating clears a Reserved or Cleaning hold.",
+    "operationId": "seat_api_v1_tables__table_id__seat_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__floor__router__SeatIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables/{table_id}/hold": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Hold",
+    "operationId": "hold_api_v1_tables__table_id__hold_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/HoldIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables/{table_id}/move": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Move",
+    "description": "The guests changed tables: their whole visit goes to a free table (Free, Reserved or Cleaning).",
+    "operationId": "move_api_v1_tables__table_id__move_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MoveIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables/{table_id}/merge": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Merge",
+    "description": "One party across several tables: their visits join this table, so they get one bill (split it by guest\nlater if they want).",
+    "operationId": "merge_api_v1_tables__table_id__merge_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MergeIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/categories": {
    "get": {
     "tags": [
@@ -3280,6 +3559,241 @@
         }
        }
       }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/stations": {
+   "get": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "List Stations",
+    "operationId": "list_stations_api_v1_stations_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response List Stations Api V1 Stations Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Create Station",
+    "operationId": "create_station_api_v1_stations_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StationIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Create Station Api V1 Stations Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/stations/{station_id}": {
+   "put": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Rename Station",
+    "operationId": "rename_station_api_v1_stations__station_id__put",
+    "parameters": [
+     {
+      "name": "station_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Station Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StationIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Rename Station Api V1 Stations  Station Id  Put"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Delete Station",
+    "description": "Its dishes go back to the main kitchen; tickets already sent keep their station.",
+    "operationId": "delete_station_api_v1_stations__station_id__delete",
+    "parameters": [
+     {
+      "name": "station_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Station Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
      },
      "422": {
       "description": "Validation Error",
@@ -7407,6 +7921,539 @@
     }
    }
   },
+  "/api/v1/day-close": {
+   "get": {
+    "tags": [
+     "day close"
+    ],
+    "summary": "Preview",
+    "description": "What the drawer should hold now for that hotel day (default today), or the saved close if already done.\nWith `counted_minor` (as the cashier types), also the would-be difference and deposit, so the app shows\nOver / Short without doing money arithmetic itself (rule 1).",
+    "operationId": "preview_api_v1_day_close_get",
+    "parameters": [
+     {
+      "name": "date",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date"
+      }
+     },
+     {
+      "name": "counted_minor",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "maximum": 1000000000000,
+         "minimum": 0
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Counted Minor"
+      }
+     },
+     {
+      "name": "float_kept_minor",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 1000000000000,
+       "minimum": 0,
+       "default": 0,
+       "title": "Float Kept Minor"
+      }
+     },
+     {
+      "name": "opening_float_minor",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "maximum": 1000000000000,
+         "minimum": 0
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Opening Float Minor"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Preview Api V1 Day Close Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "day close"
+    ],
+    "summary": "Close",
+    "operationId": "close_api_v1_day_close_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CloseIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Close Api V1 Day Close Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/day-closes": {
+   "get": {
+    "tags": [
+     "day close"
+    ],
+    "summary": "History",
+    "description": "Closes in a period (default the last 30 days), newest first, with the running over/short total and how many\ndays were short: small nightly shortfalls are a pattern worth seeing (docs/14).",
+    "operationId": "history_api_v1_day_closes_get",
+    "parameters": [
+     {
+      "name": "from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "From"
+      }
+     },
+     {
+      "name": "to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "To"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response History Api V1 Day Closes Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bookings": {
+   "post": {
+    "tags": [
+     "bookings"
+    ],
+    "summary": "Create",
+    "operationId": "create_api_v1_bookings_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BookingIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Create Api V1 Bookings Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "bookings"
+    ],
+    "summary": "Day",
+    "description": "The day's book (hotel-local, default today), the live waitlist, and today's actual average wait so quotes\nfollow reality.",
+    "operationId": "day_api_v1_bookings_get",
+    "parameters": [
+     {
+      "name": "date",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Day Api V1 Bookings Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bookings/{booking_id}/seat": {
+   "post": {
+    "tags": [
+     "bookings"
+    ],
+    "summary": "Seat",
+    "description": "The party arrived (or their table is ready): start the table visit with the booking's guest count.",
+    "operationId": "seat_api_v1_bookings__booking_id__seat_post",
+    "parameters": [
+     {
+      "name": "booking_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Booking Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__floor__bookings__SeatIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Seat Api V1 Bookings  Booking Id  Seat Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/bookings/{booking_id}/status": {
+   "post": {
+    "tags": [
+     "bookings"
+    ],
+    "summary": "Set Status",
+    "operationId": "set_status_api_v1_bookings__booking_id__status_post",
+    "parameters": [
+     {
+      "name": "booking_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Booking Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StatusIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Set Status Api V1 Bookings  Booking Id  Status Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/health": {
    "get": {
     "summary": "Health",
@@ -7597,6 +8644,101 @@
     "title": "BillIn",
     "description": "A table's bill for this visit (`table_id`), or one takeaway order's bill (`order_id`)."
    },
+   "BookingIn": {
+    "properties": {
+     "kind": {
+      "type": "string",
+      "pattern": "^(BOOKING|WAITLIST)$",
+      "title": "Kind"
+     },
+     "name": {
+      "type": "string",
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "phone": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 20,
+        "pattern": "^[0-9+ -]*$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone"
+     },
+     "guests": {
+      "type": "integer",
+      "maximum": 99.0,
+      "minimum": 1.0,
+      "title": "Guests"
+     },
+     "booked_for": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Booked For"
+     },
+     "quoted_minutes": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 600.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quoted Minutes"
+     },
+     "table_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Table Id"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 200
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "allow_overlap": {
+      "type": "boolean",
+      "title": "Allow Overlap",
+      "default": false
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind",
+     "name",
+     "guests"
+    ],
+    "title": "BookingIn"
+   },
    "BrandingIn": {
     "properties": {
      "address_line": {
@@ -7629,6 +8771,50 @@
      "sort": {
       "type": "integer",
       "title": "Sort"
+     },
+     "days": {
+      "type": "integer",
+      "title": "Days",
+      "default": 127
+     },
+     "available_from": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Available From"
+     },
+     "available_to": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Available To"
+     },
+     "open_now": {
+      "type": "boolean",
+      "title": "Open Now",
+      "default": true
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
      }
     },
     "type": "object",
@@ -7651,6 +8837,65 @@
      "plan_code"
     ],
     "title": "CheckoutIn"
+   },
+   "CloseIn": {
+    "properties": {
+     "date": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "counted_minor": {
+      "type": "integer",
+      "maximum": 1000000000000.0,
+      "minimum": 0.0,
+      "title": "Counted Minor"
+     },
+     "float_kept_minor": {
+      "type": "integer",
+      "maximum": 1000000000000.0,
+      "minimum": 0.0,
+      "title": "Float Kept Minor",
+      "default": 0
+     },
+     "opening_float_minor": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 1000000000000.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Opening Float Minor"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 200
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "counted_minor"
+    ],
+    "title": "CloseIn"
    },
    "ComponentIn": {
     "properties": {
@@ -8026,6 +9271,33 @@
     "type": "object",
     "title": "HTTPValidationError"
    },
+   "HoldIn": {
+    "properties": {
+     "state": {
+      "type": "string",
+      "pattern": "^(FREE|RESERVED|CLEANING)$",
+      "title": "State"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "state"
+    ],
+    "title": "HoldIn",
+    "description": "FREE clears a hold (the table is clean, or the reservation is off). RESERVED takes a short note."
+   },
    "HotelIn": {
     "properties": {
      "name": {
@@ -8312,6 +9584,18 @@
       "type": "integer",
       "title": "Sort",
       "default": 0
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
      }
     },
     "type": "object",
@@ -8411,6 +9695,30 @@
        }
       ],
       "title": "Offer"
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
+     },
+     "station": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station"
      }
     },
     "type": "object",
@@ -8514,6 +9822,18 @@
        }
       ],
       "title": "Sort"
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
      }
     },
     "type": "object",
@@ -8630,6 +9950,39 @@
     ],
     "title": "LogoIn"
    },
+   "MergeIn": {
+    "properties": {
+     "from_table_ids": {
+      "items": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "From Table Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "from_table_ids"
+    ],
+    "title": "MergeIn"
+   },
+   "MoveIn": {
+    "properties": {
+     "to_table_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "To Table Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "to_table_id"
+    ],
+    "title": "MoveIn"
+   },
    "OrderIn": {
     "properties": {
      "items": {
@@ -8640,6 +9993,11 @@
       "maxItems": 50,
       "minItems": 1,
       "title": "Items"
+     },
+     "allow_outside_hours": {
+      "type": "boolean",
+      "title": "Allow Outside Hours",
+      "default": false
      },
      "table_id": {
       "anyOf": [
@@ -9478,6 +10836,35 @@
     "title": "SplitLineIn",
     "description": "One grouped line of the table: `qty` = whole units per guest (one number per guest, adding up to the line's\nquantity), or `shared` = guest numbers (from 1) who share the whole line equally."
    },
+   "StationIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Name"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "StationIn"
+   },
+   "StatusIn": {
+    "properties": {
+     "status": {
+      "type": "string",
+      "pattern": "^(CANCELLED|NO_SHOW)$",
+      "title": "Status"
+     }
+    },
+    "type": "object",
+    "required": [
+     "status"
+    ],
+    "title": "StatusIn"
+   },
    "TableIn": {
     "properties": {
      "label": {
@@ -9559,6 +10946,52 @@
       "type": "string",
       "title": "State",
       "default": "FREE"
+     },
+     "seated_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Seated At"
+     },
+     "guests": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Guests"
+     },
+     "hold_note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Hold Note"
+     },
+     "next_booking": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Next Booking"
      },
      "unbilled_orders": {
       "type": "integer",
@@ -10000,6 +11433,49 @@
       "type": "integer",
       "title": "Sort",
       "default": 0
+     },
+     "days": {
+      "type": "integer",
+      "maximum": 127.0,
+      "minimum": 1.0,
+      "title": "Days",
+      "default": 127
+     },
+     "available_from": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Available From"
+     },
+     "available_to": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Available To"
+     },
+     "station_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Station Id"
      }
     },
     "type": "object",
@@ -10022,6 +11498,43 @@
      "name"
     ],
     "title": "CategoryIn"
+   },
+   "app__floor__bookings__SeatIn": {
+    "properties": {
+     "table_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Table Id"
+     }
+    },
+    "type": "object",
+    "title": "SeatIn"
+   },
+   "app__floor__router__SeatIn": {
+    "properties": {
+     "guests": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 99.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Guests"
+     }
+    },
+    "type": "object",
+    "title": "SeatIn"
    },
    "app__ordering__router__ReasonIn": {
     "properties": {

@@ -55,9 +55,9 @@ async def test_cash_plus_upi_pays_the_bill(client, hp):
     done = (await _pay(client, hp, b, "UPI", total - 10_000)).json()
     assert done["status"] == "PAID" and done["payment_method"] == "MIXED" and done["due_minor"] == 0
     assert [p["method"] for p in done["payments"]] == ["CASH", "UPI"]
-    # Paid: the table is free and no more payments are taken.
+    # Paid: the visit is over; the table waits to be cleared (docs/03 "Table visits"), and no more payments are taken.
     tables = (await client.get(f"{API}/tables", headers=h(hp["admin"]))).json()
-    assert next(t for t in tables if t["id"] == hp["table"]["id"])["state"] == "FREE"
+    assert next(t for t in tables if t["id"] == hp["table"]["id"])["state"] == "CLEANING"
     assert (await _pay(client, hp, b, "CASH", 1)).status_code == 409
     printed = (await client.post(f"{API}/bills/{b['id']}/print", headers=h(hp["admin"]), json={})).json()
     text_ = " ".join(str(x) for x in printed["blocks"])

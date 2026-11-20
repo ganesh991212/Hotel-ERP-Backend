@@ -20,7 +20,7 @@ from app.models import ACTIVE_ASSIGNMENT, Assignment, Hotel, Order, PrintLog, Us
 from app.ordering.service import Actor, emit_order, order_json, transition
 from app.ordering.service import mark_ready as finish_ready
 from app.printing import escpos
-from app.printing.documents import kot_blocks
+from app.printing.documents import kot_blocks, kot_stations
 
 router = APIRouter(tags=["printing"])
 
@@ -34,15 +34,20 @@ async def _kot(ctx: Ctx, o: Order, copy_no: int) -> dict:
     hotel = await ctx.db.get(Hotel, ctx.hotel_id)
     me = await ctx.db.get(User, ctx.user_id)
     data = await order_json(ctx.db, o)
-    blocks = kot_blocks(
-        hotel_name=hotel.name,
-        order=data,
-        tz=hotel.timezone,
-        copy_no=copy_no,
-        printed_by=me.name if me else None,
-        created_at=o.created_at,
+    common = {
+        "hotel_name": hotel.name,
+        "order": data,
+        "tz": hotel.timezone,
+        "copy_no": copy_no,
+        "printed_by": me.name if me else None,
+        "created_at": o.created_at,
+    }
+    # One ticket per station when the order spans several (Bar, Tandoor, Kitchen...); the full ticket stays too.
+    stations = kot_stations(data)
+    tickets = (
+        [{"station": st, "blocks": kot_blocks(**common, station=st)} for st in stations] if len(stations) > 1 else []
     )
-    return {"order": data, "copy_no": copy_no, "blocks": blocks}
+    return {"order": data, "copy_no": copy_no, "blocks": kot_blocks(**common), "tickets": tickets}
 
 
 @router.get("/orders/{order_id}/kot")
@@ -76,6 +81,8 @@ async def print_kot(order_id: UUID, body: KotIn, ctx: Ctx = HotelCtx("kot.print"
     out = await _kot(ctx, o, o.kot_print_count)
     if body.paper_mm:
         out["escpos_b64"] = base64.b64encode(escpos.render(out["blocks"], body.paper_mm)).decode()
+        for t in out["tickets"]:  # network printers get each station's slip as raw bytes too
+            t["escpos_b64"] = base64.b64encode(escpos.render(t["blocks"], body.paper_mm)).decode()
     return out
 
 

@@ -21,6 +21,7 @@ from app.models import (
     User,
 )
 from app.ordering.service import OPEN_STATES, order_json
+from app.reports.router import METHODS
 
 router = APIRouter(tags=["dashboard"])
 
@@ -46,6 +47,28 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
             select(func.count(), func.coalesce(func.sum(Bill.total_minor), 0)).where(bill_day == today, live_bill)
         )
     ).one()
+    # Same weekday last week, up to the same hotel-local time, so a partial day is never set against a whole one.
+    last_week_now = local_now - timedelta(days=7)
+    last_week_revenue = (
+        await db.execute(
+            select(func.coalesce(func.sum(Bill.total_minor), 0)).where(
+                bill_day == today - timedelta(days=7),
+                func.timezone(tz, Bill.created_at) <= last_week_now,
+                live_bill,
+            )
+        )
+    ).scalar_one()
+    # Money received today by method: the same definition as Reports and Day close, so they never disagree.
+    pay_day = cast(func.timezone(tz, BillPayment.created_at), Date)
+    paid = dict(
+        (
+            await db.execute(
+                select(BillPayment.method, func.coalesce(func.sum(BillPayment.amount_minor), 0))
+                .where(pay_day == today)
+                .group_by(BillPayment.method)
+            )
+        ).all()
+    )
     unbilled_today = (
         await db.execute(
             select(func.coalesce(func.sum(Order.total_minor), 0)).where(is_today, billable, Order.bill_id.is_(None))
@@ -205,6 +228,8 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         "revenue_today_minor": int(revenue_today),
         "bills_today": int(bills_today),
         "unbilled_today_minor": int(unbilled_today),
+        "vs_last_week": _vs_last_week(int(revenue_today), int(last_week_revenue), last_week_now),
+        "payment_mix": _mix(paid),
         "avg_ticket_minor": int(revenue_today) // bills_today if bills_today else 0,  # per bill, like Reports
         "avg_prep_minutes": round(float(avg_prep), 1) if avg_prep is not None else None,
         "by_status": {k: int(v) for k, v in by_status.items()},
@@ -228,6 +253,32 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         "servers": servers,
         "live_orders": [await order_json(db, o) for o in live],
         "generated_at": now().isoformat(),
+    }
+
+
+def _vs_last_week(today_minor: int, last_minor: int, until) -> dict:
+    """Change against the same weekday last week up to the same time. No sales then -> no percentage (docs/14)."""
+    return {
+        "until": until.isoformat(),  # hotel-local time last week the comparison stops at
+        "last_week_minor": last_minor,
+        "change_minor": today_minor - last_minor,
+        # Ready to show as "Up/Down <amount> (<pct>%)": the app does no arithmetic on money (rule 1).
+        "direction": "UP" if today_minor > last_minor else ("DOWN" if today_minor < last_minor else "SAME"),
+        "difference_minor": abs(today_minor - last_minor),
+        "change_pct": abs(round((today_minor - last_minor) * 100 / last_minor, 1)) if last_minor else None,
+    }
+
+
+def _mix(paid: dict) -> dict:
+    """Money received by method, with each method's whole-percent share (shares are display only)."""
+    amounts = {m: int(paid.get(m, 0)) for m in METHODS}
+    total = sum(amounts.values())
+    return {
+        "total_minor": total,
+        "methods": [
+            {"method": m, "amount_minor": v, "share_pct": round(v * 100 / total) if total else 0}
+            for m, v in amounts.items()
+        ],
     }
 
 
