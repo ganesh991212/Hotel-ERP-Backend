@@ -512,3 +512,37 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
 - The GST report lists **B2B invoices one per line** (invoice, date, buyer GSTIN, name, taxable, rate, CGST, SGST)
   and the B2C totals separately; the CSV has both (avoids 2).
 - No e-invoicing (IRN) yet: it applies only above the turnover threshold.
+
+## Profit and loss by month (checklist item 8) - 2026-11-20
+
+### How others do it
+- **Petpooja**: the POS fills in net sales, discounts, taxes and food cost; the owner adds fixed costs (rent,
+  salaries, utilities); prime cost = food + labour as one figure
+  (https://blog.petpooja.com/finance-compliance/read-restaurant-profit-and-loss-from-pos/).
+- **Patron Accounting (India)**: the P&L starts from **net sales excluding GST**, then COGS, labour, rent, utilities and
+  aggregator commission, each on its own line (https://www.patronaccounting.com/blog/restaurant-profit-and-loss-statement).
+- **Benchmarks**: COGS 28-35%, labour 25-35%, prime cost 55-65%
+  (https://www.katalystos.com/blog/how-to-read-a-restaurant-p-and-l-statement,
+  https://equimise-marketing.pages.dev/blog/reading-your-pl).
+- **DoorDash / 7shifts / Supy / OysterLink guides**: same structure; review more often than monthly
+  (https://merchants.doordash.com/en-au/blog/restaurant-profit-and-loss-statement,
+  https://www.7shifts.com/blog/restaurant-profit-and-loss-statement/, https://supy.io/blog/how-to-read-a-restaurant-p-and-l,
+  https://oysterlink.com/spotlight/pl-for-restaurant-example).
+
+### Their mistakes (and one of ours)
+1. **GST counted as revenue**: the tax collected for the government inflates sales and profit by the GST rate.
+   *Our own Overview did this*: "net this month" was bill totals (with GST) minus expenses.
+2. A **part month** compared with full months as if it were complete.
+3. Profit shown with **no food cost** and no warning, so it looks far better than it is.
+4. Numbers that do not match the sales report because the P&L uses another definition of a sale.
+
+### Our choice
+- Sales = **taxable value** of issued, not-cancelled bills (gross minus discounts, **before GST**), the same bills as
+  Reports; service charge is income on its own line; GST collected is shown below as "collected for the government",
+  never as income (avoids 1, 4). The Overview's month net now uses the same rule.
+- Expenses by category from the Expenses screen, on the date they were spent. Operating profit = sales + service
+  charge - expenses; margin % from the server.
+- One column per month (up to 12); the current month is marked **"so far"** (avoids 2).
+- Until inventory exists, the P&L says **food cost is only what was entered as expenses** (avoids 3); prime cost and
+  COGS % come with inventory (parked).
+- CSV download like the other reports.

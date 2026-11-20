@@ -19,7 +19,7 @@ from sqlalchemy import Date, case, cast, func, select
 from app.billing.service import REPLACED_MARK, split_gst, tax_by_rate
 from app.core.deps import Ctx, HotelCtx
 from app.core.errors import bad_request
-from app.models import AuditLog, Bill, BillLine, BillPayment, DiningTable, Hotel, Order, User
+from app.models import AuditLog, Bill, BillLine, BillPayment, DiningTable, Expense, ExpenseCategory, Hotel, Order, User
 
 router = APIRouter(tags=["reports"])
 
@@ -439,6 +439,119 @@ From = Query(None, alias="from")
 To = Query(None, alias="to")
 
 
+# ---------- Profit and loss by month (docs/14 "Profit and loss") ----------
+
+MAX_MONTHS = 12
+
+
+def _month_start(d: date) -> date:
+    return d.replace(day=1)
+
+
+def _next_month(d: date) -> date:
+    return (d.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+
+async def pnl_period(ctx: Ctx, start: date | None, end: date | None) -> tuple[str, date, list[date]]:
+    """Whole months from `start`'s month to `end`'s month (default: the last 6 months to this one), at most 12."""
+    tz = (await ctx.db.execute(select(Hotel.timezone))).scalar_one()
+    today = (await ctx.db.execute(select(cast(func.timezone(tz, func.now()), Date)))).scalar_one()
+    last = _month_start(end or today)
+    first = _month_start(start) if start else _month_start(last - timedelta(days=150))
+    if first > last:
+        raise bad_request("bad_range", "The start is after the end")
+    months = [first]
+    while months[-1] < last:
+        months.append(_next_month(months[-1]))
+    if len(months) > MAX_MONTHS:
+        raise bad_request("range_too_long", f"Pick at most {MAX_MONTHS} months", {"max_months": MAX_MONTHS})
+    return tz, today, months
+
+
+async def pnl_data(ctx: Ctx, start: date | None, end: date | None) -> dict:
+    """Sales before GST + service charge - expenses, per month. GST collected is shown, never counted as income."""
+    tz, today, months = await pnl_period(ctx, start, end)
+    db = ctx.db
+    first, after = months[0], _next_month(months[-1])
+    bill_day = cast(func.timezone(tz, Bill.created_at), Date)
+    bill_month = cast(func.date_trunc("month", bill_day), Date)
+    sales = {
+        m: (int(n), int(taxable), int(service), int(tax))
+        for m, n, taxable, service, tax in (
+            await db.execute(
+                select(
+                    bill_month,
+                    func.count(),
+                    func.sum(Bill.subtotal_minor - Bill.discount_minor),
+                    func.sum(Bill.service_charge_minor),
+                    func.sum(Bill.tax_minor),
+                )
+                .where(bill_day >= first, bill_day < after, Bill.status.in_(LIVE))
+                .group_by(bill_month)
+            )
+        ).all()
+    }
+    exp_month = cast(func.date_trunc("month", Expense.spent_on), Date)
+    expenses: dict[date, dict[str, int]] = defaultdict(dict)
+    for m, name, amount in (
+        await db.execute(
+            select(exp_month, ExpenseCategory.name, func.sum(Expense.amount_minor))
+            .join(ExpenseCategory, ExpenseCategory.id == Expense.category_id)
+            .where(Expense.spent_on >= first, Expense.spent_on < after)
+            .group_by(exp_month, ExpenseCategory.name)
+        )
+    ).all():
+        expenses[m][name] = int(amount)
+
+    def column(bills: int, taxable: int, service: int, tax: int, spent: dict[str, int]) -> dict:
+        income = taxable + service
+        total_exp = sum(spent.values())
+        profit = income - total_exp
+        return {
+            "bills": bills,
+            "sales_minor": taxable,  # before GST, after discounts: the same taxable value as the sales report
+            "service_charge_minor": service,
+            "income_minor": income,
+            "expenses": [{"category": k, "amount_minor": v} for k, v in sorted(spent.items(), key=lambda kv: -kv[1])],
+            "expenses_minor": total_exp,
+            "operating_profit_minor": profit,
+            "margin_pct": round(profit * 100 / income, 1) if income else None,
+            "gst_collected_minor": tax,  # owed to the government: not income
+        }
+
+    cols = []
+    for m in months:
+        n, taxable, service, tax = sales.get(m, (0, 0, 0, 0))
+        cols.append(
+            {
+                "month": m.strftime("%Y-%m"),
+                "so_far": m == _month_start(today),  # the current month is not complete
+                **column(n, taxable, service, tax, expenses.get(m, {})),
+            }
+        )
+    every: dict[str, int] = defaultdict(int)
+    for m in months:
+        for k, v in expenses.get(m, {}).items():
+            every[k] += v
+    totals = column(
+        sum(c["bills"] for c in cols),
+        sum(c["sales_minor"] for c in cols),
+        sum(c["service_charge_minor"] for c in cols),
+        sum(c["gst_collected_minor"] for c in cols),
+        dict(every),
+    )
+    return {
+        "report": "pnl",
+        "from": first.isoformat(),
+        "to": (after - timedelta(days=1)).isoformat(),
+        "timezone": tz,
+        "basis": "Sales = issued bills before GST (after discounts); expenses on the day they were spent. "
+        "Food cost is only what was entered as expenses (no stock tracking yet)",
+        "months": cols,
+        "totals": totals,
+    }
+
+
 @router.get("/reports/sales")
 async def sales(date_from: date | None = From, date_to: date | None = To, ctx: Ctx = HotelCtx("report.view")) -> dict:
     return await sales_data(ctx, await _period(ctx, date_from, date_to))
@@ -452,6 +565,12 @@ async def items(date_from: date | None = From, date_to: date | None = To, ctx: C
 @router.get("/reports/gst")
 async def gst(date_from: date | None = From, date_to: date | None = To, ctx: Ctx = HotelCtx("report.view")) -> dict:
     return await gst_data(ctx, await _period(ctx, date_from, date_to))
+
+
+@router.get("/reports/pnl")
+async def pnl(date_from: date | None = From, date_to: date | None = To, ctx: Ctx = HotelCtx("report.view")) -> dict:
+    """Profit and loss by month: whole months covering `from`..`to` (default the last 6), at most 12."""
+    return await pnl_data(ctx, date_from, date_to)
 
 
 @router.get("/reports/staff")
@@ -621,13 +740,48 @@ async def csv_text(ctx: Ctx, kind: str, p: Period) -> str:
     )
 
 
+def pnl_csv(d: dict) -> str:
+    """One column per month and a total column; one row per line of the statement."""
+    cols = [*d["months"], {"month": "Total", "so_far": False, **d["totals"]}]
+    cats = [e["category"] for e in d["totals"]["expenses"]]
+    head = ["", *(c["month"] + (" (so far)" if c["so_far"] else "") for c in cols)]
+
+    def line(label: str, get) -> list:
+        return [label, *(get(c) for c in cols)]
+
+    rows = [
+        line("Bills", lambda c: c["bills"]),
+        line("Sales before GST", lambda c: rupees(c["sales_minor"])),
+        line("Service charge", lambda c: rupees(c["service_charge_minor"])),
+        line("Income", lambda c: rupees(c["income_minor"])),
+        *[
+            line(
+                f"Expense: {k}",
+                lambda c, k=k: rupees(next((e["amount_minor"] for e in c["expenses"] if e["category"] == k), 0)),
+            )
+            for k in cats
+        ],
+        line("Expenses", lambda c: rupees(c["expenses_minor"])),
+        line("Operating profit", lambda c: rupees(c["operating_profit_minor"])),
+        line("Margin", lambda c: "" if c["margin_pct"] is None else f"{c['margin_pct']:g}%"),
+        [],
+        line("GST collected (owed to the government, not income)", lambda c: rupees(c["gst_collected_minor"])),
+    ]
+    head_info = {"report": "pnl", "from": d["from"], "to": d["to"], "timezone": d["timezone"]}
+    return _csv(head_info, d["basis"], head, rows)
+
+
 @router.get("/reports/{kind}.csv", response_class=Response)
 async def export_csv(
     kind: str, date_from: date | None = From, date_to: date | None = To, ctx: Ctx = HotelCtx("report.view")
 ) -> Response:
-    p = await _period(ctx, date_from, date_to)
-    body = await csv_text(ctx, kind, p)
-    name = f"{kind}_{p.start.isoformat()}_{p.end.isoformat()}.csv"
+    if kind == "pnl":  # whole months (up to 12), not the 92-day day range of the other reports
+        d = await pnl_data(ctx, date_from, date_to)
+        body, name = pnl_csv(d), f"pnl_{d['from'][:7]}_{d['to'][:7]}.csv"
+    else:
+        p = await _period(ctx, date_from, date_to)
+        body = await csv_text(ctx, kind, p)
+        name = f"{kind}_{p.start.isoformat()}_{p.end.isoformat()}.csv"
     # A byte-order mark so Excel opens rupee names and Telugu/Hindi item names correctly.
     return Response(
         "﻿" + body,

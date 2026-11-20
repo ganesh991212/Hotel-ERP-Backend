@@ -62,6 +62,12 @@ response; design in docs/14 "Reports"):
 - `GET /reports/sales`: per day and in total: bills, gross, discount, taxable, CGST, SGST, other tax, service charge,
   round off, total; paid / unpaid; cancelled (by hand) and replaced bills kept apart; money received by CASH/UPI/CARD
   by the day it was taken; `unbilled` (orders on no live bill: a warning, never sales).
+- `GET /reports/pnl?from=&to=` (`report.view`): profit and loss by **whole months** (default the last 6, at most 12):
+  per month and in total `bills`, `sales_minor` (before GST, after discounts), `service_charge_minor`,
+  `income_minor`, `expenses[]` by category, `expenses_minor`, `operating_profit_minor`, `margin_pct`,
+  `gst_collected_minor` (not income), `so_far` for the current month. `GET /reports/pnl.csv` (one column per month).
+  `/dashboard/summary` adds `income_month_minor`; `net_month_minor` = income before GST - expenses (it used to
+  subtract expenses from bill totals that included GST).
 - `GET /reports/items`: per item name as billed: category, qty, gross, discount, taxable; plus `categories[]`
   (items, qty, gross, discount, taxable, share %) from the same lines. `GET /reports/categories.csv` exports them.
 - `GET /reports/gst`: by GST rate: taxable, CGST, SGST (per bill as printed, then summed); SAC 996331; documents

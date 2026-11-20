@@ -268,7 +268,7 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   number the Reports show) with the change against **the same weekday last week up to the same time** (an up or
   down arrow and the amount and percentage; "No sales to compare" when there were none then), **money received today
   by cash / UPI / card** (the same figures as Reports and Close the day), average bill, food served but not billed yet (a warning), open orders by status, tables
-  busy, orders by hour, last 7 days, channels, top items, month revenue / expenses / net, average times (waiting for a
+  busy, orders by hour, last 7 days, channels, top items, month income before GST / expenses / net (the same rule as the Profit & loss report), average times (waiting for a
   chef, cooking, ready-to-table, total), each chef's completed orders and queue, each server's served orders and
   speed, live orders, and **On time today: 92% (23 of 25 orders ready by their due time)** under Service times.
 - **My work** (everyone else's Overview), today or last 7 days, with the team's average under each average:
@@ -310,6 +310,11 @@ rupees).
   moving it to another category later does not change past reports. Older bills that could not be matched show as
   "Not recorded". Download it as CSV like the other reports.
   Cancelled bills are left out.
+- **Profit & loss** (tab; Last 6 / Last 12 months): one card per month, newest first, and a total. **Sales before
+  GST** (issued bills after discounts) + service charge − **expenses** (by category, from the Expenses screen, on the
+  day spent) = **operating profit** (or loss) and its % of sales. **GST collected** is shown separately as owed to
+  the government, never as income. The current month says **So far**. Food cost is only what was entered as expenses
+  until stock is tracked. Download CSV gives one column per month.
 - **GST summary**: taxable value, CGST and SGST per GST rate for the period (intra-state), SAC 996331, company (B2B) bills one per line, and
   the documents issued (first and last invoice number, how many, how many cancelled) as GSTR-1 asks. The tax per rate
   is exactly what was printed on each bill, so it always matches the bills.
@@ -408,6 +413,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Profit & loss by month; Overview month net now excludes GST (sections 13) |
 | 2026-11-20 | Company GST (B2B) bills; B2B list in the GST report (sections 10, 13) |
 | 2026-11-20 | Target time per dish, "Delayed" on the kitchen screen, on time % (sections 7, 13) |
 | 2026-11-20 | Hold / resume an order (section 6, 13) |

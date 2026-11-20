@@ -120,9 +120,15 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
     ).all()
 
     month_start = today.replace(day=1)
-    revenue_month = (
-        await db.execute(select(func.coalesce(func.sum(Bill.total_minor), 0)).where(bill_day >= month_start, live_bill))
-    ).scalar_one()
+    revenue_month, income_month = (
+        await db.execute(
+            select(
+                func.coalesce(func.sum(Bill.total_minor), 0),
+                # Income for profit: before GST (GST is collected for the government), plus service charge.
+                func.coalesce(func.sum(Bill.subtotal_minor - Bill.discount_minor + Bill.service_charge_minor), 0),
+            ).where(bill_day >= month_start, live_bill)
+        )
+    ).one()
     expenses_month = (
         await db.execute(
             select(func.coalesce(func.sum(Expense.amount_minor), 0)).where(Expense.spent_on >= month_start)
@@ -259,7 +265,9 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         "top_items": [{"name": n, "qty": int(q), "revenue_minor": int(r)} for n, q, r in top_items],
         "revenue_month_minor": int(revenue_month),
         "expenses_month_minor": int(expenses_month),
-        "net_month_minor": int(revenue_month) - int(expenses_month),
+        # Same rule as the P&L report (docs/14): income before GST minus expenses. Not bill totals minus expenses.
+        "income_month_minor": int(income_month),
+        "net_month_minor": int(income_month) - int(expenses_month),
         "tables_total": tables_total,
         "tables_busy": tables_busy,
         "chefs": chefs,
