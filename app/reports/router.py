@@ -182,33 +182,61 @@ async def sales_data(ctx: Ctx, p: Period) -> dict:
 # ---------- Items ----------
 
 
+NOT_RECORDED = "Not recorded"  # bills issued before categories were kept on bill lines (docs/14)
+
+
 async def items_data(ctx: Ctx, p: Period) -> dict:
+    """Item-wise and category-wise sales from the same bill lines, so categories add up to the item totals."""
+    category = func.coalesce(BillLine.category_name, NOT_RECORDED)
     rows = (
         await ctx.db.execute(
             select(
                 BillLine.name,
+                category,
                 func.sum(BillLine.qty),
                 func.sum(BillLine.line_total_minor),
                 func.sum(BillLine.discount_minor),
             )
             .join(Bill, Bill.id == BillLine.bill_id)
             .where(*p.on(Bill.created_at), Bill.status.in_(LIVE))
-            .group_by(BillLine.name)
+            .group_by(BillLine.name, category)
             .order_by(func.sum(BillLine.line_total_minor).desc(), BillLine.name)
         )
     ).all()
     items = [
         {
             "name": name,
+            "category": cat,
             "qty": int(qty),
             "gross_minor": int(gross),
             "discount_minor": int(disc),
             "taxable_minor": int(gross) - int(disc),
         }
-        for name, qty, gross, disc in rows
+        for name, cat, qty, gross, disc in rows
     ]
-    totals = {k: sum(i[k] for i in items) for k in ("qty", "gross_minor", "discount_minor", "taxable_minor")}
-    return {**p.head("items"), "basis": BASIS + "; item names as printed on the bill", "items": items, "totals": totals}
+    keys = ("qty", "gross_minor", "discount_minor", "taxable_minor")
+    by_cat: dict[str, dict[str, int]] = defaultdict(lambda: dict.fromkeys(("items", *keys), 0))
+    for i in items:
+        c = by_cat[i["category"]]
+        c["items"] += 1
+        for k in keys:
+            c[k] += i[k]
+    totals = {k: sum(i[k] for i in items) for k in keys}
+    categories = [
+        {
+            "category": name,
+            **c,
+            "share_pct": round(c["taxable_minor"] * 100 / totals["taxable_minor"], 1) if totals["taxable_minor"] else 0,
+        }
+        for name, c in sorted(by_cat.items(), key=lambda kv: (-kv[1]["taxable_minor"], kv[0]))
+    ]
+    return {
+        **p.head("items"),
+        "basis": BASIS + "; item names and categories as they were when billed",
+        "items": items,
+        "categories": categories,
+        "totals": totals,
+    }
 
 
 # ---------- GST summary ----------
@@ -471,6 +499,16 @@ async def csv_text(ctx: Ctx, kind: str, p: Period) -> str:
         t = d["totals"]
         rows.append(["Total", t["qty"], *(rupees(t[k]) for k in ("gross_minor", "discount_minor", "taxable_minor"))])
         return _csv(d, d["basis"], ["Item", "Qty", "Gross", "Discount", "Taxable"], rows)
+    if kind == "categories":
+        d = await items_data(ctx, p)
+        money = ("gross_minor", "discount_minor", "taxable_minor")
+        rows = [
+            [c["category"], c["items"], c["qty"], *(rupees(c[k]) for k in money), f"{c['share_pct']:g}%"]
+            for c in d["categories"]
+        ]
+        t = d["totals"]
+        rows.append(["Total", len(d["items"]), t["qty"], *(rupees(t[k]) for k in money), "100%" if t["qty"] else ""])
+        return _csv(d, d["basis"], ["Category", "Items", "Qty", "Gross", "Discount", "Taxable", "Share"], rows)
     if kind == "gst":
         d = await gst_data(ctx, p)
         keys = ("taxable_minor", "cgst_minor", "sgst_minor", "tax_minor")
@@ -532,7 +570,9 @@ async def csv_text(ctx: Ctx, kind: str, p: Period) -> str:
         ]
         basis = "Every bill issued on the hotel's calendar day, including cancelled ones (status VOID)"
         return _csv(p.head("register"), basis, header, body)
-    raise bad_request("unknown_report", "Unknown report", {"kinds": ["sales", "items", "gst", "staff", "register"]})
+    raise bad_request(
+        "unknown_report", "Unknown report", {"kinds": ["sales", "items", "categories", "gst", "staff", "register"]}
+    )
 
 
 @router.get("/reports/{kind}.csv", response_class=Response)

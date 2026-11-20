@@ -382,3 +382,32 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
 - Payment mix = **money received today by method** (`bill_payments`), the same definition as Reports and Day close,
   so the Overview, the reports and the drawer agree (avoids 3).
 - No hour-by-hour comparison; the 7-day chart already shows the pattern (avoids 4).
+
+## Category-wise sales (checklist item 7) - 2026-11-20
+
+### How others do it
+- **Petpooja**: category-wise sales built from the same billing data as its other sales reports
+  (https://blog.petpooja.com/glossary/item-category/, https://www.petpooja.com/reporting).
+- **Toast**: "sales categories" are set in the menu builder, separate from menu groups; a change applies **only to future
+  sales**, and support can back-fill at most two weeks
+  (https://support.toasttab.com/en/article/Sales-Categories-1492812477858?lang=en_US).
+- **Square**: past sales keep the category they had; owners who fix categories still see the old ones in earlier
+  reports, and deleted categories linger there
+  (https://www.sellercommunity.com/t5/Questions-How-To/Updating-Categorie-Do-Reports-update-with-the-changes-made/m-p/5447).
+- **Lightspeed (ShopKeep)**: a sales-by-category report with the same totals as the item report
+  (https://shopkeep-support.lightspeedhq.com/support/reporting/sales-by-category-report).
+
+### Their mistakes
+1. Owners are **surprised** that a category fix does not change old reports, and nothing on screen says why.
+2. Category totals that **don't add up** to the item report or the sales report (different bases: ordered vs billed,
+   before vs after discount).
+3. Back-filling history from today's menu silently **rewrites** what was sold under which heading.
+
+### Our choice
+- The category is **snapshotted** on the order line when ordered and copied to the bill line, like the name and the
+  price: a bill never changes later. The report says so in its basis line (avoids 1).
+- Category rows are computed from the **same bill lines** as the item report (issued, not cancelled; gross, discount,
+  taxable), so categories sum exactly to the item totals (avoids 2).
+- Bills issued before this change have no category; they show as **"Not recorded"** rather than being guessed from
+  today's menu, except where the order line's own dish could be matched exactly (avoids 3).
+- One table under the item report, plus a CSV; no separate screen.

@@ -232,6 +232,8 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - `kitchen_stations(name, sort)` (RLS, migration 0018); `menu_categories.station_id`, `menu_items.station_id`
   (dish overrides category; ON DELETE SET NULL). A dish goes to exactly one station; none = the main "Kitchen" (a
   reserved name).
+- `order_items.category_name` and `bill_lines.category_name`: the dish's menu category, snapshot when ordered and
+  copied to the bill line (category-wise sales; NULL on bills issued before 0019 that could not be matched exactly).
 - `order_items.station_id`, `station_name`: snapshot when ordered. KOT: `tickets[]` (one per station, each with
   only its dishes and the order number and table) when an order spans several stations; `blocks` is the full ticket.
 - Display and print only: assignment, the strict queue and "ready" stay per order (docs/04).

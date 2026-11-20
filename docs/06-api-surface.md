@@ -62,7 +62,8 @@ response; design in docs/14 "Reports"):
 - `GET /reports/sales`: per day and in total: bills, gross, discount, taxable, CGST, SGST, other tax, service charge,
   round off, total; paid / unpaid; cancelled (by hand) and replaced bills kept apart; money received by CASH/UPI/CARD
   by the day it was taken; `unbilled` (orders on no live bill: a warning, never sales).
-- `GET /reports/items`: per item name as billed: qty, gross, discount, taxable.
+- `GET /reports/items`: per item name as billed: category, qty, gross, discount, taxable; plus `categories[]`
+  (items, qty, gross, discount, taxable, share %) from the same lines. `GET /reports/categories.csv` exports them.
 - `GET /reports/gst`: by GST rate: taxable, CGST, SGST (per bill as printed, then summed); SAC 996331; documents
   issued per type and FY (first/last number, total, cancelled, net) for GSTR-1 table 13.
 - `GET /reports/staff` (also plan feature `REPORTS_ADVANCED`): per person: bills, billed value, discounts given,

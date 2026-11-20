@@ -193,6 +193,7 @@ class GuestLine:
     unit_price_minor: int
     tax_rate_bp: int
     line_total_minor: int
+    source: str = ""  # the grouped line it came from (for its category), even when shared
 
 
 def apportion(total_minor: int, weights: list[int]) -> list[int]:
@@ -229,7 +230,7 @@ def allocate(
                 raise bad_request("bad_split", f"{name}: give out all {qty} exactly", {"key": spec.key, "qty": qty})
             for g, (q, value) in enumerate(zip(spec.qty, apportion(total, spec.qty), strict=True)):
                 if q:
-                    out[g].append(GuestLine(name, q, price, rate, value))
+                    out[g].append(GuestLine(name, q, price, rate, value, name))
         else:
             who = sorted(set(spec.shared or []))
             if len(who) < 2 or who[0] < 1 or who[-1] > guests or len(who) != len(spec.shared or []):
@@ -237,10 +238,27 @@ def allocate(
             label = f"{qty} x {name}" if qty > 1 else name
             for g, value in zip(who, split_equally(total, len(who)), strict=True):
                 # A share is one line priced at its part of the value: qty x price = line total still holds.
-                out[g - 1].append(GuestLine(f"{label} (1/{len(who)} share)", 1, value, rate, value))
+                out[g - 1].append(GuestLine(f"{label} (1/{len(who)} share)", 1, value, rate, value, name))
     empty = [g + 1 for g, lines in enumerate(out) if not lines]
     if empty:
         raise bad_request("guest_empty", "Every guest needs at least one item", {"guests": empty})
+    return out
+
+
+def line_name(it: OrderItem) -> str:
+    """The bill line's name for an order line."""
+    # Add-ons are part of the line's name, so "Biryani (Half) + Raita" and "+ Salad" never merge.
+    name = f"{it.name} + {addons_label(it.addons)}" if it.addons else it.name
+    if it.price_rule:  # happy-hour sales stay their own line (and their own row in the item report)
+        name = f"{name} ({it.price_rule})"
+    return name
+
+
+def categories(items: list[OrderItem]) -> dict[str, str | None]:
+    """Bill line name -> the category snapshotted on its order line (the first one, if a name repeats)."""
+    out: dict[str, str | None] = {}
+    for it in items:
+        out.setdefault(line_name(it), it.category_name)
     return out
 
 
@@ -256,11 +274,7 @@ async def _grouped(db: AsyncSession, orders: list[Order]) -> tuple[dict[tuple, l
     )
     grouped: dict[tuple, list[int]] = defaultdict(lambda: [0, 0])
     for it in items:
-        # Add-ons are part of the line's name, so "Biryani (Half) + Raita" and "+ Salad" never merge.
-        name = f"{it.name} + {addons_label(it.addons)}" if it.addons else it.name
-        if it.price_rule:  # happy-hour sales stay their own line (and their own row in the item report)
-            name = f"{name} ({it.price_rule})"
-        key = (name, it.unit_price_minor, it.tax_rate_bp)
+        key = (line_name(it), it.unit_price_minor, it.tax_rate_bp)
         grouped[key][0] += it.qty
         grouped[key][1] += it.line_total_minor
     return grouped, list(items)
@@ -347,7 +361,8 @@ async def split_by_items(
     unserved = sorted(o.number for o in [*orders, *already] if o.status != "SERVED")
     if unserved and not include_unserved:
         raise conflict("orders_not_served", "Some orders are not served yet", {"orders": unserved})
-    grouped, _ = await _grouped(db, [*orders, *already])
+    grouped, all_items = await _grouped(db, [*orders, *already])
+    cats = categories(all_items)
     parts = allocate({k: (v[0], v[1]) for k, v in grouped.items()}, guests, specs)  # validate before cancelling
 
     if open_bill:
@@ -398,6 +413,7 @@ async def split_by_items(
                     unit_price_minor=x.unit_price_minor,
                     tax_rate_bp=x.tax_rate_bp,
                     line_total_minor=x.line_total_minor,
+                    category_name=cats.get(x.source),
                 )
             )
         bills.append(bill)
@@ -486,6 +502,7 @@ async def _issue(
     )
     db.add(bill)
     await db.flush()
+    cats = categories(items)
     for (name, price, rate), share in zip(keys, shares, strict=True):
         qty, line_total = grouped[(name, price, rate)]
         db.add(
@@ -498,6 +515,7 @@ async def _issue(
                 tax_rate_bp=rate,
                 line_total_minor=line_total,
                 discount_minor=share,
+                category_name=cats.get(name),
             )
         )
     for o in orders:

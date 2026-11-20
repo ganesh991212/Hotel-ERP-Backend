@@ -141,6 +141,9 @@ async def test_three_guests_get_their_own_gst_bills(client, hp):
     # Reports count three bills and one replaced.
     t = (await client.get(f"{API}/reports/sales", headers=h(hp["admin"]))).json()["totals"]
     assert t["bills"] == 3 and t["replaced_bills"] == 1 and t["paid_minor"] == sum(b["total_minor"] for b in bills)
+    # Guest bills keep each line's category, shared lines too.
+    cats = (await client.get(f"{API}/reports/items", headers=h(hp["admin"]))).json()["categories"]
+    assert [c["category"] for c in cats] == ["Mains"]
 
 
 async def test_food_ordered_after_a_split_gets_its_own_bill(client, hp):

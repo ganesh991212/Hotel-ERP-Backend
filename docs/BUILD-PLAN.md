@@ -172,7 +172,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 4 | Kitchen display | 8 | 90% | 7.2 | Mostly done |
 | 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
 | 6 | Live dashboard | 6 | 90% | 5.4 | Mostly done (profit needs inventory) |
-| 7 | Reports | 7 | 80% | 5.6 | Mostly done |
+| 7 | Reports | 7 | 90% | 6.3 | Mostly done (PDF left) |
 | 8 | Finance and GST | 7 | 70% | 4.9 | Mostly done |
 | 9 | Inventory | 7 | 0% | 0 | Missing |
 | 10 | Recipes and food cost | 5 | 0% | 0 | Missing |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **59.5** | |
+| | **Total** | **100** | | **60.2** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -238,7 +238,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] Day-by-day sales table (bills, gross, discounts, taxable, CGST/SGST, total, paid/unpaid, cancelled kept
       apart, money received by method, unbilled food warning); Overview revenue uses the same definition
 - [x] Item-wise sales
-- [ ] Category-wise sales (needs the menu category stored on bill lines)
+- [x] Category-wise sales (category snapshotted on order and bill lines; adds up to the item totals)
 - [x] Staff-wise: bills, discounts given, money received, cancellations (plan feature REPORTS_ADVANCED)
 - [x] Export CSV for every report, plus the bills register for the accountant
 - [ ] Export PDF

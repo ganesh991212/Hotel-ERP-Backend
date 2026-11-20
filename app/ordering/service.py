@@ -401,6 +401,16 @@ async def create_order(
     from app.catalog.options import station_for_items
 
     stations = await station_for_items(db, menu_items)  # snapshot: where each dish's ticket goes
+    cat_names = dict(
+        (
+            await db.execute(
+                select(MenuCategory.id, MenuCategory.name).where(
+                    MenuCategory.id.in_({i.category_id for i in menu_items})
+                )
+            )
+        ).all()
+    )
+    category = {i.id: cat_names.get(i.category_id) for i in menu_items}  # snapshot, for category-wise sales
     o = Order(
         hotel_id=hotel_id,
         outlet_id=outlet.id,
@@ -442,6 +452,7 @@ async def create_order(
             price_rule=p.price_rule,
             station_id=st.id if (st := stations.get(UUID(p.item_id))) else None,
             station_name=st.name if st else None,
+            category_name=category.get(UUID(p.item_id)),
             components=[{"item_id": i, "name": n, "qty": q} for i, n, q in p.components] or None,
         )
         db.add(it)

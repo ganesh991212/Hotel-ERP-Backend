@@ -140,6 +140,24 @@ async def test_staff_report_needs_the_plan_and_the_permission(client, root, day)
     assert (await _get(client, growth, "staff.csv")).status_code == 403
 
 
+async def test_categories_add_up_and_keep_what_was_billed(client, day):
+    hp = day["hp"]
+    d = (await _get(client, hp, "items")).json()
+    assert {i["category"] for i in d["items"]} == {"Mains"}
+    [mains] = d["categories"]
+    assert mains["category"] == "Mains" and mains["items"] == 3 and mains["share_pct"] == 100
+    for k in ("qty", "gross_minor", "discount_minor", "taxable_minor"):
+        assert mains[k] == d["totals"][k], "categories add up to the item totals"
+    # Moving Chai to a new category later does not rewrite past sales (snapshot, docs/14).
+    a = h(hp["admin"])
+    drinks = (await client.post(f"{API}/categories", headers=a, json={"name": "Drinks"})).json()
+    r = await client.patch(f"{API}/items/{hp['items']['Chai']}", headers=a, json={"category_id": drinks["id"]})
+    assert r.status_code == 200, r.text
+    assert (await _get(client, hp, "items")).json()["categories"] == d["categories"]
+    csv = (await _get(client, hp, "categories.csv")).text
+    assert "Category,Items,Qty" in csv and any(line.startswith("Mains,3,") for line in csv.splitlines())
+
+
 async def test_csv_exports_match_the_screen(client, day):
     hp, b = day["hp"], day["bill"]
     r = await _get(client, hp, "sales.csv")

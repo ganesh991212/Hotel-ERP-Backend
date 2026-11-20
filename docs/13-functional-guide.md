@@ -287,6 +287,10 @@ rupees).
   **Not billed yet**: food ordered in the period that is on no bill (including food whose bill was cancelled). It is a
   warning to act on, not sales.
 - **Items**: each dish as printed on the bill: quantity sold, gross, discount, taxable. Biggest seller first.
+  Above it, **By category** (Starters, Mains, Beverages...): dishes, quantity, gross, discount, taxable and share of
+  sales; the categories add up to the item totals. A dish counts under the category it had **when it was billed**:
+  moving it to another category later does not change past reports. Older bills that could not be matched show as
+  "Not recorded". Download it as CSV like the other reports.
   Cancelled bills are left out.
 - **GST summary**: taxable value, CGST and SGST per GST rate for the period (B2C, intra-state), SAC 996331, and
   the documents issued (first and last invoice number, how many, how many cancelled) as GSTR-1 asks. The tax per rate
@@ -386,6 +390,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Reports: sales by category (section 13) |
 | 2026-11-20 | Overview: vs same day last week and payment mix (section 13) |
 | 2026-11-20 | Kitchen stations: a ticket and a screen per station (sections 7, 8) |
 | 2026-11-20 | Bookings and walk-in waitlist (section 6) |

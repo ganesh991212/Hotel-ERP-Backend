@@ -482,6 +482,7 @@ class OrderItem(Base):
     # The kitchen station the dish was sent to (snapshot); NULL = the main kitchen.
     station_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     station_name: Mapped[str | None] = mapped_column(String(40))
+    category_name: Mapped[str | None] = mapped_column(String(80))  # snapshot, for category-wise sales
     # Position on the order as entered (KOT and order screens list items in this order).
     line_no: Mapped[int] = mapped_column(SmallInteger, server_default="0")
     # Happy hour (docs/03): the dish/size price before the rule, and the rule's name; NULL when no rule applied.
@@ -668,6 +669,7 @@ class BillLine(Base):
     tax_rate_bp: Mapped[int] = mapped_column(Integer)
     line_total_minor: Mapped[int] = mapped_column(BigInteger)
     discount_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")  # this line's share
+    category_name: Mapped[str | None] = mapped_column(String(80))  # snapshot from the order line; NULL = not recorded
 
 
 class PrintLog(Base):
