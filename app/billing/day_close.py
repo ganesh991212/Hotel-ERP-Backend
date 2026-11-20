@@ -103,18 +103,39 @@ async def _day(ctx: Ctx, day: date | None) -> tuple[str, date]:
 
 
 @router.get("/day-close")
-async def preview(day: date | None = Query(None, alias="date"), ctx: Ctx = HotelCtx("dayclose.manage")) -> dict:
-    """What the drawer should hold now for that hotel day (default today), or the saved close if already done."""
+async def preview(
+    day: date | None = Query(None, alias="date"),
+    counted_minor: int | None = Query(None, ge=0, le=10**12),
+    float_kept_minor: int = Query(0, ge=0, le=10**12),
+    opening_float_minor: int | None = Query(None, ge=0, le=10**12),
+    ctx: Ctx = HotelCtx("dayclose.manage"),
+) -> dict:
+    """What the drawer should hold now for that hotel day (default today), or the saved close if already done.
+    With `counted_minor` (as the cashier types), also the would-be difference and deposit, so the app shows
+    Over / Short without doing money arithmetic itself (rule 1)."""
     tz, day = await _day(ctx, day)
     saved = (await ctx.db.execute(select(DayClose).where(DayClose.business_date == day))).scalar_one_or_none()
     f = await _figures(ctx, tz, day)
-    opening = f["carried_float_minor"] or 0
+    if f["carried_float_minor"] is not None:
+        opening = f["carried_float_minor"]
+    else:
+        opening = opening_float_minor or 0
+    expected = opening + f["cash_sales_minor"] - f["cash_paid_out_minor"]
+    check = None
+    if counted_minor is not None:
+        diff = counted_minor - expected
+        check = {
+            "difference_minor": diff,
+            "result": "OVER" if diff > 0 else "SHORT" if diff < 0 else "EXACT",
+            "deposit_minor": counted_minor - float_kept_minor,
+        }
     return {
         "date": day.isoformat(),
         "timezone": tz,
         **f,
         "opening_float_minor": opening,
-        "expected_minor": opening + f["cash_sales_minor"] - f["cash_paid_out_minor"],
+        "expected_minor": expected,
+        "check": check,
         "closed": await _close_json(ctx, tz, saved) if saved else None,
     }
 

@@ -123,7 +123,6 @@ async def test_qr_order_as_the_phone_sends_it(client, hx):
     assert third.status_code == 201 and third.json()["id"] != first.json()["id"]
 
 
-
 async def test_qr_order_to_chef_to_served(client, hx):
     qr = hx["table"]["qr_token"]
     menu = (await client.get(f"{API}/d/{qr}")).json()

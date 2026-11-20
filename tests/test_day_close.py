@@ -55,6 +55,15 @@ async def test_count_against_what_every_device_recorded(client, hd):
 
     # First close ever: the opening float is typed once. Expected = float + cash sales - cash paid out.
     expected = 50_000 + cash["total_minor"] - 2000
+    # As the cashier types, the server says over/short (the app never subtracts money itself).
+    chk = (
+        await client.get(
+            f"{API}/day-close",
+            headers=a,
+            params={"counted_minor": expected - 1_000, "float_kept_minor": 50_000, "opening_float_minor": 50_000},
+        )
+    ).json()["check"]
+    assert chk == {"difference_minor": -1_000, "result": "SHORT", "deposit_minor": expected - 51_000}
     short = {"counted_minor": expected - 1_000, "float_kept_minor": 50_000, "opening_float_minor": 50_000}
     r = await client.post(f"{API}/day-close", headers=a, json=short)
     assert r.status_code == 400 and r.json()["code"] == "note_required"

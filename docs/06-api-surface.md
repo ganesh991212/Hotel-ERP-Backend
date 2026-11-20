@@ -147,7 +147,9 @@ response; design in docs/14 "Reports"):
 ## Day close (added 2026-11-20)
 - `GET /day-close?date=` (`dayclose.manage`; default today): `cash_sales_minor`, `upi_minor`, `card_minor`,
   `cash_paid_out_minor`, `carried_float_minor` (null before the first close), `opening_float_minor`,
-  `expected_minor`, `unpaid_bills {count, total_minor}` (a warning), `closed` (the saved close or null).
+  `expected_minor`, `unpaid_bills {count, total_minor}` (a warning), `closed` (the saved close or null). With
+  `counted_minor` (+ `float_kept_minor`, `opening_float_minor`) it adds `check {difference_minor, result,
+  deposit_minor}` so the app shows Over / Short live without money arithmetic.
 - `POST /day-close {date?, counted_minor, float_kept_minor, opening_float_minor? (first close only), note?}` -> 201
   the close: `difference_minor`, `result` OVER | SHORT | EXACT, `deposit_minor`, `closed_by`,
   `cash_after_close_minor`. Errors `note_required` (any difference), `already_closed`, `future_day`, `bad_float`.

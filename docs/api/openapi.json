@@ -7413,7 +7413,7 @@
      "day close"
     ],
     "summary": "Preview",
-    "description": "What the drawer should hold now for that hotel day (default today), or the saved close if already done.",
+    "description": "What the drawer should hold now for that hotel day (default today), or the saved close if already done.\nWith `counted_minor` (as the cashier types), also the would-be difference and deposit, so the app shows\nOver / Short without doing money arithmetic itself (rule 1).",
     "operationId": "preview_api_v1_day_close_get",
     "parameters": [
      {
@@ -7431,6 +7431,54 @@
         }
        ],
        "title": "Date"
+      }
+     },
+     {
+      "name": "counted_minor",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "maximum": 1000000000000,
+         "minimum": 0
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Counted Minor"
+      }
+     },
+     {
+      "name": "float_kept_minor",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 1000000000000,
+       "minimum": 0,
+       "default": 0,
+       "title": "Float Kept Minor"
+      }
+     },
+     {
+      "name": "opening_float_minor",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "maximum": 1000000000000,
+         "minimum": 0
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Opening Float Minor"
       }
      },
      {
