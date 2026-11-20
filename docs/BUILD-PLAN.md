@@ -168,7 +168,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 |---|---|---|---|---|---|
 | 1 | Point of sale / billing | 10 | 90% | 9.0 | Mostly done |
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
-| 3 | Tables / floor plan | 6 | 55% | 3.3 | Partial |
+| 3 | Tables / floor plan | 6 | 75% | 4.5 | Mostly done |
 | 4 | Kitchen display | 8 | 80% | 6.4 | Mostly done |
 | 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
 | 6 | Live dashboard | 6 | 70% | 4.2 | Mostly done |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **51.8** | |
+| | **Total** | **100** | | **53.0** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -210,8 +210,8 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 
 ### 3. Tables / floor plan (6)
 - [x] Areas, live status (free / occupied / bill pending), amount owed, QR per table
-- [ ] Time seated and guest count (covers) per table
-- [ ] Reserved and Cleaning states
+- [x] Time seated and guest count (covers) per table; covers and average per guest in Reports
+- [x] Reserved and Cleaning states (Cleaning automatic after payment)
 - [ ] Waitlist (with 14)
 - [ ] Move / merge tables
 

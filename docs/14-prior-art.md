@@ -236,3 +236,30 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   (avoids 5).
 - New permission **"Count cash and close the day"** (admin, manager, cashier by default; servers don't have it).
 - Warns (doesn't block) when bills are still unpaid for the day.
+
+## Tables: guests (covers), time seated, Reserved / Cleaning (checklist item 3) - 2026-11-20
+
+### How others do it
+- **Toast Tables**: statuses include Seated (set when a party is seated) and Dirty (set by "Mark as dirty" or
+  automatically when the party leaves); the table tile shows the guest count and a timer. The timer counts how long
+  the **check** has been open, not how long the guests have been seated.
+- Table-management guides describe multi-state floors (available, reserved, seated, ordered, paying, dirty...).
+- Petpooja / Square: table management is listed as a feature; no public detail on statuses (searches came back
+  generic).
+
+### Their mistakes
+1. **Split checks copy the guest count to every check** (Toast forum; staff reply: no fix, adjust by hand), so covers
+   and "average per cover" are inflated whenever a table splits.
+2. **Timer measures the check, not the seating**: a party that sat 20 minutes before ordering looks quicker than it
+   was.
+3. Too many manual statuses for staff to keep up with on a busy floor (generic guides list up to 11).
+
+### Our choice
+- **Seat a table** with the number of guests (optional); the first order seats it automatically (QR diners too), so
+  the timer starts when guests sit down or first order, whichever is first (avoids 2).
+- **Guests are counted once per visit**: the bill keeps the visit's guest count; when a visit is split by items, only
+  the first guest bill carries it (avoids 1). Reports show covers per day and the average spend per cover, computed
+  on the server.
+- **States stay few and mostly automatic** (avoids 3): Free -> Seated -> Ordering -> Bill pending -> **Cleaning**
+  (set automatically when the last bill is paid) -> Free (one tap "Clean"). **Reserved** is the only manual state, with
+  a short note ("8 pm, 4 people"); seating or ordering on it clears it.

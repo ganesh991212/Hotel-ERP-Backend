@@ -136,7 +136,7 @@ async def test_three_guests_get_their_own_gst_bills(client, hp):
     for b in bills[1:]:
         await client.post(f"{API}/bills/{b['id']}/settle", headers=h(hp["admin"]), json={"method": "CASH"})
     tables = (await client.get(f"{API}/tables", headers=h(hp["admin"]))).json()
-    assert _table_state(tables, hp) == "FREE"
+    assert _table_state(tables, hp) == "CLEANING", "everyone paid: the visit is over"
 
     # Reports count three bills and one replaced.
     t = (await client.get(f"{API}/reports/sales", headers=h(hp["admin"]))).json()["totals"]

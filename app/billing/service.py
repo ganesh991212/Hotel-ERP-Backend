@@ -116,6 +116,16 @@ async def create_bill(
         user_id=user_id,
         discount=discount,
     )
+    # Covers: the visit's guests, once. Food ordered after a split gets its own bill without counting guests again.
+    has_split = (
+        await db.execute(
+            select(Bill.id)
+            .where(Bill.table_id == table.id, Bill.split_group_id.is_not(None), Bill.status != "VOID")
+            .where(Bill.created_at >= (table.seated_at or now()))
+            .limit(1)
+        )
+    ).first()
+    bill.guests = None if has_split else table.guests
     for old in replaced:
         old.void_reason = f"{why}{REPLACED_MARK}{bill.invoice_no}"
     await _carry_payments(db, replaced, bill)
@@ -371,6 +381,7 @@ async def split_by_items(
             guest_no=g,
             guest_count=guests,
             created_by=user_id,
+            guests=table.guests if not bills else None,  # covers counted once, on the first guest bill
         )
         # The first guest bill anchors the group (it refers to itself); the visit's orders point to it.
         bill.id = uuid4()
@@ -570,6 +581,7 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
         "table_id": str(bill.table_id) if bill.table_id else None,
         "customer_name": await _customer(db, bill),
         "subtotal_minor": bill.subtotal_minor,
+        "guests": bill.guests,
         "discount_minor": bill.discount_minor,
         "discount_reason": bill.discount_reason,
         "taxable_minor": bill.subtotal_minor - bill.discount_minor,
@@ -717,6 +729,10 @@ async def _mark_paid(db: AsyncSession, bill: Bill) -> None:
         )
     ).scalar_one()
     if bill.table_id and not still_owed:
+        # The visit is over: the table needs clearing before the next guests (one tap "Clean" frees it).
+        table = await db.get(DiningTable, bill.table_id)
+        if table is not None:
+            table.seated_at, table.guests, table.hold_state, table.hold_note = None, None, "CLEANING", None
         await db.execute(
             update(TableSession)
             .where(TableSession.table_id == bill.table_id, TableSession.closed_at.is_(None))

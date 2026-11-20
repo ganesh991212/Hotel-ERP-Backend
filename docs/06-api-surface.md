@@ -155,6 +155,12 @@ response; design in docs/14 "Reports"):
   `cash_after_close_minor`. Errors `note_required` (any difference), `already_closed`, `future_day`, `bad_float`.
 - `GET /day-closes?from=&to=` (default last 30 days): `closes[]`, `net_difference_minor`, `short_days`, `over_days`.
 
+## Table visits (added 2026-11-20)
+- `POST /tables/{id}/seat {guests?}` and `POST /tables/{id}/hold {state: FREE|RESERVED|CLEANING, note?}`
+  (`order.create`); error `table_in_use`. Tables return `state` (FREE | SEATED | OCCUPIED | BILL_PENDING | CLEANING |
+  RESERVED), `seated_at`, `guests`, `hold_note`. Bills return `guests`. Sales report rows add `covers`,
+  `avg_per_cover_minor`.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.

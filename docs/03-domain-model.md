@@ -203,5 +203,14 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Cash taken on that day after the close is reported as `cash_after_close_minor`, never folded in.
 - Permission `dayclose.manage` (admin, manager, cashier; migration grants it to existing hotels' system roles).
 
+## Table visits (added 2026-11-20; prior art in docs/14)
+- `dining_tables.seated_at`, `guests`, `hold_state` (RESERVED | CLEANING), `hold_note` (migration 0016). State shown:
+  OCCUPIED (open orders) > BILL_PENDING (owes) > SEATED (seated, nothing ordered) > hold (CLEANING / RESERVED) > FREE.
+- Seating (`POST /tables/{id}/seat`) or the first order (any channel) starts the visit and clears a hold. Paying the
+  table's last open bill ends the visit and sets CLEANING; "Clean" (hold FREE) frees it. Reserved is manual, with a
+  short note; it can't be set while guests are seated. Guests who leave without ordering: hold FREE ends the visit.
+- Covers: `bills.guests` = the visit's guests, recorded on its bill (only the first guest bill when split; never on a
+  later extra bill). Reports: `covers` and `avg_per_cover_minor` (total of the bills that recorded guests / covers).
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

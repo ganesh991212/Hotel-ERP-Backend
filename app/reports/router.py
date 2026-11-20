@@ -13,7 +13,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
-from sqlalchemy import Date, cast, func, select
+from sqlalchemy import Date, case, cast, func, select
 
 from app.billing.service import REPLACED_MARK, split_gst, tax_by_rate
 from app.core.deps import Ctx, HotelCtx
@@ -98,16 +98,20 @@ async def sales_data(ctx: Ctx, p: Period) -> dict:
                 func.sum(Bill.sgst_minor),
                 func.sum(Bill.service_charge_minor),
                 func.sum(Bill.total_minor),
+                func.coalesce(func.sum(Bill.guests), 0),
+                func.coalesce(func.sum(case((Bill.guests.is_not(None), Bill.total_minor), else_=0)), 0),
             )
             .where(*p.on(Bill.created_at))
             .group_by(day, Bill.status, replaced)
         )
     ).all()
     acc: dict[date, dict] = {d: defaultdict(int) for d in _dates(p)}
-    for d, status, is_replaced, n, gross, disc, tax, cgst, sgst, svc, total in rows:
+    for d, status, is_replaced, n, gross, disc, tax, cgst, sgst, svc, total, guests, covered in rows:
         a = acc[d]
         if status in LIVE:
             a["bills"] += n
+            a["covers"] += int(guests)
+            a["covered"] += int(covered)  # total of the bills that recorded guests (takeaway has none)
             for k, v in (("g", gross), ("d", disc), ("t", tax), ("c", cgst), ("s", sgst), ("v", svc), ("T", total)):
                 a[k] += int(v)
             a["paid" if status == "PAID" else "unpaid"] += int(total)
@@ -135,6 +139,9 @@ async def sales_data(ctx: Ctx, p: Period) -> dict:
     def row(a: dict, r: dict[str, int]) -> dict:
         return {
             "bills": a["bills"],
+            # Covers: guests recorded once per visit (docs/14); average spend per guest, where guests were counted.
+            "covers": a["covers"],
+            "avg_per_cover_minor": a["covered"] // a["covers"] if a["covers"] else None,
             **_ladder(a["g"], a["d"], a["t"], a["c"], a["s"], a["v"], a["T"]),
             "paid_minor": a["paid"],
             "unpaid_minor": a["unpaid"],

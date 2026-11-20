@@ -99,7 +99,7 @@ async def test_served_table_is_bill_pending_until_paid(client, hw):
     r = await client.post(f"{API}/bills/{bill['id']}/settle", headers=h(hw["admin"]), json={"method": "UPI"})
     assert r.status_code == 200, r.text
     t = await _table(client, hw)
-    assert t["state"] == "FREE" and t["unbilled_total_minor"] == 0
+    assert t["state"] == "CLEANING" and t["unbilled_total_minor"] == 0, "paid: waiting to be cleared"
     attention = (await client.get(f"{API}/orders?scope=attention", headers=h(hw["admin"]))).json()
     assert o["id"] not in [x["id"] for x in attention]
 

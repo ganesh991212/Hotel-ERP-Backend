@@ -227,6 +227,12 @@ class DiningTable(Base):
     qr_token: Mapped[str] = mapped_column(String(40), unique=True)
     status: Mapped[str] = mapped_column(String(10), server_default="ACTIVE")
     created_at: Mapped[datetime] = created()
+    # The current visit (docs/03 "Table visits"): when guests sat down (or first ordered) and how many.
+    seated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    guests: Mapped[int | None] = mapped_column(SmallInteger)
+    # A manual or automatic hold while nobody is seated: RESERVED (with a note) or CLEANING (after payment).
+    hold_state: Mapped[str | None] = mapped_column(String(10))
+    hold_note: Mapped[str | None] = mapped_column(String(80))
 
 
 class TableSession(Base):
@@ -591,6 +597,7 @@ class Bill(Base):
     discount_reason: Mapped[str | None] = mapped_column(String(200))
     discount_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     payment_method: Mapped[str | None] = mapped_column(String(8))  # CASH | UPI | CARD | MIXED (several parts)
+    guests: Mapped[int | None] = mapped_column(SmallInteger)  # covers: the visit's guests (first guest bill if split)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     print_count: Mapped[int] = mapped_column(Integer, server_default="0")
     void_reason: Mapped[str | None] = mapped_column(Text)

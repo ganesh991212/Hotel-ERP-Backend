@@ -386,6 +386,9 @@ async def create_order(
     if table and table.status != "ACTIVE":
         raise conflict("table_inactive", "This table is not taking orders")
     totals = await quote(db, lines, allow_outside_hours=allow_outside_hours)
+    if table is not None and table.seated_at is None:
+        # The first order seats the table (QR diners too): the visit's timer starts here at the latest.
+        table.seated_at, table.hold_state, table.hold_note = now(), None, None
     await lock_outlet(db, outlet.id)
     number = (
         await db.execute(select(func.coalesce(func.max(Order.number), 0) + 1).where(Order.outlet_id == outlet.id))

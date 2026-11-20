@@ -139,6 +139,16 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   shows happy-hour sales as their own row. Switch an offer off without deleting it; deleting it never changes past
   orders.
 
+### Table visits (Floor)
+- **Seat** a table when guests sit down, with how many they are (you can change it later). The table shows
+  **Seated** and a timer from that moment. If nobody seats it, the first order (waiter or QR) starts the timer.
+- After ordering it shows Occupied, then Bill pending. When the last bill is paid the table turns **Cleaning**;
+  tap **Clean** when it is ready and it becomes Free.
+- **Reserved**: hold a free table with a short note ("8 pm, 4 people"). Seating guests or ordering clears it.
+- Guests who leave without ordering: tap **Free** to end the visit.
+- The number of guests is kept on the bill once per visit (also when the bill is split by guest), so Reports show
+  **covers** and the **average spend per guest** correctly.
+
 ## 9. Tables and QR codes
 
 - Add tables with a label (like T1), area (Indoor, Patio...) and seats; deactivate when not in use.
@@ -354,6 +364,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Table visits: seat with guests, timer, Cleaning / Reserved; covers in Reports (section 6) |
 | 2026-11-20 | Close the day: cash drawer count with over/short and history (section 13) |
 | 2026-11-20 | Serving hours for categories (breakfast / lunch / dinner) (section 8) |
 | 2026-11-20 | Combos (section 8) |

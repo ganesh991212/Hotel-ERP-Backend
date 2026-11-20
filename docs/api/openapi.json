@@ -2164,6 +2164,145 @@
     }
    }
   },
+  "/api/v1/tables/{table_id}/seat": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Seat",
+    "description": "Guests sit down (or the count changes): the visit's timer starts at the first seating and the count is what\nthe bill will record as covers. Seating clears a Reserved or Cleaning hold.",
+    "operationId": "seat_api_v1_tables__table_id__seat_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SeatIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables/{table_id}/hold": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Hold",
+    "operationId": "hold_api_v1_tables__table_id__hold_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/HoldIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/categories": {
    "get": {
     "tags": [
@@ -8379,6 +8518,33 @@
     "type": "object",
     "title": "HTTPValidationError"
    },
+   "HoldIn": {
+    "properties": {
+     "state": {
+      "type": "string",
+      "pattern": "^(FREE|RESERVED|CLEANING)$",
+      "title": "State"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "state"
+    ],
+    "title": "HoldIn",
+    "description": "FREE clears a hold (the table is clean, or the reservation is off). RESERVED takes a short note."
+   },
    "HotelIn": {
     "properties": {
      "name": {
@@ -9588,6 +9754,25 @@
     "title": "RuleIn",
     "description": "`days`: Monday = 1, Tuesday = 2, Wednesday = 4 ... Sunday = 64 (127 = every day). Times are the hotel's local\ntimes; an end before the start crosses midnight. `category_ids` null = the whole menu."
    },
+   "SeatIn": {
+    "properties": {
+     "guests": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 99.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Guests"
+     }
+    },
+    "type": "object",
+    "title": "SeatIn"
+   },
    "SettingsIn": {
     "properties": {
      "name": {
@@ -9917,6 +10102,40 @@
       "type": "string",
       "title": "State",
       "default": "FREE"
+     },
+     "seated_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Seated At"
+     },
+     "guests": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Guests"
+     },
+     "hold_note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Hold Note"
      },
      "unbilled_orders": {
       "type": "integer",

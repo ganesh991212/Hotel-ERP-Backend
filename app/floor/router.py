@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -7,7 +8,7 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.deps import Ctx, HotelCtx, count
 from app.core.errors import bad_request, conflict, not_found
-from app.core.security import new_opaque_token
+from app.core.security import new_opaque_token, now
 from app.models import Bill, DiningTable, Order, Outlet
 from app.realtime.hub import outlet_channel  # noqa: F401  (re-exported)
 
@@ -89,8 +90,12 @@ class TableOut(BaseModel):
     qr_token: str
     qr_url: str
     open_orders: int = 0
-    # Derived (docs/04): OCCUPIED while orders are open, BILL_PENDING while served food is unpaid, else FREE.
+    # Derived (docs/03 "Table visits"): OCCUPIED while orders are open, BILL_PENDING while served food is unpaid,
+    # SEATED when guests sat but haven't ordered, then CLEANING / RESERVED holds, else FREE.
     state: str = "FREE"
+    seated_at: datetime | None = None
+    guests: int | None = None
+    hold_note: str | None = None
     unbilled_orders: int = 0
     unbilled_total_minor: int = 0  # unbilled served orders + issued-but-unpaid bills; computed by the server
 
@@ -108,6 +113,16 @@ class TablePatch(BaseModel):
     status: str | None = Field(default=None, pattern="^(ACTIVE|INACTIVE)$")
 
 
+def table_state(t: DiningTable, open_orders: int, owes: bool) -> str:
+    if open_orders:
+        return "OCCUPIED"
+    if owes:
+        return "BILL_PENDING"
+    if t.seated_at is not None:
+        return "SEATED"
+    return t.hold_state or "FREE"
+
+
 def _qr_url(token: str) -> str:
     base = get_settings().public_diner_url.rstrip("/")
     return f"{base}/{token}" if base else f"/#/t/{token}"
@@ -123,6 +138,10 @@ def _table_out(t: DiningTable, open_orders: int = 0) -> TableOut:
         qr_token=t.qr_token,
         qr_url=_qr_url(t.qr_token),
         open_orders=open_orders,
+        seated_at=t.seated_at,
+        guests=t.guests,
+        hold_note=t.hold_note,
+        state=table_state(t, open_orders, False),
     )
 
 
@@ -165,7 +184,7 @@ async def list_tables(ctx: Ctx = HotelCtx("order.view")) -> list[TableOut]:
         n, total = unbilled.get(t.id, (0, 0))
         row.unbilled_orders = n
         row.unbilled_total_minor = int(total) + int(owing.get(t.id, 0))
-        row.state = "OCCUPIED" if row.open_orders else "BILL_PENDING" if row.unbilled_total_minor or n else "FREE"
+        row.state = table_state(t, row.open_orders, bool(row.unbilled_total_minor or n))
         out.append(row)
     return out
 
@@ -309,3 +328,56 @@ async def print_all_qr(body: QrPrintIn, ctx: Ctx = HotelCtx("table.manage")) -> 
         .all()
     )
     return await _qr_doc(ctx, list(tables), body)
+
+
+class SeatIn(BaseModel):
+    guests: int | None = Field(default=None, ge=1, le=99)
+
+
+@router.post("/tables/{table_id}/seat", response_model=TableOut)
+async def seat(table_id: UUID, body: SeatIn, ctx: Ctx = HotelCtx("order.create")) -> TableOut:
+    """Guests sit down (or the count changes): the visit's timer starts at the first seating and the count is what
+    the bill will record as covers. Seating clears a Reserved or Cleaning hold."""
+    t = await ctx.db.get(DiningTable, table_id)
+    if not t:
+        raise not_found("Table")
+    if t.seated_at is None:
+        t.seated_at = now()
+    t.guests = body.guests or t.guests
+    t.hold_state, t.hold_note = None, None
+    await ctx.audit("table.seat", "table", t.id, after={"guests": t.guests})
+    ctx.emit(outlet_channel(t.outlet_id), {"type": "table.updated", "table_id": str(t.id)})
+    return _table_out(t)
+
+
+class HoldIn(BaseModel):
+    """FREE clears a hold (the table is clean, or the reservation is off). RESERVED takes a short note."""
+
+    state: str = Field(pattern="^(FREE|RESERVED|CLEANING)$")
+    note: str | None = Field(default=None, max_length=80)
+
+
+@router.post("/tables/{table_id}/hold", response_model=TableOut)
+async def hold(table_id: UUID, body: HoldIn, ctx: Ctx = HotelCtx("order.create")) -> TableOut:
+    t = await ctx.db.get(DiningTable, table_id)
+    if not t:
+        raise not_found("Table")
+    if t.seated_at is not None and body.state != "FREE":
+        raise conflict("table_in_use", "Guests are at this table")
+    if body.state == "FREE" and t.seated_at is not None:
+        # Guests left without ordering: end the visit.
+        busy = (
+            await ctx.db.execute(
+                select(Order.id)
+                .where(Order.table_id == t.id, Order.bill_id.is_(None), Order.status != "CANCELLED")
+                .limit(1)
+            )
+        ).first()
+        if busy:
+            raise conflict("table_in_use", "This table has orders; bill it first")
+        t.seated_at, t.guests = None, None
+    t.hold_state = None if body.state == "FREE" else body.state
+    t.hold_note = (body.note or "").strip() or None if body.state == "RESERVED" else None
+    await ctx.audit("table.hold", "table", t.id, after={"state": body.state, "note": t.hold_note})
+    ctx.emit(outlet_channel(t.outlet_id), {"type": "table.updated", "table_id": str(t.id)})
+    return _table_out(t)
