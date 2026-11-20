@@ -12,7 +12,31 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 `/outlets`, `/users`, `/roles`, `/areas`, `/tables` (+ `/tables/{id}/qr`, `/tables/qr-sheet`), `/stations`, `/settings`
 
 ## Catalog
-`/menus`, `/categories`, `/items` (+ `/items/{id}/availability`), `/modifier-groups`
+`/menus`, `/categories`, `/items` (+ `/items/{id}/availability`)
+
+Variants and add-ons (built 2026-11-20; docs/03 "Variants and add-ons"):
+- `GET /items` and the diner menu `GET /d/{qr}` add per item `variants[]` `{id, name, price_minor, is_available}` and
+  `addon_groups[]` `{id, name, min_select, max_select, addons[]}`. Diners never see sold-out sizes/add-ons; an item
+  whose sizes are all sold out is shown sold out.
+- `PUT /items/{id}/variants {variants: [{id?, name, price_minor, is_available}]}` (none, or 2 to 10; `menu.manage`).
+- `POST /variants/{id}/availability`, `POST /addons/{id}/availability` (`menu.availability`).
+- `GET /addon-groups` (with `used_by` item names), `POST /addon-groups`, `PUT /addon-groups/{id}`
+  `{name, min_select, max_select, addons: [{id?, name, price_minor, is_available}]}`, `DELETE /addon-groups/{id}`.
+- `PUT /items/{id}/addon-groups {group_ids}` (order = display order).
+- Order and quote lines accept `variant_id` and `addons: [{addon_id, qty}]` (ids only; priced on the server).
+  Errors: `variant_required`, `bad_variant`, `bad_addon`, `addon_count` (`details.group/min/max`), `item_unavailable`.
+  Order items return `variant_name` and `addons[]`.
+
+Happy hour (built 2026-11-20; docs/03 "Happy hour"):
+- `GET /price-rules`; `POST`/`PUT /price-rules/{id}` `{name, percent_bp 1..9000, days 1..127 (Mon=1 ... Sun=64),
+  start_time "HH:MM", end_time, category_ids | null, is_active}` (`menu.manage`); `DELETE /price-rules/{id}`.
+- `GET /items` and the diner menu add `offer`: `{name, percent_bp, until}` while a rule is live for the dish (a badge;
+  the price is the quote's). Order items return `price_rule` and `list_unit_price_minor`.
+
+Combos (built 2026-11-20; docs/03 "Combos"):
+- `PUT /items/{id}/components {components: [{item_id, qty}]}` (`menu.manage`; empty = ordinary item). Errors
+  `bad_combo`. `GET /items` and the diner menu return `components[]` `{item_id, name, qty, is_available}`; order items
+  return `components[]`. `DELETE /items/{id}` refuses a dish used in a combo (`item_in_combo`, `details.combos`).
 
 ## Diner (token = table QR, then table-session token)
 `GET /d/{qr_token}` (outlet + menu, cacheable), `POST /d/{qr_token}/session`, `POST /d/orders`, `GET /d/orders/{id}`, `POST /d/orders/{id}/rating`, `POST /d/call-waiter`, `POST /d/bill-request`

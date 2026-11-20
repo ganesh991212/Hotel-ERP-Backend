@@ -1,7 +1,7 @@
 """Pure server-side pricing. Integer paise only; the client never computes money (rule 1, 4)."""
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, time, timedelta
 
 
 @dataclass(frozen=True)
@@ -13,12 +13,64 @@ class TaxRuleRow:
 
 
 @dataclass(frozen=True)
+class AddonPick:
+    """One chosen add-on at its price of the moment; `qty` picks of it on each unit of the dish."""
+
+    id: str
+    name: str
+    price_minor: int
+    qty: int = 1
+
+
+@dataclass(frozen=True)
+class PriceRuleRow:
+    """Happy hour. `days`: Monday = 1, Tuesday = 2 ... Sunday = 64. `category_ids` None = whole menu."""
+
+    name: str
+    percent_bp: int
+    days: int
+    start: time
+    end: time
+    category_ids: frozenset[str] | None = None
+
+
+def rule_applies(rule: PriceRuleRow, at: datetime, category_id: str) -> bool:
+    """`at` is the hotel's local time. A window that crosses midnight (22:00-01:00) belongs to the day it started."""
+    if rule.category_ids is not None and category_id not in rule.category_ids:
+        return False
+    t = at.time()
+    if rule.start < rule.end:
+        return bool(rule.days & (1 << at.weekday())) and rule.start <= t < rule.end
+    if t >= rule.start:
+        return bool(rule.days & (1 << at.weekday()))
+    if t < rule.end:  # after midnight: the window opened yesterday
+        return bool(rule.days & (1 << (at - timedelta(days=1)).weekday()))
+    return False
+
+
+def best_rule(rules: list[PriceRuleRow], at: datetime, category_id: str) -> PriceRuleRow | None:
+    """The single best rule for this dish now; rules never stack (docs/14)."""
+    live = [r for r in rules if rule_applies(r, at, category_id)]
+    return max(live, key=lambda r: (r.percent_bp, r.name)) if live else None
+
+
+def after_rule(base_minor: int, rule: PriceRuleRow | None) -> int:
+    return base_minor if rule is None else base_minor - bp_of(base_minor, rule.percent_bp)
+
+
+@dataclass(frozen=True)
 class PriceLine:
     item_id: str
     name: str
     qty: int
-    unit_price_minor: int
+    unit_price_minor: int  # dish (or variant) + add-ons, per unit
     tax_rate_bp: int
+    variant_id: str | None = None
+    variant_name: str | None = None
+    addons: tuple[AddonPick, ...] = ()
+    list_unit_price_minor: int | None = None  # dish/size before happy hour
+    price_rule: str | None = None
+    components: tuple[tuple[str, str, int], ...] = ()  # combo contents: (item id, name, qty per unit)
 
 
 @dataclass(frozen=True)
@@ -30,6 +82,28 @@ class PricedLine:
     tax_rate_bp: int
     line_total_minor: int
     tax_minor: int
+    variant_id: str | None = None
+    variant_name: str | None = None
+    addons: tuple[AddonPick, ...] = ()
+    list_unit_price_minor: int | None = None  # dish/size before happy hour
+    price_rule: str | None = None
+    components: tuple[tuple[str, str, int], ...] = ()  # combo contents: (item id, name, qty per unit)
+
+
+def unit_price(base_minor: int, addons: tuple[AddonPick, ...]) -> int:
+    """A unit of the dish with its add-ons. Add-ons served with a dish take the dish's GST rate (composite
+    supply, docs/14), so they are simply part of the unit price."""
+    return base_minor + sum(a.price_minor * a.qty for a in addons)
+
+
+def addons_label(addons) -> str:
+    """'Raita, 2 x Extra cheese' for bills and lists (dicts from a snapshot or AddonPick)."""
+
+    def part(a) -> str:
+        name, qty = (a["name"], a.get("qty", 1)) if isinstance(a, dict) else (a.name, a.qty)
+        return f"{qty} x {name}" if qty > 1 else name
+
+    return ", ".join(part(a) for a in addons or [])
 
 
 @dataclass(frozen=True)
@@ -69,6 +143,12 @@ def price(lines: list[PriceLine], service_charge_bp: int = 0) -> Totals:
                 tax_rate_bp=ln.tax_rate_bp,
                 line_total_minor=total,
                 tax_minor=bp_of(total, ln.tax_rate_bp),
+                variant_id=ln.variant_id,
+                variant_name=ln.variant_name,
+                addons=ln.addons,
+                list_unit_price_minor=ln.list_unit_price_minor,
+                price_rule=ln.price_rule,
+                components=ln.components,
             )
         )
     subtotal = sum(p.line_total_minor for p in priced)

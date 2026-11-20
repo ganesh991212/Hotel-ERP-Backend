@@ -170,7 +170,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
 | 3 | Tables / floor plan | 6 | 55% | 3.3 | Partial |
 | 4 | Kitchen display | 8 | 80% | 6.4 | Mostly done |
-| 5 | Menu and pricing | 7 | 50% | 3.5 | Partial |
+| 5 | Menu and pricing | 7 | 85% | 6.0 | Mostly done |
 | 6 | Live dashboard | 6 | 70% | 4.2 | Mostly done |
 | 7 | Reports | 7 | 80% | 5.6 | Mostly done |
 | 8 | Finance and GST | 7 | 55% | 3.9 | Partial |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **47.3** | |
+| | **Total** | **100** | | **49.8** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -223,9 +223,9 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 
 ### 5. Menu and pricing (7)
 - [x] Items, categories, availability, veg/non-veg, prep time, tax rate
-- [ ] Variants (half/full) and add-ons
-- [ ] Combos
-- [ ] Happy hour (time + days + categories + %)
+- [x] Variants (half/full) and add-ons (server-priced, snapshot on the order, add-ons at the dish GST rate)
+- [x] Combos (an item with component dishes; choices via add-on groups; KOT lists every dish)
+- [x] Happy hour (time + days + categories + %; server-applied on every channel; own report row)
 - [ ] Time-based menus (breakfast / lunch / dinner)
 
 ### 6. Live dashboard (6)

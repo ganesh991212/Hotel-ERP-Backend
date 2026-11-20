@@ -4,10 +4,12 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
+from app.catalog.options import options_for, with_options
+from app.catalog.price_rules import offers_now
 from app.core.deps import Ctx, HotelCtx, count
 from app.core.errors import bad_request, not_found
 from app.floor.router import current_outlet, outlet_channel
-from app.models import MenuCategory, MenuItem, OrderItem
+from app.models import MenuCategory, MenuItem, MenuItemComponent, OrderItem
 
 router = APIRouter(tags=["catalog"])
 
@@ -34,6 +36,13 @@ class ItemOut(BaseModel):
     est_prep_minutes: int
     is_available: bool
     sort: int
+    # Sizes and add-on groups (docs/03 "Variants and add-ons"); managed through /items/{id}/variants and
+    # /items/{id}/addon-groups.
+    variants: list[dict] = []
+    addon_groups: list[dict] = []
+    components: list[dict] = []  # a combo's dishes (docs/03 "Combos"); empty for ordinary items
+    # A happy-hour rule live right now for this dish (a badge; the price comes from the quote).
+    offer: dict | None = None
 
 
 class ItemIn(BaseModel):
@@ -103,8 +112,10 @@ async def delete_category(category_id: UUID, ctx: Ctx = HotelCtx("menu.manage"))
 
 @router.get("/items", response_model=list[ItemOut])
 async def list_items(ctx: Ctx = HotelCtx()) -> list[ItemOut]:
-    rows = (await ctx.db.execute(select(MenuItem).order_by(MenuItem.sort, MenuItem.name))).scalars()
-    return [_item_out(i) for i in rows]
+    rows = (await ctx.db.execute(select(MenuItem).order_by(MenuItem.sort, MenuItem.name))).scalars().all()
+    opts = await options_for(ctx.db)
+    offers = await offers_now(ctx.db, rows)
+    return [ItemOut(**{**with_options(_item_out(i).model_dump(), opts, i.id), "offer": offers.get(i.id)}) for i in rows]
 
 
 @router.post("/items", response_model=ItemOut, status_code=201)
@@ -150,4 +161,17 @@ async def delete_item(item_id: UUID, ctx: Ctx = HotelCtx("menu.manage")) -> None
         raise not_found("Item")
     if (await ctx.db.execute(select(OrderItem.id).where(OrderItem.item_id == i.id).limit(1))).first():
         raise bad_request("item_has_orders", "Items with order history can be marked unavailable, not deleted")
+    in_combo = (
+        (
+            await ctx.db.execute(
+                select(MenuItem.name)
+                .join(MenuItemComponent, MenuItemComponent.combo_item_id == MenuItem.id)
+                .where(MenuItemComponent.component_item_id == i.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if in_combo:
+        raise bad_request("item_in_combo", "Remove it from its combos first", {"combos": list(in_combo)})
     await ctx.db.delete(i)

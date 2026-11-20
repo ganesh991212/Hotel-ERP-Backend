@@ -70,3 +70,110 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   percentages (rarely needed; Square's portion count is the same idea).
 - Not yet: a discount per guest bill (Toast's "discount does not follow the item" mistake is avoided by not carrying
   a whole-bill discount into the split at all; a guest discount comes later).
+
+## Menu variants (half/full) and add-ons (checklist item 5) - 2026-11-20
+
+### How others do it
+- **Petpooja** (India): "item-wise variations, and add-ons with separate pricing for each customisation"; menu setup
+  is categories, variations, add-ons, recipes and tax mapping, kept the same across dine-in and delivery. (Vendor
+  material; screens not public.)
+- **Toast**: portions (e.g. 1st half / 2nd half) and modifier groups attached to items; groups can be required or
+  optional, with min/max choices.
+- **Square**: modifier sets attached to items, with required/optional and pre-selected options.
+- Common pattern: a variation group (Half / Full, Small / Large) with its own price per option, plus reusable
+  add-on groups ("Extras", "Choose your bread") with rules for how many may be picked.
+
+### Their mistakes (user reports)
+1. **Modifier rules that behave differently by device** (Square: optional modifiers forced as required on iOS) and
+   pre-selected modifier bugs that silently add items.
+2. **Can't see where a modifier is used** (Toast: modifier items "don't show which groups they're used in"), so
+   owners can't safely change or delete them; large menus become unmanageable.
+3. **Hidden from the till** when a visibility flag is off (Toast "Visible to POS"): staff can't sell what's on the menu.
+4. **Online customers see a huge raw list of modifiers** (Square), because one list serves every channel.
+5. **The same option can't be picked twice** in a group (Square), e.g. "extra cheese x2".
+6. **Required-before-optional prompting order** forces extra taps on every order (Toast).
+
+### GST (India)
+- Food and drink served by a restaurant is one **composite supply**, taxed at the rate of the principal supply
+  (restaurant service): add-ons served with the dish take the **dish's GST rate**, not a rate of their own. Things sold
+  as separate goods (e.g. packaged goods, cigarettes) are outside this; we do not model them as add-ons.
+  (Commentary sources; rates must still come from effective-dated tax config, rule 7.)
+
+### Our choice
+- **Variants** belong to one item (Half ₹180 / Full ₹320). If an item has variants, one must be chosen and its price
+  replaces the item price. Each variant can be marked sold out on its own (half biryani out, full still on).
+- **Add-on groups** are reusable across items ("Extras": raita ₹30, extra gravy ₹40) with `min`/`max` picks
+  (0..n optional, 1..1 "choose one"). The menu screen shows **which items use each group** (avoids mistake 2).
+  An add-on can be picked more than once only if the group allows it (`max` counts total picks; mistake 5).
+- **One rule set everywhere**: the server validates variant and add-on choices for waiters, admins and QR diners
+  alike (no per-device behaviour; mistake 1). Nothing is pre-selected.
+- **Prices from the server only** (rule 4): clients send `variant_id` and add-on ids with counts; the server prices
+  `unit = variant (or item) + add-ons`, and the add-ons take the item's GST rate (composite supply).
+- **Snapshot on the order**: the order line keeps the variant name, each add-on's name and price at that moment, so
+  later menu edits never change an order, a KOT or a bill. The bill line reads "Chicken Biryani (Half) + Raita" with
+  the combined unit price; the KOT shows the variant in bold and add-ons underneath for the chef.
+- **One list for staff and diners**, but sold-out variants/add-ons are hidden from diners and shown greyed for
+  staff (no separate "visible to POS" flag to forget; mistake 3).
+- Composer: pick the variant first (one tap, required), add-ons on the same sheet (mistake 6 avoided by showing
+  both at once, not as successive prompts).
+
+## Happy hour (checklist item 5) - 2026-11-20
+
+### How others do it
+- **Petpooja**: time-based pricing and time-based menus (set a window once; items appear/disappear on schedule).
+  (Vendor material; steps not public.)
+- **Toast**: either "time-specific pricing" on items/groups, or a separate happy-hour menu with menu-specific prices.
+- **Heartland / Lavu**: pricing rules with a start and end time, targeting items by tag; the POS applies the discount
+  in the window and reverts after.
+
+### Their mistakes
+1. **Online and third-party channels don't get the happy-hour price** (Toast's own support: partners "do not read
+   time-based prices"; ChowNow always shows the base price; Toast Order & Pay users add the discount by hand).
+2. **Reports hide it**: Toast's product mix averages the prices (100 beers at $10 + 50 at $5 shows $8.33), so the
+   owner can't see what happy hour sold or cost.
+3. **Staff must remember** to ring the happy-hour version of an item (Toast's own guidance), so errors are common.
+4. **Copies leak**: a shallow-copied happy-hour menu group changes the original item's pricing (Toast).
+5. **Sizes block it**: size pricing can't be combined with happy-hour pricing (Toast forum).
+6. **Timed menu bugs**: ordering from a timed menu fails outside its window (Toast forum, "may not be a priority").
+
+### Our choice
+- A **price rule**, not a copy of the menu (avoids 4): name, percent off, days of the week, start and end time (may
+  cross midnight, e.g. 22:00-01:00), and the categories it covers (none = whole menu). Owners switch it on/off.
+- Applied **on the server, automatically, for every channel** (waiter, admin, QR diner) at the hotel's local time
+  (avoids 1 and 3). If two rules overlap, the guest gets the single best one; rules never stack.
+- Applies to the dish or size price (works with sizes; avoids 5); add-ons keep their price.
+- **Recorded on the order line** (list price, rule name), and the bill line reads "Fresh Lime Soda (Happy hour)", so the
+  item report shows happy-hour sales as their own row with real amounts, never an average (avoids 2).
+- The price is decided when the order is placed: a cart quoted at 6:59 and sent at 7:01 gets the 7:01 price; the
+  order shows exactly what was charged.
+- A bill discount still works on top (it is a separate, audited decision with the role's limit).
+
+## Combos (checklist item 5) - 2026-11-20
+
+### How others do it
+- **Petpooja**: a combo bills at one set price while each component stays linked to its own recipe, so stock comes
+  off per component (vendor blog).
+- **Square** (combos): the ticket and KDS show the combo's parts, each routed to its station, marked "part of Burger
+  Combo"; the item-sales report lists the individual items sold in combos.
+- **Lightspeed**: a base price sets the combo's minimum; chosen items can add a charge.
+- **GoFrugal ServQuick**: combos cannot track inventory at all (disabled by default).
+
+### Their mistakes
+1. A bundle that reaches the kitchen as **one line** ("3-course prix fixe" shows as one ticket item; Square forum), so
+   the cooks don't see what to make.
+2. **Combos missing from accounting exports** (Square: not supported by QuickBooks/Xero/Zoho integrations).
+3. **No stock tracking for combos** (GoFrugal), or a combo still sold when one of its parts has run out.
+4. Choice slots ("pick your drink") built as a separate, special mechanism with its own rules to learn.
+
+### Our choice
+- A combo is an **ordinary menu item** (own price, category, GST code, sold-out switch) with a list of component
+  dishes and quantities. It reuses everything items already have: sizes, add-on groups, happy hour.
+- **Choices reuse add-on groups**: "Choose your drink" is a group with Coke ₹0 / Lime soda ₹0 / Lassi +₹20, min 1,
+  max 1 (avoids 4).
+- The **KOT prints every component** under the combo (avoids 1); the order line keeps a snapshot of the components.
+- A combo **can't be ordered while any of its fixed components is sold out** (server check; avoids the second half of
+  3); its preparation time is the slowest component's.
+- Priced and taxed as one supply at the combo's own price and GST code (restaurant food, composite supply). The bill
+  and reports show the combo as one line at its real price, so CSV exports carry it like any item (avoids 2).
+  Per-component stock comes with inventory (checklist item 9), which will read the same snapshot.
+- No combos inside combos (keeps the ticket and stock readable).

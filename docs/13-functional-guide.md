@@ -112,6 +112,28 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 - **Sold out** switch (chefs and servers may use it): the item disappears from QR ordering instantly and cannot be
   ordered.
 - Prices always come from the server; a diner's phone or a waiter's tablet never sets a price.
+- **Sizes** (Menu > item > Sizes): give a dish two or more sizes with their own price, e.g. Half ₹180 / Full ₹320.
+  Then everyone ordering it (waiter, admin, QR diner) must pick a size. One size can be marked sold out on its own
+  (half biryani finished, full still on); if every size is sold out the dish shows as sold out.
+- **Add-ons** (Menu > Add-on groups): make a group once, e.g. "Extras" (Raita ₹30, Cheese ₹40; pick up to 3) or
+  "Choose your bread" (Roti / Naan; pick exactly 1), then attach it to the dishes that offer it. Each group shows
+  which dishes use it. The same add-on can be picked more than once (2 x Cheese) if the group allows that many.
+- When ordering, the size and add-ons are chosen on the same sheet. The price shown is the server's: size plus
+  add-ons. Add-ons are taxed at the dish's GST rate. The kitchen ticket prints the add-ons under the dish; the bill
+  line reads "Biryani (Half) + Raita, 2 x Cheese".
+- Changing a price later never changes an order already placed or its bill.
+- **Combos** (Menu > item > ⋮ > Combo): turn a dish into a combo by listing what it contains, e.g. "Thali ₹300" =
+  1 Biryani + 2 Naan. It keeps its own price and tax. For a choice ("choose your drink"), attach an add-on group
+  with ₹0 options (and a surcharge for the pricier ones), set to "choose 1". The kitchen ticket lists every dish in
+  the combo with its quantity. A combo can't be ordered while one of its dishes is sold out (diners see it sold out).
+  A dish used in a combo can't be deleted until it is taken out of the combo.
+- **Happy hour** (Menu > Happy hour): a name, percent off, the days, a start and end time (it can run past
+  midnight, e.g. Saturday 10 pm to 1 am) and which categories (or the whole menu). While it runs, the dishes show a
+  "Happy hour −20%" badge for staff and on the QR menu, and the price is lowered automatically for every order,
+  whoever takes it. It takes the percent off the dish or size price; add-ons keep their price. If two offers overlap,
+  the guest gets the better one (they never add up). The bill line reads "Naan (Happy hour)", and the item report
+  shows happy-hour sales as their own row. Switch an offer off without deleting it; deleting it never changes past
+  orders.
 
 ## 9. Tables and QR codes
 
@@ -314,6 +336,9 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Combos (section 8) |
+| 2026-11-20 | Happy hour (section 8) |
+| 2026-11-20 | Menu sizes (half/full) and add-ons (section 8) |
 | 2026-11-20 | Split by items: one GST bill per guest (section 10) |
 | 2026-11-20 | Reports: sales by day, items, GST summary, staff, bills register, CSV; Overview revenue now counts bills (section 13) |
 | 2026-11-20 | Part payments and equal split (sections 10, 13) |

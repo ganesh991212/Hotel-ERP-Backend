@@ -144,5 +144,44 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Discounts: a discounted bill is not split (`bill_discounted`; cancel it first), because the discount would be
   lost. Guest bills cannot be discounted yet; a per-guest discount comes later.
 
+## Variants and add-ons (added 2026-11-20; prior art in docs/14)
+- `menu_item_variants(item_id, name, price_minor, is_available, sort)`: an item has none or two to ten sizes (Half /
+  Full). With sizes, one must be chosen and its price replaces the item price; each size can be sold out alone.
+- `addon_groups(name, min_select, max_select)` with `addons(name, price_minor, is_available)`, reusable across
+  items via `menu_item_addon_groups(item_id, group_id, sort)`. `min..max` counts total picks in the group (0..3
+  optional extras; 1..1 "choose one"). Picking the same add-on twice is `qty`, not two entries.
+- Every channel goes through one check (`ordering.service._choose`): size required/valid/available, add-on offered
+  with this item/available, group counts. Nothing is pre-selected.
+- Price per unit = size (or item) price + add-ons x picks; **add-ons take the dish's GST rate** (restaurant food is
+  one composite supply). Rates still come from effective-dated tax rules (rule 7).
+- Order lines snapshot `variant_id`, `variant_name`, `addons` [{id, name, price_minor, qty}]; `name` reads
+  "Biryani (Half)". Bill lines read "Biryani (Half) + Raita, 2 x Cheese", so different add-ons never merge.
+- Lines are matched by position when an order is created: the same dish can be on one order twice. Each item keeps
+  its `line_no` (migration 0012), and orders, KOTs and screens list items in the order they were entered.
+- All four tables have `hotel_id` and RLS (migration 0010).
+
+## Happy hour (added 2026-11-20; prior art in docs/14)
+- `price_rules(name, percent_bp 1..9000, days bitmask Mon=1..Sun=64, start_time, end_time, category_ids[] | NULL,
+  is_active)`, RLS (migration 0011). Times are the hotel's local time; end before start crosses midnight and belongs
+  to the day it started (Sat 22:00-01:00 covers Sunday 00:30).
+- Applied in `ordering.service.quote` for every channel at the moment the order is priced: the single best live rule
+  for the dish's category takes its percent off the **dish/size price**; add-ons keep their price; rules never stack.
+  A cart quoted at 6:59 and sent at 7:01 gets the 7:01 price.
+- Order lines snapshot `list_unit_price_minor` (before the rule) and `price_rule` (its name). Bill lines read
+  "Naan (Happy hour)", so the item report shows happy-hour sales as their own row with real amounts.
+- `quote` now uses the hotel's local date for the GST rate lookup too (it used the server's UTC date, which was a day
+  behind between 00:00 and 05:30 IST).
+
+## Combos (added 2026-11-20; prior art in docs/14)
+- A combo is an ordinary `menu_items` row with `menu_item_components(combo_item_id, component_item_id, qty, sort)`
+  (RLS, migration 0013): its own price, category, GST code, sold-out switch, sizes, add-on groups and happy hour.
+  Choice slots ("choose your drink") are add-on groups (min 1, max 1; ₹0 or a surcharge).
+- At least two dishes (or one dish twice); no combo inside a combo; a dish in a combo can't be deleted
+  (`item_in_combo`). Saving components sets the combo's preparation time to its slowest dish.
+- Ordering: refused while any component is sold out (`item_unavailable`); diners see such a combo as sold out.
+  Priced and taxed as one supply at the combo's price and GST code.
+- Order lines snapshot `components` [{item_id, name, qty per combo}]; the KOT prints each dish x quantity under the
+  combo. Bills and reports show the combo as one line; per-component stock comes with inventory (item 9).
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

@@ -27,10 +27,18 @@ from app.ordering.service import transition as do_transition
 router = APIRouter(tags=["orders"])
 
 
+class AddonModel(BaseModel):
+    addon_id: UUID
+    qty: int = Field(default=1, ge=1, le=20)  # picks per unit of the dish ("extra cheese x2")
+
+
 class LineModel(BaseModel):
     item_id: UUID
     qty: int = Field(ge=1, le=99)
     note: str | None = Field(default=None, max_length=200)
+    # Ids only: the server prices the variant and add-ons (rule 4).
+    variant_id: UUID | None = None
+    addons: list[AddonModel] = Field(default_factory=list, max_length=20)
 
 
 class QuoteIn(BaseModel):
@@ -61,7 +69,7 @@ class ReasonIn(BaseModel):
 
 
 def _lines(items: list[LineModel]) -> list[LineIn]:
-    return [LineIn(i.item_id, i.qty, i.note) for i in items]
+    return [LineIn(i.item_id, i.qty, i.note, i.variant_id, tuple((a.addon_id, a.qty) for a in i.addons)) for i in items]
 
 
 async def ensure_order_quota(ctx_db, entitlements: dict) -> None:
