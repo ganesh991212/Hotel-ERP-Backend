@@ -146,6 +146,10 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   tap **Clean** when it is ready and it becomes Free.
 - **Reserved**: hold a free table with a short note ("8 pm, 4 people"). Seating guests or ordering clears it.
 - Guests who leave without ordering: tap **Free** to end the visit.
+- **Move**: the guests changed tables. Pick a free table: their orders (wherever they are in the kitchen), guest
+  count and timer go with them, and QR diners keep ordering on the new table. The old table turns Cleaning.
+- **Merge**: one party across several tables. Their orders and guests join this table, so they get one bill (split
+  it by guest at the end if they like). Both are only possible before the bill is made.
 - The number of guests is kept on the bill once per visit (also when the bill is split by guest), so Reports show
   **covers** and the **average spend per guest** correctly.
 
@@ -364,6 +368,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Move and merge tables (section 6) |
 | 2026-11-20 | Table visits: seat with guests, timer, Cleaning / Reserved; covers in Reports (section 6) |
 | 2026-11-20 | Close the day: cash drawer count with over/short and history (section 13) |
 | 2026-11-20 | Serving hours for categories (breakfast / lunch / dinner) (section 8) |

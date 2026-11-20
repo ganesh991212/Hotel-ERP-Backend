@@ -160,6 +160,8 @@ response; design in docs/14 "Reports"):
   (`order.create`); error `table_in_use`. Tables return `state` (FREE | SEATED | OCCUPIED | BILL_PENDING | CLEANING |
   RESERVED), `seated_at`, `guests`, `hold_note`. Bills return `guests`. Sales report rows add `covers`,
   `avg_per_cover_minor`.
+- `POST /tables/{id}/move {to_table_id}` and `POST /tables/{id}/merge {from_table_ids}` (`order.create`); errors
+  `table_has_bill`, `table_in_use`, `nothing_to_move`, `same_table`. Return the target table.
 
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.

@@ -263,3 +263,32 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
 - **States stay few and mostly automatic** (avoids 3): Free -> Seated -> Ordering -> Bill pending -> **Cleaning**
   (set automatically when the last bill is paid) -> Free (one tap "Clean"). **Reserved** is the only manual state, with
   a short note ("8 pm, 4 people"); seating or ordering on it clears it.
+
+## Move / merge tables (checklist item 3) - 2026-11-20
+
+### How others do it
+- **Lightspeed**: tables with ordered items can be transferred to another table or merged.
+- **Papaya**: merging combines two tables into one bill; the merged table's unpaid items go to the destination
+  bill; **blocked if a part payment exists** (move items instead).
+- **Eats365 / eZee**: transfer the whole table, or individual KOTs / items, to another table; complimentary items
+  can't be transferred (Eats365).
+- **Dish / Odoo**: "move order" moves the table's open order to another table.
+(Vendor help pages; no Petpooja or Toast specifics found.)
+
+### Their mistakes / gaps
+1. Merge silently fails or is blocked late when part of a bill is already paid; staff learn the rule at the till.
+2. Three overlapping actions (move order, move KOT, move items) for what the waiter thinks of as "they changed
+   tables".
+3. Not covered in any of them: a **QR diner** whose phone still points at the old table keeps ordering to it after
+   the move.
+
+### Our choice
+- Two actions only: **Move** (the whole visit goes to a free table) and **Merge** (other tables' visits join this
+  one: one party, one bill). Moving single items between guests is already "split by items" at billing time.
+- Everything moves together: open orders (wherever they are in the kitchen; screens and tickets show the new table),
+  the guest count (summed on merge), the timer (earliest start kept) and the **QR diner sessions**, so diners keep
+  ordering and tracking on the new table (avoids 3). The old table turns Cleaning.
+- **Before billing only**: if a table already has an issued bill, the action is refused up front with a clear reason
+  ("bill it again after moving" isn't needed: cancel or settle that bill first), so an invoice never changes table
+  after it was issued and nothing paid is merged (avoids 1).
+- Audited (who, from, to).

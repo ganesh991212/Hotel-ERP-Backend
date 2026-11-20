@@ -211,6 +211,11 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   short note; it can't be set while guests are seated. Guests who leave without ordering: hold FREE ends the visit.
 - Covers: `bills.guests` = the visit's guests, recorded on its bill (only the first guest bill when split; never on a
   later extra bill). Reports: `covers` and `avg_per_cover_minor` (total of the bills that recorded guests / covers).
+- **Move** (`POST /tables/{id}/move`) sends the whole visit to a free table; **Merge** (`POST /tables/{id}/merge`)
+  brings other tables' visits into this one. Unbilled live orders, open QR diner sessions, guests (summed) and the
+  earliest seating time move; the source tables turn CLEANING. Refused while any involved table has an issued bill
+  (`table_has_bill`), so invoices never change table and nothing paid is merged; a busy target needs merge
+  (`table_in_use`).
 
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

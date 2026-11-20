@@ -3,13 +3,13 @@ from uuid import UUID
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.core.config import get_settings
 from app.core.deps import Ctx, HotelCtx, count
 from app.core.errors import bad_request, conflict, not_found
 from app.core.security import new_opaque_token, now
-from app.models import Bill, DiningTable, Order, Outlet
+from app.models import Bill, DiningTable, Order, Outlet, TableSession
 from app.realtime.hub import outlet_channel  # noqa: F401  (re-exported)
 
 router = APIRouter(tags=["floor"])
@@ -381,3 +381,110 @@ async def hold(table_id: UUID, body: HoldIn, ctx: Ctx = HotelCtx("order.create")
     await ctx.audit("table.hold", "table", t.id, after={"state": body.state, "note": t.hold_note})
     ctx.emit(outlet_channel(t.outlet_id), {"type": "table.updated", "table_id": str(t.id)})
     return _table_out(t)
+
+
+# ---------- move / merge (docs/03 "Table visits", docs/14) ----------
+
+LIVE_ORDERS = ("PLACED", "CONFIRMED", "ASSIGNED", "PREPARING", "READY", "SERVED")
+
+
+async def _visit_orders(ctx: Ctx, t: DiningTable) -> list[Order]:
+    return list(
+        (
+            await ctx.db.execute(
+                select(Order).where(Order.table_id == t.id, Order.bill_id.is_(None), Order.status.in_(LIVE_ORDERS))
+            )
+        ).scalars()
+    )
+
+
+async def _check_unbilled(ctx: Ctx, t: DiningTable) -> None:
+    """Only before billing: an issued invoice never changes table, and nothing paid is ever merged."""
+    open_bill = (
+        await ctx.db.execute(select(Bill.invoice_no).where(Bill.table_id == t.id, Bill.status == "ISSUED").limit(1))
+    ).scalar()
+    if open_bill:
+        raise conflict(
+            "table_has_bill",
+            f"Table {t.label} has bill {open_bill}; settle or cancel it first",
+            {"table": t.label, "invoice_no": open_bill},
+        )
+
+
+async def _bring(ctx: Ctx, src: DiningTable, dst: DiningTable) -> int:
+    """Move one visit's orders, QR diner sessions, guests and timer from src to dst; src turns Cleaning."""
+    orders = await _visit_orders(ctx, src)
+    for o in orders:
+        o.table_id = dst.id
+    # Diners' phones keep ordering and tracking on the new table.
+    await ctx.db.execute(
+        update(TableSession)
+        .where(TableSession.table_id == src.id, TableSession.closed_at.is_(None))
+        .values(table_id=dst.id)
+    )
+    if src.seated_at and (dst.seated_at is None or src.seated_at < dst.seated_at):
+        dst.seated_at = src.seated_at
+    if src.guests:
+        dst.guests = (dst.guests or 0) + src.guests
+    if dst.seated_at is None and orders:
+        dst.seated_at = min(o.created_at for o in orders)
+    dst.hold_state, dst.hold_note = None, None
+    src.seated_at, src.guests, src.hold_state, src.hold_note = None, None, "CLEANING", None
+    return len(orders)
+
+
+class MoveIn(BaseModel):
+    to_table_id: UUID
+
+
+@router.post("/tables/{table_id}/move", response_model=TableOut)
+async def move(table_id: UUID, body: MoveIn, ctx: Ctx = HotelCtx("order.create")) -> TableOut:
+    """The guests changed tables: their whole visit goes to a free table (Free, Reserved or Cleaning)."""
+    src = await ctx.db.get(DiningTable, table_id, with_for_update=True)
+    dst = await ctx.db.get(DiningTable, body.to_table_id, with_for_update=True)
+    if not src or not dst:
+        raise not_found("Table")
+    if src.id == dst.id:
+        raise bad_request("same_table", "Pick another table")
+    if dst.status != "ACTIVE" or dst.seated_at is not None or await _visit_orders(ctx, dst):
+        raise conflict("table_in_use", f"Table {dst.label} has guests; merge instead", {"table": dst.label})
+    await _check_unbilled(ctx, src)
+    await _check_unbilled(ctx, dst)
+    if src.seated_at is None and not await _visit_orders(ctx, src):
+        raise bad_request("nothing_to_move", f"Nobody is seated at table {src.label}")
+    moved = await _bring(ctx, src, dst)
+    await ctx.audit("table.move", "table", src.id, after={"from": src.label, "to": dst.label, "orders": moved})
+    for t in (src, dst):
+        ctx.emit(outlet_channel(t.outlet_id), {"type": "table.updated", "table_id": str(t.id)})
+    return _table_out(dst, sum(o.status != "SERVED" for o in await _visit_orders(ctx, dst)))
+
+
+class MergeIn(BaseModel):
+    from_table_ids: list[UUID] = Field(min_length=1, max_length=10)
+
+
+@router.post("/tables/{table_id}/merge", response_model=TableOut)
+async def merge(table_id: UUID, body: MergeIn, ctx: Ctx = HotelCtx("order.create")) -> TableOut:
+    """One party across several tables: their visits join this table, so they get one bill (split it by guest
+    later if they want)."""
+    dst = await ctx.db.get(DiningTable, table_id, with_for_update=True)
+    if not dst:
+        raise not_found("Table")
+    ids = list(dict.fromkeys(body.from_table_ids))
+    if table_id in ids:
+        raise bad_request("same_table", "Pick other tables to merge in")
+    srcs = [await ctx.db.get(DiningTable, i, with_for_update=True) for i in ids]
+    if any(s is None for s in srcs):
+        raise not_found("Table")
+    for t in (dst, *srcs):
+        await _check_unbilled(ctx, t)
+    moved = 0
+    for s in srcs:
+        moved += await _bring(ctx, s, dst)
+    if dst.seated_at is None:
+        raise bad_request("nothing_to_move", "None of these tables has guests")
+    labels = [s.label for s in srcs]
+    await ctx.audit("table.merge", "table", dst.id, after={"into": dst.label, "from": labels, "orders": moved})
+    for t in (dst, *srcs):
+        ctx.emit(outlet_channel(t.outlet_id), {"type": "table.updated", "table_id": str(t.id)})
+    return _table_out(dst, sum(o.status != "SERVED" for o in await _visit_orders(ctx, dst)))

@@ -2303,6 +2303,146 @@
     }
    }
   },
+  "/api/v1/tables/{table_id}/move": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Move",
+    "description": "The guests changed tables: their whole visit goes to a free table (Free, Reserved or Cleaning).",
+    "operationId": "move_api_v1_tables__table_id__move_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MoveIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tables/{table_id}/merge": {
+   "post": {
+    "tags": [
+     "floor"
+    ],
+    "summary": "Merge",
+    "description": "One party across several tables: their visits join this table, so they get one bill (split it by guest\nlater if they want).",
+    "operationId": "merge_api_v1_tables__table_id__merge_post",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MergeIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TableOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/categories": {
    "get": {
     "tags": [
@@ -9148,6 +9288,39 @@
      "image_b64"
     ],
     "title": "LogoIn"
+   },
+   "MergeIn": {
+    "properties": {
+     "from_table_ids": {
+      "items": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "From Table Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "from_table_ids"
+    ],
+    "title": "MergeIn"
+   },
+   "MoveIn": {
+    "properties": {
+     "to_table_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "To Table Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "to_table_id"
+    ],
+    "title": "MoveIn"
    },
    "OrderIn": {
     "properties": {
