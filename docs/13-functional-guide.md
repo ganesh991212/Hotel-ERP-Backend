@@ -227,6 +227,20 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   - Billing staff: bills raised, money they received by Cash/UPI/Card (part payments count for whoever took them),
     unpaid bills now.
 
+### Close the day (cash drawer)
+
+Who: owner, manager, cashier (permission "Count the cash drawer and close the day"). Open **Close day** from the
+Overview at the end of the hotel day.
+- The screen shows what the drawer should hold, worked out by the server from everything recorded on every phone
+  and tablet: opening float + cash received (part payments included) - cash expenses paid from the drawer. UPI and
+  card received are shown too, and a warning if bills are still unpaid.
+- Count the cash and type the total, and how much stays in the drawer for tomorrow (the rest goes to the bank).
+  The difference is shown at once as **Over**, **Short** or **Exact**. Any difference needs a short reason.
+- Saving is final. Tomorrow's opening float is the cash you kept, so it can't be changed later. If cash is taken
+  on that day after closing, the close shows it as "cash after close".
+- **History** lists every close with the over/short and how many days were short in the period, so a pattern of
+  small shortfalls stands out.
+
 ### Reports (owners and managers: permission "See sales reports")
 
 Open **Reports** from the Overview. Pick a day or a date range (up to 92 days; days are the hotel's own calendar
@@ -340,6 +354,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Close the day: cash drawer count with over/short and history (section 13) |
 | 2026-11-20 | Serving hours for categories (breakfast / lunch / dinner) (section 8) |
 | 2026-11-20 | Combos (section 8) |
 | 2026-11-20 | Happy hour (section 8) |

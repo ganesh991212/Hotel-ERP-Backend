@@ -539,6 +539,29 @@ class Expense(Base):
     created_at: Mapped[datetime] = created()
 
 
+class DayClose(Base):
+    """One cash-drawer close per hotel day (docs/03 "Day close"). Final once saved; figures are a snapshot."""
+
+    __tablename__ = "day_closes"
+    __table_args__ = (UniqueConstraint("hotel_id", "business_date", name="uq_day_closes_day"),)
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    business_date: Mapped[date] = mapped_column(Date)
+    opening_float_minor: Mapped[int] = mapped_column(BigInteger)
+    cash_sales_minor: Mapped[int] = mapped_column(BigInteger)
+    cash_paid_out_minor: Mapped[int] = mapped_column(BigInteger)
+    expected_minor: Mapped[int] = mapped_column(BigInteger)
+    counted_minor: Mapped[int] = mapped_column(BigInteger)
+    difference_minor: Mapped[int] = mapped_column(BigInteger)  # counted - expected: + over, - short
+    float_kept_minor: Mapped[int] = mapped_column(BigInteger)
+    deposit_minor: Mapped[int] = mapped_column(BigInteger)
+    upi_minor: Mapped[int] = mapped_column(BigInteger)
+    card_minor: Mapped[int] = mapped_column(BigInteger)
+    note: Mapped[str | None] = mapped_column(String(200))
+    closed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    closed_at: Mapped[datetime] = created()
+
+
 class Bill(Base):
     """Customer bill for a table. Numbered sequentially per hotel per financial year; immutable once issued.
     Correction = VOID (audited, reason required) and re-issue; credit notes come with Phase 5."""
@@ -705,4 +728,5 @@ TENANT_TABLES = [
     "menu_item_addon_groups",
     "price_rules",
     "menu_item_components",
+    "day_closes",
 ]

@@ -202,3 +202,37 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   "Breakfast is over: order anyway?", and staff can send it (avoids 2). Diners can never override.
 - Uses the same time logic as happy hour (hotel's local time, days bitmask, crossing midnight), so the two never
   disagree. Online platforms (checklist item 16) will receive the same hours when they are built (3).
+
+## Day close / cash drawer (checklist item 8) - 2026-11-20
+
+### How others do it
+- **Petpooja**: the night audit / day-end report has a cash position: expected vs counted drawer cash, over or short;
+  payments split by card, UPI, cash, online. Advice: count and sign over each drawer at handover, because "an
+  unexplained shortfall discovered later has no clear owner" (vendor blog).
+- **Toast**: after the count, the result is labelled cash over / short / no difference; above a threshold a manager
+  must approve, and staff add a short comment (45 characters). A Z report alone does not close the day.
+- Common formula: expected = opening float + cash sales - cash paid out; difference = counted - expected.
+
+### Their mistakes (Square seller forums, mostly)
+1. **Cash rung on another device is missing** from the drawer report (drawer tracked per device).
+2. **Day boundary vs shifts**: a 24/7 shop's cash for a shift didn't match its sales until the close-of-day time was
+   changed.
+3. **The difference was hidden** from the close screen by an update (only visible later in history).
+4. Cash refunds, reopened sales and tips handled differently in drawer vs sales reports, so owners stop trusting the
+   drawer report.
+5. **Small nightly shortfalls go unnoticed** when reconciling only monthly.
+
+### Our choice
+- **One drawer per hotel day, computed on the server** from what was actually recorded on every device: cash
+  payments (`bill_payments`, part payments included) and cash expenses that day (avoids 1 and 4: the same numbers as
+  Reports).
+- **Hotel's calendar day**, stated on screen; cash taken after the day was closed is shown on that close as "cash
+  after close" instead of silently changing it (helps 2).
+- Close screen shows expected, counted and the **difference with "over" / "short" labels**, before and after saving
+  (avoids 3). Any difference needs a note (Toast-style); the close is final and audited.
+- **Opening float carries over**: tomorrow's opening float is the cash kept in the drawer at today's close, so it
+  can't be edited to hide a gap. The rest is the bank deposit.
+- **History with a running over/short total and a count of short days**, so a pattern of small shortfalls is visible
+  (avoids 5).
+- New permission **"Count cash and close the day"** (admin, manager, cashier by default; servers don't have it).
+- Warns (doesn't block) when bills are still unpaid for the day.

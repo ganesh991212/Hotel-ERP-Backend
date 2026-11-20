@@ -193,5 +193,15 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - The diner menu marks such a section `open_now: false` with its `hours` (dishes keep their real sold-out state, so
   the menu says "Served 07:00-11:00", not "Sold out").
 
+## Day close (added 2026-11-20; prior art in docs/14)
+- `day_closes` (RLS, migration 0015): one per hotel day, final once saved. A snapshot of opening float, cash sales
+  (`bill_payments` CASH on the hotel day, every device, part payments included), cash paid out (expenses paid in
+  CASH that day), expected = float + cash sales - paid out, counted, difference = counted - expected (+ over,
+  - short), cash kept in the drawer and the deposit (counted - kept), UPI and card received.
+- The opening float is the previous close's cash kept (typed only for the very first close), so it can't be edited
+  to hide a gap. Any difference needs a note. Future days can't be closed; a day can be closed once.
+- Cash taken on that day after the close is reported as `cash_after_close_minor`, never folded in.
+- Permission `dayclose.manage` (admin, manager, cashier; migration grants it to existing hotels' system roles).
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

@@ -25,6 +25,7 @@ PERMISSIONS: dict[str, str] = {
     "kot.print": "Print kitchen tickets (and hand orders to the kitchen on paper)",
     "bill.manage": "Create, print and settle table bills",
     "bill.void": "Void an issued bill (reason required)",
+    "dayclose.manage": "Count the cash drawer and close the day",
 }
 
 ALL = set(PERMISSIONS)
@@ -37,7 +38,16 @@ SYSTEM_ROLES: dict[str, tuple[str, set[str]]] = {
     ),
     "CASHIER": (
         "Cashier",
-        {"dashboard.view", "order.view", "order.create", "order.serve", "expense.view", "kot.print", "bill.manage"},
+        {
+            "dashboard.view",
+            "order.view",
+            "order.create",
+            "order.serve",
+            "expense.view",
+            "kot.print",
+            "bill.manage",
+            "dayclose.manage",
+        },
     ),
     "WAITER": (
         "Server",

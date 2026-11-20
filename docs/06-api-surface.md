@@ -144,6 +144,15 @@ response; design in docs/14 "Reports"):
 - Bill JSON adds `split`: null, or `{group_id, guest_no, guest_count, bills: [{id, invoice_no, guest_no, status,
   total_minor, due_minor}]}`. Voiding a guest bill voids the whole split (`split_partly_paid` once anyone paid).
 
+## Day close (added 2026-11-20)
+- `GET /day-close?date=` (`dayclose.manage`; default today): `cash_sales_minor`, `upi_minor`, `card_minor`,
+  `cash_paid_out_minor`, `carried_float_minor` (null before the first close), `opening_float_minor`,
+  `expected_minor`, `unpaid_bills {count, total_minor}` (a warning), `closed` (the saved close or null).
+- `POST /day-close {date?, counted_minor, float_kept_minor, opening_float_minor? (first close only), note?}` -> 201
+  the close: `difference_minor`, `result` OVER | SHORT | EXACT, `deposit_minor`, `closed_by`,
+  `cash_after_close_minor`. Errors `note_required` (any difference), `already_closed`, `future_day`, `bad_float`.
+- `GET /day-closes?from=&to=` (default last 30 days): `closes[]`, `net_difference_minor`, `short_days`, `over_days`.
+
 ## Realtime
 `WS /ws/outlets/{id}?token=` channels: `kitchen`, `floor`, `admin`; diner: `WS /ws/d/orders/{id}`.
 Implemented: one outlet stream (`/ws/outlets/{id}?token=`) carrying all staff events, and `/ws/d?token=<diner session>` per diner session.
