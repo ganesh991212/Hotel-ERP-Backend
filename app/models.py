@@ -304,6 +304,28 @@ class ShiftPlan(Base):
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
 
 
+class CashHandover(Base):
+    """A blind drawer count when one cashier hands over to the next (docs/14 "Cash handover"). Never edited."""
+
+    __tablename__ = "cash_handovers"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    business_date: Mapped[date] = mapped_column(Date)
+    since_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    at: Mapped[datetime] = created()
+    opening_minor: Mapped[int] = mapped_column(BigInteger)
+    cash_in_minor: Mapped[int] = mapped_column(BigInteger)
+    paid_out_minor: Mapped[int] = mapped_column(BigInteger)
+    expected_minor: Mapped[int] = mapped_column(BigInteger)
+    counted_minor: Mapped[int] = mapped_column(BigInteger)
+    difference_minor: Mapped[int] = mapped_column(BigInteger)
+    upi_minor: Mapped[int] = mapped_column(BigInteger)
+    card_minor: Mapped[int] = mapped_column(BigInteger)
+    handed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    taken_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    note: Mapped[str | None] = mapped_column(String(200))
+
+
 class TableSession(Base):
     __tablename__ = "table_sessions"
     id: Mapped[uuid.UUID] = pk()
@@ -838,5 +860,6 @@ TENANT_TABLES = [
     "held_orders",
     "attendance",
     "shift_plans",
+    "cash_handovers",
     "kitchen_stations",
 ]

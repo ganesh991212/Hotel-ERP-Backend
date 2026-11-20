@@ -8364,6 +8364,190 @@
     }
    }
   },
+  "/api/v1/handover": {
+   "get": {
+    "tags": [
+     "day close"
+    ],
+    "summary": "Handover Start",
+    "description": "What the handover screen needs, **without** the expected cash (a blind count: it is shown after counting).",
+    "operationId": "handover_start_api_v1_handover_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Handover Start Api V1 Handover Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "day close"
+    ],
+    "summary": "Handover",
+    "description": "Save the outgoing cashier's blind count, then return expected and over / short. The count is final.",
+    "operationId": "handover_api_v1_handover_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/HandoverIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Handover Api V1 Handover Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/handover/{handover_id}/note": {
+   "post": {
+    "tags": [
+     "day close"
+    ],
+    "summary": "Handover Note",
+    "description": "Why the cash was over or short: added once, after the count (the count itself never changes).",
+    "operationId": "handover_note_api_v1_handover__handover_id__note_post",
+    "parameters": [
+     {
+      "name": "handover_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Handover Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/NoteIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Handover Note Api V1 Handover  Handover Id  Note Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/bookings": {
    "post": {
     "tags": [
@@ -10367,6 +10551,40 @@
     "type": "object",
     "title": "HTTPValidationError"
    },
+   "HandoverIn": {
+    "properties": {
+     "counted_minor": {
+      "type": "integer",
+      "maximum": 1000000000000.0,
+      "minimum": 0.0,
+      "title": "Counted Minor"
+     },
+     "taken_by": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Taken By"
+     },
+     "opening_float_minor": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 1000000000000.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Opening Float Minor"
+     }
+    },
+    "type": "object",
+    "required": [
+     "counted_minor",
+     "taken_by"
+    ],
+    "title": "HandoverIn"
+   },
    "HotelIn": {
     "properties": {
      "name": {
@@ -11051,6 +11269,21 @@
      "to_table_id"
     ],
     "title": "MoveIn"
+   },
+   "NoteIn": {
+    "properties": {
+     "note": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "note"
+    ],
+    "title": "NoteIn"
    },
    "OrderIn": {
     "properties": {

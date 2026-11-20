@@ -671,3 +671,40 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
 - Each planned shift shows **Upcoming, Working, On time, Late N min** (more than 10 minutes after the start) or
   **No-show** (no clock-in by the end); words and an icon, never colour alone.
 - Staff see their own next shifts on My work. Swaps, open shifts and labour cost come later, if owners ask.
+
+## Cash handover between shifts (checklist item 13) - 2026-11-20
+
+### How others do it
+- **Petpooja** "quick shift change": the outgoing cashier's session closes, the drawer is counted and signed over,
+  the float stays in the drawer, and **both cashiers count together**, because a count by the incoming one alone
+  cannot show when a shortfall appeared (https://blog.petpooja.com/glossary/quick-shift-change/).
+- **Toast**: cash drawers per employee, shift review, and a **blind** permission that hides the expected cash while
+  counting; reopening a closed shift review deletes earlier tip-out and cash-collected entries
+  (https://support.toasttab.com/en/article/Assigning-Multiple-Cash-Drawers-To-One-Employee?lang=en_US,
+  https://support.toasttab.com/en/article/Shift-Review-Overview?lang=en_US,
+  https://support.toasttab.com/en/article/Use-Cash-Drawers-New-Experience,
+  https://support.toasttab.com/article/Manager-Activities-Cash-Management-1493049150424,
+  https://pos.toasttab.com/blog/restaurant-cash-management).
+- **Lightspeed**: closing a drawer at shift change prints the drawer report
+  (https://k-series-support.lightspeedhq.com/hc/articles/360050436394, https://www.lightspeedhq.com/blog/retail-cash-handling/).
+- Blind counting and balancing guides: https://plumpos.com/glossary/blind-cash-count.html,
+  https://www.shopify.com/in/blog/balancing-a-cash-drawer, https://www.webstaurantstore.com/article/98/article.html;
+  Toast community on shift changes: https://community.toasttab.com/t5/restaurant-operations/shift-change-help/m-p/2516.
+
+### Their mistakes
+1. Showing the **expected amount before counting**: people "find" the number they were told.
+2. One count at the end of the day: a shortage can't be tied to the shift (or person) it happened in.
+3. Re-opening a closed count **loses** what was recorded (Toast's shift review).
+4. Cash taken under the wrong method (a cash sale keyed as card) only noticed at the end of the day.
+
+### Our choice
+- **Blind count**: the outgoing cashier types what is in the drawer first; only then does the app show what was
+  expected and the over / short (avoids 1).
+- A handover covers the time **since the last handover** (or the start of the day): opening cash + cash payments in
+  that time - cash expenses entered in that time. The next shift starts from the cash **counted**, so each shift
+  answers only for its own time (avoids 2).
+- Records who handed over and **who took over** (the incoming cashier is named), the time, the counted and expected
+  cash, and a reason when it is off. Saved handovers are never edited or reopened (avoids 3).
+- The handover also lists UPI and card taken in the shift, so a mis-keyed method shows up at the change, not at
+  night (avoids 4).
+- Close the day stays the whole day's truth and lists the day's handovers with each one's over / short.

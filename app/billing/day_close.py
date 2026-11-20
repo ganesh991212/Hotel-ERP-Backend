@@ -1,15 +1,17 @@
 """Day close / cash drawer (docs/03 "Day close", docs/14). Every figure is computed here from what was recorded on
 every device (payments and cash expenses); the counter only types what is in the drawer."""
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from uuid import UUID
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import Date, cast, func, select
+from sqlalchemy import Date, cast, func, select, text
 
 from app.core.deps import Ctx, HotelCtx
-from app.core.errors import bad_request, conflict
-from app.models import Bill, BillPayment, DayClose, Expense, Hotel, User
+from app.core.errors import bad_request, conflict, not_found
+from app.core.security import now
+from app.models import Bill, BillPayment, CashHandover, DayClose, Expense, Hotel, User
 from app.ordering.held import held_count
 
 router = APIRouter(tags=["day close"])
@@ -140,6 +142,8 @@ async def preview(
         "expected_minor": expected,
         "check": check,
         "closed": await _close_json(ctx, tz, saved) if saved else None,
+        # The day's shift changes, each with its own over / short (docs/14 "Cash handover").
+        "handovers": await handovers_on(ctx, day),
     }
 
 
@@ -231,3 +235,159 @@ async def history(
         "short_days": sum(1 for c in closes if c["result"] == "SHORT"),
         "over_days": sum(1 for c in closes if c["result"] == "OVER"),
     }
+
+
+# ---------- Cash handover between shifts (docs/03 "Cash handover", docs/14) ----------
+
+
+async def _segment(ctx: Ctx, tz: str, day: date) -> dict:
+    """The current shift's window: since the last handover today, else the start of the hotel day."""
+    last = (
+        await ctx.db.execute(
+            select(CashHandover).where(CashHandover.business_date == day).order_by(CashHandover.at.desc()).limit(1)
+        )
+    ).scalar_one_or_none()
+    previous_close = (
+        await ctx.db.execute(
+            select(DayClose).where(DayClose.business_date < day).order_by(DayClose.business_date.desc()).limit(1)
+        )
+    ).scalar_one_or_none()
+    if last is not None:
+        opening, since = last.counted_minor, last.at  # the next shift starts from what was counted
+    else:
+        opening = previous_close.float_kept_minor if previous_close else None
+        since = None
+    return {"opening": opening, "since": since}
+
+
+async def _segment_money(ctx: Ctx, tz: str, day: date, since: datetime | None, until: datetime) -> dict:
+    pay_day = cast(func.timezone(tz, BillPayment.created_at), Date)
+    q = select(BillPayment.method, func.coalesce(func.sum(BillPayment.amount_minor), 0)).where(
+        pay_day == day, BillPayment.created_at <= until
+    )
+    if since is not None:
+        q = q.where(BillPayment.created_at > since)
+    by_method = dict((await ctx.db.execute(q.group_by(BillPayment.method))).all())
+    e = select(func.coalesce(func.sum(Expense.amount_minor), 0)).where(
+        Expense.spent_on == day, Expense.payment_method == "CASH", Expense.created_at <= until
+    )
+    if since is not None:
+        e = e.where(Expense.created_at > since)
+    return {
+        "cash_in": int(by_method.get("CASH", 0)),
+        "upi": int(by_method.get("UPI", 0)),
+        "card": int(by_method.get("CARD", 0)),
+        "paid_out": int((await ctx.db.execute(e)).scalar_one()),
+    }
+
+
+async def _handover_json(ctx: Ctx, h: CashHandover) -> dict:
+    names = dict((await ctx.db.execute(select(User.id, User.name).where(User.id.in_([h.handed_by, h.taken_by])))).all())
+    return {
+        "id": str(h.id),
+        "date": h.business_date.isoformat(),
+        "since": h.since_at.isoformat() if h.since_at else None,
+        "at": h.at.isoformat(),
+        "handed_by": names.get(h.handed_by),
+        "taken_by": names.get(h.taken_by),
+        "opening_minor": h.opening_minor,
+        "cash_in_minor": h.cash_in_minor,
+        "paid_out_minor": h.paid_out_minor,
+        "expected_minor": h.expected_minor,
+        "counted_minor": h.counted_minor,
+        "difference_minor": h.difference_minor,
+        "result": "OVER" if h.difference_minor > 0 else "SHORT" if h.difference_minor < 0 else "EXACT",
+        "upi_minor": h.upi_minor,
+        "card_minor": h.card_minor,
+        "note": h.note,
+    }
+
+
+async def handovers_on(ctx: Ctx, day: date) -> list[dict]:
+    rows = (
+        await ctx.db.execute(select(CashHandover).where(CashHandover.business_date == day).order_by(CashHandover.at))
+    ).scalars()
+    return [await _handover_json(ctx, h) for h in rows]
+
+
+@router.get("/handover")
+async def handover_start(ctx: Ctx = HotelCtx("dayclose.manage")) -> dict:
+    """What the handover screen needs, **without** the expected cash (a blind count: it is shown after counting)."""
+    tz, day = await _tz_today(ctx)
+    seg = await _segment(ctx, tz, day)
+    closed = (await ctx.db.execute(select(DayClose.id).where(DayClose.business_date == day))).first() is not None
+    return {
+        "date": day.isoformat(),
+        "since": seg["since"].isoformat() if seg["since"] else None,
+        "needs_opening_float": seg["opening"] is None,  # the very first count ever: type the starting float
+        "day_closed": closed,
+        "today": await handovers_on(ctx, day),
+    }
+
+
+class HandoverIn(BaseModel):
+    counted_minor: int = Field(ge=0, le=10**12)
+    taken_by: UUID  # the cashier taking over (named on the record)
+    opening_float_minor: int | None = Field(default=None, ge=0, le=10**12)
+
+
+@router.post("/handover", status_code=201)
+async def handover(body: HandoverIn, ctx: Ctx = HotelCtx("dayclose.manage")) -> dict:
+    """Save the outgoing cashier's blind count, then return expected and over / short. The count is final."""
+    tz, day = await _tz_today(ctx)
+    if (await ctx.db.execute(select(DayClose.id).where(DayClose.business_date == day))).first():
+        raise conflict("already_closed", "This day is already closed")
+    if body.taken_by == ctx.user_id:
+        raise bad_request("same_person", "Hand over to someone else")
+    if not await ctx.db.get(User, body.taken_by):
+        raise not_found("Person")
+    # One handover at a time per hotel, so two windows cannot overlap.
+    await ctx.db.execute(text("select pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"drawer:{ctx.hotel_id}"})
+    seg = await _segment(ctx, tz, day)
+    opening = seg["opening"] if seg["opening"] is not None else (body.opening_float_minor or 0)
+    at = now()
+    m = await _segment_money(ctx, tz, day, seg["since"], at)
+    expected = opening + m["cash_in"] - m["paid_out"]
+    h = CashHandover(
+        hotel_id=ctx.hotel_id,
+        business_date=day,
+        since_at=seg["since"],
+        at=at,
+        opening_minor=opening,
+        cash_in_minor=m["cash_in"],
+        paid_out_minor=m["paid_out"],
+        expected_minor=expected,
+        counted_minor=body.counted_minor,
+        difference_minor=body.counted_minor - expected,
+        upi_minor=m["upi"],
+        card_minor=m["card"],
+        handed_by=ctx.user_id,
+        taken_by=body.taken_by,
+    )
+    ctx.db.add(h)
+    await ctx.db.flush()
+    out = await _handover_json(ctx, h)
+    await ctx.audit(
+        "cash.handover",
+        "cash_handover",
+        h.id,
+        after={k: out[k] for k in ("expected_minor", "counted_minor", "difference_minor", "taken_by")},
+    )
+    return out
+
+
+class NoteIn(BaseModel):
+    note: str = Field(min_length=3, max_length=200)
+
+
+@router.post("/handover/{handover_id}/note")
+async def handover_note(handover_id: UUID, body: NoteIn, ctx: Ctx = HotelCtx("dayclose.manage")) -> dict:
+    """Why the cash was over or short: added once, after the count (the count itself never changes)."""
+    h = await ctx.db.get(CashHandover, handover_id, with_for_update=True)
+    if not h:
+        raise not_found("Handover")
+    if h.note:
+        raise conflict("note_exists", "This handover already has a note")
+    h.note = body.note.strip()
+    await ctx.audit("cash.handover_note", "cash_handover", h.id, after={"note": h.note})
+    return await _handover_json(ctx, h)

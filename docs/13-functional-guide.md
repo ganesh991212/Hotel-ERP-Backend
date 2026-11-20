@@ -332,6 +332,15 @@ rupees).
 What happens: reports are read-only and computed on the server from the bills; nothing is stored or changed.
 Servers and chefs cannot open them.
 
+### Shift handover (cash)
+
+- **Close day > Hand over** when one cashier hands the drawer to the next. Type the cash in the drawer and pick who is
+  taking over (on the very first count ever, also the opening float). The app does **not** show what the drawer
+  should hold until the count is saved: it is a blind count, and the count can't be changed.
+- Then it shows what was expected and **Over / Short / Exact**; if it is off, write why (once).
+- The next shift starts from the cash that was counted, so each shift answers only for its own time. Close the day
+  still checks the whole day and lists the day's handovers with their own over / short.
+
 ### Attendance
 
 - Everyone clocks in and out on their **own login**: the **Clock in** button on Overview (owners, managers) or My
@@ -452,6 +461,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Cash handover between shifts, blind count (section 13) |
 | 2026-11-20 | Shift rota with lateness and no-shows (section 13) |
 | 2026-11-20 | Attendance: clock in / out, corrections with a reason (sections 11, 13) |
 | 2026-11-20 | Reports as PDF (section 13) |

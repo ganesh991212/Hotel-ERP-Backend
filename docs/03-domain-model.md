@@ -248,6 +248,17 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   (`attendance.manage`) needs a reason, keeps the punched times once in `original_*`, and is audited.
 - Permission `attendance.manage` (HOTEL_ADMIN, MANAGER).
 
+## Cash handover (added 2026-11-20; prior art in docs/14)
+
+- `cash_handovers(id, hotel_id, business_date, since_at?, at, opening_minor, cash_in_minor, paid_out_minor,
+  expected_minor, counted_minor, difference_minor, upi_minor, card_minor, handed_by, taken_by, note?)`, RLS per hotel.
+- Window: since the day's last handover (opening = its counted cash), else the start of the hotel day (opening = the
+  previous close's float kept, or typed on the very first count). Cash in = cash payments in the window; paid out =
+  cash expenses for the day entered in the window. Expected = opening + in - out.
+- **Blind**: `GET /handover` never returns the expected cash; `POST /handover` saves the count and only then returns
+  expected and over / short. Never edited; a note can be added once. One at a time per hotel (advisory lock).
+- Close the day is unchanged (the whole day) and lists the day's handovers.
+
 ## Shift rota (added 2026-11-20; prior art in docs/14)
 
 - `shift_plans(id, hotel_id, user_id, day, starts_at, ends_at, note?, created_by)`, RLS per hotel. `day` is the

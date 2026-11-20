@@ -62,6 +62,10 @@ response; design in docs/14 "Reports"):
 - `GET /reports/sales`: per day and in total: bills, gross, discount, taxable, CGST, SGST, other tax, service charge,
   round off, total; paid / unpaid; cancelled (by hand) and replaced bills kept apart; money received by CASH/UPI/CARD
   by the day it was taken; `unbilled` (orders on no live bill: a warning, never sales).
+- Cash handover (`dayclose.manage`): `GET /handover` (no expected cash: `since`, `needs_opening_float`, `day_closed`,
+  `today[]`); `POST /handover {counted_minor, taken_by, opening_float_minor?}` → expected, difference, result, UPI /
+  card in the window (`same_person`, `already_closed`); `POST /handover/{id}/note {note}` once (`note_exists`).
+  `GET /day-close` adds `handovers[]`.
 - Rota (`attendance.manage`): `GET /rota?from=&to=` (default 7 days from today, max 31), `POST /rota {user_id, day,
   start "HH:MM", end "HH:MM", note?}` (`shift_overlap`, `bad_times`), `DELETE /rota/{id}`, `POST /rota/copy-week
   {week_start}` → `{copied, skipped}`. `GET /rota/me` (anyone): my shifts for 7 days. Each shift has `state`,
