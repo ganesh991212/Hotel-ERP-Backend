@@ -262,7 +262,10 @@ def _vs_last_week(today_minor: int, last_minor: int, until) -> dict:
         "until": until.isoformat(),  # hotel-local time last week the comparison stops at
         "last_week_minor": last_minor,
         "change_minor": today_minor - last_minor,
-        "change_pct": round((today_minor - last_minor) * 100 / last_minor, 1) if last_minor else None,
+        # Ready to show as "Up/Down <amount> (<pct>%)": the app does no arithmetic on money (rule 1).
+        "direction": "UP" if today_minor > last_minor else ("DOWN" if today_minor < last_minor else "SAME"),
+        "difference_minor": abs(today_minor - last_minor),
+        "change_pct": abs(round((today_minor - last_minor) * 100 / last_minor, 1)) if last_minor else None,
     }
 
 

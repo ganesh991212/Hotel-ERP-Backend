@@ -39,7 +39,7 @@ async def test_no_sales_last_week_means_no_percentage(client, hw):
     d = await _summary(client, hw)
     v = d["vs_last_week"]
     assert v["last_week_minor"] == 0 and v["change_pct"] is None  # never "+inf%" or "-100%"
-    assert v["change_minor"] == cash["total_minor"] == d["revenue_today_minor"]
+    assert v["change_minor"] == cash["total_minor"] == d["revenue_today_minor"] and v["direction"] == "UP"
 
 
 async def test_compares_up_to_the_same_time_last_week(client, hw):
@@ -55,7 +55,9 @@ async def test_compares_up_to_the_same_time_last_week(client, hw):
     last = earlier["total_minor"]
     assert v["last_week_minor"] == last
     assert v["change_minor"] == today["total_minor"] - last
-    assert v["change_pct"] == round((today["total_minor"] - last) * 100 / last, 1)
+    assert v["change_pct"] == abs(round((today["total_minor"] - last) * 100 / last, 1))
+    assert v["difference_minor"] == abs(today["total_minor"] - last)
+    assert v["direction"] == ("UP" if today["total_minor"] > last else "DOWN")
 
 
 async def test_payment_mix_is_money_received_today(client, hw):
