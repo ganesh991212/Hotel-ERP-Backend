@@ -59,6 +59,7 @@ class OrderIn(QuoteIn):
     customer_phone: str | None = Field(default=None, pattern=r"^[0-9+ -]{6,20}$")
     note: str | None = Field(default=None, max_length=300)
     client_ref: str | None = Field(default=None, max_length=64)
+    held_order_id: UUID | None = None  # resuming a hold: it is consumed with this order (docs/14)
 
     @model_validator(mode="after")
     def _table_or_takeaway(self) -> "OrderIn":
@@ -117,6 +118,10 @@ async def place_order(body: OrderIn, ctx: Ctx = HotelCtx("order.create", feature
         client_ref=body.client_ref,
         allow_outside_hours=body.allow_outside_hours,
     )
+    if created and body.held_order_id:
+        from app.ordering.held import consume
+
+        await consume(ctx, body.held_order_id)
     if created and body.takeaway:
         o.customer_name = (body.customer_name or "").strip() or None
         o.customer_phone = body.customer_phone

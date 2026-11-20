@@ -257,6 +257,23 @@ class Booking(Base):
     created_at: Mapped[datetime] = created()
 
 
+class HeldOrder(Base):
+    """A cart put on hold: not an order (no kitchen ticket, number or bill). Prices are never stored; resuming
+    re-quotes, and placing the order consumes the hold (docs/14 "Hold / resume")."""
+
+    __tablename__ = "held_orders"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    table_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("dining_tables.id", ondelete="CASCADE")
+    )  # None = takeaway / counter
+    customer_name: Mapped[str | None] = mapped_column(String(80))
+    note: Mapped[str | None] = mapped_column(String(300))
+    items: Mapped[list] = mapped_column(JSONB)  # [{item_id, qty, note, variant_id, addons: [{addon_id, qty}]}]
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    created_at: Mapped[datetime] = created()
+
+
 class TableSession(Base):
     __tablename__ = "table_sessions"
     id: Mapped[uuid.UUID] = pk()
@@ -782,5 +799,6 @@ TENANT_TABLES = [
     "menu_item_components",
     "day_closes",
     "bookings",
+    "held_orders",
     "kitchen_stations",
 ]

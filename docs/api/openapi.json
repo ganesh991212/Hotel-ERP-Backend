@@ -2274,7 +2274,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/HoldIn"
+        "$ref": "#/components/schemas/app__floor__router__HoldIn"
        }
       }
      }
@@ -8454,6 +8454,201 @@
     }
    }
   },
+  "/api/v1/held-orders": {
+   "post": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Hold",
+    "operationId": "hold_api_v1_held_orders_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/app__ordering__held__HoldIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Hold Api V1 Held Orders Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Held",
+    "description": "Oldest first: the guest who has waited longest is served first.",
+    "operationId": "held_api_v1_held_orders_get",
+    "parameters": [
+     {
+      "name": "table_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "uuid"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Table Id"
+      }
+     },
+     {
+      "name": "takeaway",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "description": "Only takeaway / counter holds",
+       "default": false,
+       "title": "Takeaway"
+      },
+      "description": "Only takeaway / counter holds"
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response Held Api V1 Held Orders Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/held-orders/{held_id}": {
+   "delete": {
+    "tags": [
+     "orders"
+    ],
+    "summary": "Discard",
+    "operationId": "discard_api_v1_held_orders__held_id__delete",
+    "parameters": [
+     {
+      "name": "held_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Held Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/health": {
    "get": {
     "summary": "Health",
@@ -9271,33 +9466,6 @@
     "type": "object",
     "title": "HTTPValidationError"
    },
-   "HoldIn": {
-    "properties": {
-     "state": {
-      "type": "string",
-      "pattern": "^(FREE|RESERVED|CLEANING)$",
-      "title": "State"
-     },
-     "note": {
-      "anyOf": [
-       {
-        "type": "string",
-        "maxLength": 80
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Note"
-     }
-    },
-    "type": "object",
-    "required": [
-     "state"
-    ],
-    "title": "HoldIn",
-    "description": "FREE clears a hold (the table is clean, or the reservation is off). RESERVED takes a short note."
-   },
    "HotelIn": {
     "properties": {
      "name": {
@@ -10063,6 +10231,18 @@
        }
       ],
       "title": "Client Ref"
+     },
+     "held_order_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Held Order Id"
      }
     },
     "type": "object",
@@ -11517,6 +11697,33 @@
     "type": "object",
     "title": "SeatIn"
    },
+   "app__floor__router__HoldIn": {
+    "properties": {
+     "state": {
+      "type": "string",
+      "pattern": "^(FREE|RESERVED|CLEANING)$",
+      "title": "State"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "state"
+    ],
+    "title": "HoldIn",
+    "description": "FREE clears a hold (the table is clean, or the reservation is off). RESERVED takes a short note."
+   },
    "app__floor__router__SeatIn": {
     "properties": {
      "guests": {
@@ -11535,6 +11742,60 @@
     },
     "type": "object",
     "title": "SeatIn"
+   },
+   "app__ordering__held__HoldIn": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/LineModel"
+      },
+      "type": "array",
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Items"
+     },
+     "table_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Table Id"
+     },
+     "customer_name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Customer Name"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "items"
+    ],
+    "title": "HoldIn"
    },
    "app__ordering__router__ReasonIn": {
     "properties": {

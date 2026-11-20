@@ -238,5 +238,14 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   only its dishes and the order number and table) when an order spans several stations; `blocks` is the full ticket.
 - Display and print only: assignment, the strict queue and "ready" stay per order (docs/04).
 
+## Hold / resume (added 2026-11-20; prior art in docs/14)
+
+- `held_orders(id, hotel_id, table_id?, customer_name?, note?, items jsonb, created_by, created_at)`: a cart put on
+  hold. **Not an order**: no number, kitchen ticket or bill. `items` holds ids and quantities only (no prices); every
+  listing re-quotes at today's prices and reports a `problem` when a dish is gone or sold out. RLS per hotel.
+- Placing an order with `held_order_id` deletes the hold in the same transaction under a row lock, so two devices
+  cannot both send it (`hold_gone`). Discarding is audited (`order.hold_discard`). Close the day reports
+  `held_orders` still waiting.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

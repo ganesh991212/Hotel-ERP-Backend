@@ -76,6 +76,10 @@ response; design in docs/14 "Reports"):
 
 ## Implemented additions (2026-11-18)
 - `POST /orders/quote`, `POST /d/{qr}/quote`: server-priced totals for carts (clients never compute money).
+- Hold / resume (`order.create`; list `order.view`): `POST /held-orders {items, table_id?, customer_name?, note?}`
+  (refused if the cart cannot be priced); `GET /held-orders?table_id=|takeaway=true` (oldest first; each with `items`,
+  today's `quote` or a `problem`); `DELETE /held-orders/{id}`. `POST /orders {..., held_order_id}` consumes the hold;
+  `409 hold_gone` if it was already sent or discarded.
 - `GET /kitchen/board`: one call for chef screens (new, per-chef queues, ready). `POST /orders/{id}/reassign` (chef or back to board, audited). `PUT /kitchen/chefs/{id}/shift`.
 - `GET /d/orders/mine` with `X-Diner-Token`.
 - `GET /permissions`, `PUT /roles/{id}/permissions`, `POST /roles` (custom, plan-gated).

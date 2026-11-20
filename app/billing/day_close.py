@@ -10,6 +10,7 @@ from sqlalchemy import Date, cast, func, select
 from app.core.deps import Ctx, HotelCtx
 from app.core.errors import bad_request, conflict
 from app.models import Bill, BillPayment, DayClose, Expense, Hotel, User
+from app.ordering.held import held_count
 
 router = APIRouter(tags=["day close"])
 
@@ -60,6 +61,8 @@ async def _figures(ctx: Ctx, tz: str, day: date) -> dict:
         # Carried from the previous close's cash kept in the drawer; None on the very first close.
         "carried_float_minor": previous.float_kept_minor if previous else None,
         "unpaid_bills": {"count": int(unpaid_n), "total_minor": int(unpaid_v)},
+        # Carts put on hold and never sent: a guest may still be waiting (docs/14 "Hold / resume").
+        "held_orders": await held_count(ctx),
     }
 
 

@@ -85,6 +85,13 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 - **Takeaway** button (staff who take orders): the same composer without a table, plus the guest's name and phone
   (both optional). The order number is the guest's token. Takeaway orders appear in Needs attention as
   "Takeaway #12 · Ramesh" with **Handed over** when ready and **Bill** until billed.
+- **Hold** (next to Send to kitchen, on a table or a takeaway): saves the cart **without sending it to the kitchen**
+  (the guest went to fetch their wallet, or is still deciding). Nothing is cooked, numbered or billed. The floor shows
+  "1 held" on the table, or "Takeaway · 1 held". Open the table / Takeaway and tap the held chip ("Held 7:42 pm ·
+  Ravi · ₹520", today's price) to put the dishes back in the cart, change anything, then **Send to kitchen**; the hold
+  disappears. If a dish was removed or sold out since, the chip says **needs changes**. Two people cannot send the
+  same held order twice: the second is told it was already sent. The cross on a chip discards it (after asking).
+  Close the day warns about held orders that were never sent.
 
 ### Orders tab (admins and billing staff)
 - **Orders | Bills** switch.
@@ -390,6 +397,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Hold / resume an order (section 6, 13) |
 | 2026-11-20 | Reports: sales by category (section 13) |
 | 2026-11-20 | Overview: vs same day last week and payment mix (section 13) |
 | 2026-11-20 | Kitchen stations: a ticket and a screen per station (sections 7, 8) |

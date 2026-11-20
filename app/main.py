@@ -24,6 +24,7 @@ from app.kitchen import overdue
 from app.kitchen.router import router as kitchen
 from app.notify.router import router as devices
 from app.ordering.diner import router as diner
+from app.ordering.held import router as held_orders
 from app.ordering.router import router as orders
 from app.platform.router import billing
 from app.platform.router import router as platform
@@ -71,6 +72,7 @@ for r in (
     reports,
     day_close,
     bookings,
+    held_orders,
 ):
     app.include_router(r, prefix="/api/v1")
 app.include_router(realtime)

@@ -411,3 +411,34 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
 - Bills issued before this change have no category; they show as **"Not recorded"** rather than being guessed from
   today's menu, except where the order line's own dish could be matched exactly (avoids 3).
 - One table under the item report, plus a CSV; no separate screen.
+
+## Hold / resume an order (checklist item 1) - 2026-11-20
+
+### How others do it
+- **PlumPOS** (glossary): "hold" saves an order **without sending it to the kitchen or charging it**, found again by
+  table, name or ticket number, then edited and sent (https://plumpos.com/glossary/hold.html).
+- **DealPOS** (restaurant): "park" an order aside while other guests are served, then retrieve it; parked items can be
+  merged into one invoice (https://support.dealpos.com/en/articles/4773801-park-and-retrieve-for-restaurant).
+- **Odoo POS** add-on "hold and resume": held carts listed on the till, resumed with one tap
+  (https://apps.odoo.com/apps/modules/17.0/sp_pos_hold_and_resume).
+- **LOGIC ERP / retail POS**: "park tickets" stored **locally on the terminal** for speed
+  (https://www.logicerp.com/retail-pos-software/park-tickets-hold-sales-in-pos).
+- **RetailOps**: holds for an order waiting on the customer (https://help.retailops.com/hc/en-us/articles/212149843-Put-Orders-on-Hold).
+- Toast's "hold" is a different thing (course firing: send the starter now, hold the mains); not this item.
+
+### Their mistakes
+1. Held tickets kept **on one terminal**: lost when the device resets, invisible from the other till or a phone.
+2. A held cart resumed hours later at **yesterday's price** (or with a dish that has since sold out).
+3. **Two people resume the same hold** and the kitchen gets the order twice.
+4. Holds **forgotten** at closing: the guest never got the food, nobody notices.
+
+### Our choice
+- A hold is a **cart saved on the server** (dish ids, sizes, add-ons, quantities, note, optional table or the
+  takeaway guest's name). It is not an order: no kitchen ticket, no number, no bill (avoids 1).
+- Prices are **never stored**: the list shows today's price, and resuming re-quotes; a dish that is gone or sold out is
+  flagged on the hold so staff see it before sending (avoids 2).
+- Sending the resumed order **consumes the hold in the same transaction**; if another device already sent it the
+  order is refused with "already sent" (avoids 3).
+- Close the day shows **how many holds are still waiting**, and the floor shows a "Held" count per table / takeaway
+  (avoids 4). Discarding a hold is audited.
+- Scope: one hold per "Hold" tap; tables and takeaway alike. Course firing stays out.
