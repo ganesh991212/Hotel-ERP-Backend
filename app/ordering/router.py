@@ -50,6 +50,9 @@ class QuoteIn(BaseModel):
 class OrderIn(QuoteIn):
     """A table order (`table_id`) or a takeaway / counter order (`takeaway: true`, no table)."""
 
+    # Staff only: order dishes outside their serving hours after the app warned (`outside_hours`).
+    allow_outside_hours: bool = False
+
     table_id: UUID | None = None
     takeaway: bool = False
     customer_name: str | None = Field(default=None, max_length=80)
@@ -84,7 +87,8 @@ async def ensure_order_quota(ctx_db, entitlements: dict) -> None:
 
 @router.post("/orders/quote")
 async def quote_order(body: QuoteIn, ctx: Ctx = HotelCtx("order.create")) -> dict:
-    return totals_json(await quote(ctx.db, _lines(body.items)))
+    # The composer's running total: priced even outside serving hours; placing the order is what warns.
+    return totals_json(await quote(ctx.db, _lines(body.items), allow_outside_hours=True))
 
 
 @router.post("/orders", status_code=201)
@@ -111,6 +115,7 @@ async def place_order(body: OrderIn, ctx: Ctx = HotelCtx("order.create", feature
         lines=_lines(body.items),
         note=body.note,
         client_ref=body.client_ref,
+        allow_outside_hours=body.allow_outside_hours,
     )
     if created and body.takeaway:
         o.customer_name = (body.customer_name or "").strip() or None

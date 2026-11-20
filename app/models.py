@@ -247,6 +247,10 @@ class MenuCategory(Base):
     outlet_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("outlets.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(80))
     sort: Mapped[int] = mapped_column(Integer, server_default="0")
+    # Serving hours (docs/03 "Serving hours"): days bitmask Monday = 1 ... Sunday = 64; no times = all day.
+    days: Mapped[int] = mapped_column(SmallInteger, server_default="127")
+    available_from: Mapped[time | None] = mapped_column(Time)
+    available_to: Mapped[time | None] = mapped_column(Time)
 
 
 class MenuItem(Base):

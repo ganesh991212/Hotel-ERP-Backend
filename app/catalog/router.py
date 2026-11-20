@@ -1,15 +1,17 @@
+from datetime import time
 from uuid import UUID
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 
 from app.catalog.options import options_for, with_options
-from app.catalog.price_rules import offers_now
+from app.catalog.price_rules import hotel_now, offers_now
 from app.core.deps import Ctx, HotelCtx, count
 from app.core.errors import bad_request, not_found
 from app.floor.router import current_outlet, outlet_channel
 from app.models import MenuCategory, MenuItem, MenuItemComponent, OrderItem
+from app.ordering.pricing import in_window
 
 router = APIRouter(tags=["catalog"])
 
@@ -18,11 +20,39 @@ class CategoryOut(BaseModel):
     id: UUID
     name: str
     sort: int
+    # Serving hours (docs/03 "Serving hours"): Monday = 1 ... Sunday = 64; no times = all day.
+    days: int = 127
+    available_from: str | None = None
+    available_to: str | None = None
+    open_now: bool = True
 
 
 class CategoryIn(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     sort: int = 0
+    days: int = Field(default=127, ge=1, le=127)
+    available_from: time | None = None
+    available_to: time | None = None
+
+    @model_validator(mode="after")
+    def _hours(self) -> "CategoryIn":
+        if (self.available_from is None) != (self.available_to is None):
+            raise ValueError("Give both serving times, or neither (served all day)")
+        if self.available_from is not None and self.available_from == self.available_to:
+            raise ValueError("The start and end times must differ")
+        return self
+
+
+def category_out(c: MenuCategory, at) -> CategoryOut:
+    return CategoryOut(
+        id=c.id,
+        name=c.name,
+        sort=c.sort,
+        days=c.days,
+        available_from=c.available_from.strftime("%H:%M") if c.available_from else None,
+        available_to=c.available_to.strftime("%H:%M") if c.available_to else None,
+        open_now=in_window(c.days, c.available_from, c.available_to, at),
+    )
 
 
 class ItemOut(BaseModel):
@@ -78,17 +108,18 @@ def _item_out(i: MenuItem) -> ItemOut:
 @router.get("/categories", response_model=list[CategoryOut])
 async def list_categories(ctx: Ctx = HotelCtx()) -> list[CategoryOut]:
     rows = (await ctx.db.execute(select(MenuCategory).order_by(MenuCategory.sort, MenuCategory.name))).scalars()
-    return [CategoryOut(id=c.id, name=c.name, sort=c.sort) for c in rows]
+    at = await hotel_now(ctx.db)
+    return [category_out(c, at) for c in rows]
 
 
 @router.post("/categories", response_model=CategoryOut, status_code=201)
 async def create_category(body: CategoryIn, ctx: Ctx = HotelCtx("menu.manage")) -> CategoryOut:
     o = await current_outlet(ctx)
-    c = MenuCategory(hotel_id=ctx.hotel_id, outlet_id=o.id, name=body.name, sort=body.sort)
+    c = MenuCategory(hotel_id=ctx.hotel_id, outlet_id=o.id, **body.model_dump())
     ctx.db.add(c)
     await ctx.db.flush()
     await ctx.audit("category.create", "category", c.id, after={"name": c.name})
-    return CategoryOut(id=c.id, name=c.name, sort=c.sort)
+    return category_out(c, await hotel_now(ctx.db))
 
 
 @router.put("/categories/{category_id}", response_model=CategoryOut)
@@ -96,8 +127,12 @@ async def update_category(category_id: UUID, body: CategoryIn, ctx: Ctx = HotelC
     c = await ctx.db.get(MenuCategory, category_id)
     if not c:
         raise not_found("Category")
-    c.name, c.sort = body.name, body.sort
-    return CategoryOut(id=c.id, name=c.name, sort=c.sort)
+    for k, v in body.model_dump().items():
+        setattr(c, k, v)
+    await ctx.db.flush()
+    after = {"name": c.name, "days": c.days, "from": str(c.available_from), "to": str(c.available_to)}
+    await ctx.audit("category.update", "category", c.id, after=after)
+    return category_out(c, await hotel_now(ctx.db))
 
 
 @router.delete("/categories/{category_id}", status_code=204)

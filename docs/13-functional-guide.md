@@ -127,6 +127,10 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   with ₹0 options (and a surcharge for the pricier ones), set to "choose 1". The kitchen ticket lists every dish in
   the combo with its quantity. A combo can't be ordered while one of its dishes is sold out (diners see it sold out).
   A dish used in a combo can't be deleted until it is taken out of the combo.
+- **Serving hours** (Menu > category > Edit): give a category its hours and days, e.g. Breakfast 7:00-11:00 every
+  day (a window can run past midnight). Outside them, the QR menu shows the section with "Served 7:00-11:00" and its
+  dishes can't be ordered. Staff get a warning ("Breakfast is over: order anyway?") and can still send the order for a
+  guest who arrived late. No hours = served all day.
 - **Happy hour** (Menu > Happy hour): a name, percent off, the days, a start and end time (it can run past
   midnight, e.g. Saturday 10 pm to 1 am) and which categories (or the whole menu). While it runs, the dishes show a
   "Happy hour −20%" badge for staff and on the QR menu, and the price is lowered automatically for every order,
@@ -336,6 +340,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Serving hours for categories (breakfast / lunch / dinner) (section 8) |
 | 2026-11-20 | Combos (section 8) |
 | 2026-11-20 | Happy hour (section 8) |
 | 2026-11-20 | Menu sizes (half/full) and add-ons (section 8) |

@@ -34,18 +34,25 @@ class PriceRuleRow:
     category_ids: frozenset[str] | None = None
 
 
+def in_window(days: int, start: time | None, end: time | None, at: datetime) -> bool:
+    """Shared by happy hour and serving hours. `at` is the hotel's local time; `days` Monday = 1 ... Sunday = 64.
+    No times = all day on those days. A window that crosses midnight (22:00-01:00) belongs to the day it started."""
+    if start is None or end is None:
+        return bool(days & (1 << at.weekday()))
+    t = at.time()
+    if start < end:
+        return bool(days & (1 << at.weekday())) and start <= t < end
+    if t >= start:
+        return bool(days & (1 << at.weekday()))
+    if t < end:  # after midnight: the window opened yesterday
+        return bool(days & (1 << (at - timedelta(days=1)).weekday()))
+    return False
+
+
 def rule_applies(rule: PriceRuleRow, at: datetime, category_id: str) -> bool:
-    """`at` is the hotel's local time. A window that crosses midnight (22:00-01:00) belongs to the day it started."""
     if rule.category_ids is not None and category_id not in rule.category_ids:
         return False
-    t = at.time()
-    if rule.start < rule.end:
-        return bool(rule.days & (1 << at.weekday())) and rule.start <= t < rule.end
-    if t >= rule.start:
-        return bool(rule.days & (1 << at.weekday()))
-    if t < rule.end:  # after midnight: the window opened yesterday
-        return bool(rule.days & (1 << (at - timedelta(days=1)).weekday()))
-    return False
+    return in_window(rule.days, rule.start, rule.end, at)
 
 
 def best_rule(rules: list[PriceRuleRow], at: datetime, category_id: str) -> PriceRuleRow | None:

@@ -177,3 +177,28 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   and reports show the combo as one line at its real price, so CSV exports carry it like any item (avoids 2).
   Per-component stock comes with inventory (checklist item 9), which will read the same snapshot.
 - No combos inside combos (keeps the ticket and stock readable).
+
+## Time-based menus (checklist item 5) - 2026-11-20
+
+### How others do it
+- **Petpooja**: time-based menus; set the window once and items appear/disappear on schedule (vendor material).
+- **Toast**: menus with availability times. **Square**: menu availability for the POS, plus separate "timed
+  categories" for online ordering.
+
+### Their mistakes (forum reports)
+1. **Works at the till, not online** (Square: menu availability "only works on our POS, not in our online stores";
+   you must also set up timed categories). Two settings for one idea.
+2. **Staff locked out with no override**: a Toast lunch menu (12-3 pm) can't be used for an order taken at 5 pm for
+   tomorrow; support's fix was to change the menu's hours, place the order, then change them back.
+3. **Delivery platforms ignore the times** ("most ordering platforms don't support time-specific menus"); sellers ask
+   how to hide breakfast after 11 am on DoorDash.
+
+### Our choice
+- **Serving hours on the category** (Breakfast 07:00-11:00, chosen days; a window may cross midnight), one setting
+  for every channel (avoids 1). No hours = served all day.
+- **QR diners**: outside the hours the section is shown with "Served 07:00-11:00" and its dishes can't be ordered; the
+  server refuses them (`outside_hours`).
+- **Staff**: warn-and-allow, as with billing: the server answers `outside_hours` with the dishes, the app asks
+  "Breakfast is over: order anyway?", and staff can send it (avoids 2). Diners can never override.
+- Uses the same time logic as happy hour (hotel's local time, days bitmask, crossing midnight), so the two never
+  disagree. Online platforms (checklist item 16) will receive the same hours when they are built (3).

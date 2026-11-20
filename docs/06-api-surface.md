@@ -38,6 +38,12 @@ Combos (built 2026-11-20; docs/03 "Combos"):
   `bad_combo`. `GET /items` and the diner menu return `components[]` `{item_id, name, qty, is_available}`; order items
   return `components[]`. `DELETE /items/{id}` refuses a dish used in a combo (`item_in_combo`, `details.combos`).
 
+Serving hours (built 2026-11-20; docs/03 "Serving hours"):
+- `POST`/`PUT /categories` accept `days` (1..127), `available_from`, `available_to` ("HH:MM", both or neither);
+  categories return them with `open_now`. The diner menu adds `open_now` and `hours` per section.
+- `POST /orders` accepts `allow_outside_hours` (staff); otherwise dishes outside their hours give `outside_hours`.
+  Diner quote and order always refuse them.
+
 ## Diner (token = table QR, then table-session token)
 `GET /d/{qr_token}` (outlet + menu, cacheable), `POST /d/{qr_token}/session`, `POST /d/orders`, `GET /d/orders/{id}`, `POST /d/orders/{id}/rating`, `POST /d/call-waiter`, `POST /d/bill-request`
 

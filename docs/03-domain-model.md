@@ -183,5 +183,14 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Order lines snapshot `components` [{item_id, name, qty per combo}]; the KOT prints each dish x quantity under the
   combo. Bills and reports show the combo as one line; per-component stock comes with inventory (item 9).
 
+## Serving hours (added 2026-11-20; prior art in docs/14)
+- `menu_categories.days` (Mon=1 ... Sun=64), `available_from`, `available_to` (both or neither; migration 0014).
+  No times = served all day on those days. Same window logic as happy hour (`pricing.in_window`): hotel-local time,
+  a window crossing midnight belongs to the day it started.
+- `quote` refuses dishes from a category outside its hours: `outside_hours` (409, details: items, category, hours).
+  QR diners can never override; staff orders may send `allow_outside_hours: true` after the app warned. The staff
+  composer's running quote always prices (only placing the order warns).
+- The diner menu marks such a section `open_now: false` with its `hours`, and its dishes unavailable.
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

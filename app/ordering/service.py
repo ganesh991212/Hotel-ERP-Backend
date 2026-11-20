@@ -17,6 +17,7 @@ from app.models import (
     DiningTable,
     Hotel,
     HotelTaxProfile,
+    MenuCategory,
     MenuItem,
     MenuItemAddonGroup,
     MenuItemComponent,
@@ -152,7 +153,9 @@ async def lock_outlet(db: AsyncSession, outlet_id: UUID) -> None:
     await db.execute(text("select pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": str(outlet_id)})
 
 
-async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
+async def quote(db: AsyncSession, lines: list[LineIn], *, allow_outside_hours: bool = False) -> pricing.Totals:
+    """Server pricing for every channel. Dishes outside their category's serving hours are refused
+    (`outside_hours`) unless staff chose to order them anyway (`allow_outside_hours`; never for diners)."""
     s = get_settings()
     if not lines:
         raise bad_request("empty_order", "Add at least one item")
@@ -182,6 +185,21 @@ async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
         for r in (await db.execute(select(PriceRule).where(PriceRule.is_active))).scalars()
     ]
     choices = await _choices(db, ids)
+    cat_ids = {i.category_id for i in items.values()}
+    cats = {c.id: c for c in (await db.execute(select(MenuCategory).where(MenuCategory.id.in_(cat_ids)))).scalars()}
+    closed = [
+        i
+        for i in items.values()
+        if (c := cats.get(i.category_id)) and not pricing.in_window(c.days, c.available_from, c.available_to, local_now)
+    ]
+    if closed and not allow_outside_hours:
+        c = cats[closed[0].category_id]
+        hours = f"{c.available_from:%H:%M}-{c.available_to:%H:%M}" if c.available_from else None
+        raise conflict(
+            "outside_hours",
+            f"{closed[0].name} is not served now ({c.name}{' ' + hours if hours else ''})",
+            {"items": sorted(i.name for i in closed), "category": c.name, "hours": hours},
+        )
     price_lines = []
     for ln in lines:
         item = items.get(ln.item_id)
@@ -358,6 +376,7 @@ async def create_order(
     lines: list[LineIn],
     note: str | None,
     client_ref: str | None,
+    allow_outside_hours: bool = False,
 ) -> tuple[Order, bool]:
     """Returns (order, created). Idempotent on client_ref (offline waiter queue dedupe, docs/07)."""
     if client_ref:
@@ -366,7 +385,7 @@ async def create_order(
             return existing, False
     if table and table.status != "ACTIVE":
         raise conflict("table_inactive", "This table is not taking orders")
-    totals = await quote(db, lines)
+    totals = await quote(db, lines, allow_outside_hours=allow_outside_hours)
     await lock_outlet(db, outlet.id)
     number = (
         await db.execute(select(func.coalesce(func.max(Order.number), 0) + 1).where(Order.outlet_id == outlet.id))

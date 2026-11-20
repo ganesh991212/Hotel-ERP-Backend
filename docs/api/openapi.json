@@ -7629,6 +7629,38 @@
      "sort": {
       "type": "integer",
       "title": "Sort"
+     },
+     "days": {
+      "type": "integer",
+      "title": "Days",
+      "default": 127
+     },
+     "available_from": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Available From"
+     },
+     "available_to": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Available To"
+     },
+     "open_now": {
+      "type": "boolean",
+      "title": "Open Now",
+      "default": true
      }
     },
     "type": "object",
@@ -8640,6 +8672,11 @@
       "maxItems": 50,
       "minItems": 1,
       "title": "Items"
+     },
+     "allow_outside_hours": {
+      "type": "boolean",
+      "title": "Allow Outside Hours",
+      "default": false
      },
      "table_id": {
       "anyOf": [
@@ -10000,6 +10037,37 @@
       "type": "integer",
       "title": "Sort",
       "default": 0
+     },
+     "days": {
+      "type": "integer",
+      "maximum": 127.0,
+      "minimum": 1.0,
+      "title": "Days",
+      "default": 127
+     },
+     "available_from": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Available From"
+     },
+     "available_to": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Available To"
      }
     },
     "type": "object",
