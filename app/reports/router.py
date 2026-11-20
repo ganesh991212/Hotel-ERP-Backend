@@ -19,7 +19,9 @@ from sqlalchemy import Date, case, cast, func, select
 from app.billing.service import REPLACED_MARK, split_gst, tax_by_rate
 from app.core.deps import Ctx, HotelCtx
 from app.core.errors import bad_request
+from app.core.security import now
 from app.models import AuditLog, Bill, BillLine, BillPayment, DiningTable, Expense, ExpenseCategory, Hotel, Order, User
+from app.reports import printable
 
 router = APIRouter(tags=["reports"])
 
@@ -769,6 +771,33 @@ def pnl_csv(d: dict) -> str:
     ]
     head_info = {"report": "pnl", "from": d["from"], "to": d["to"], "timezone": d["timezone"]}
     return _csv(head_info, d["basis"], head, rows)
+
+
+@router.get("/reports/{kind}.print")
+async def export_print(
+    kind: str, date_from: date | None = From, date_to: date | None = To, ctx: Ctx = HotelCtx("report.view")
+) -> dict:
+    """The report as print blocks (the app makes an A4 PDF from them): the same figures as the screen and CSV."""
+    if kind not in printable.TITLES:
+        raise bad_request("unknown_report", "Unknown report", {"kinds": sorted(printable.TITLES)})
+    if kind == "pnl":
+        d = await pnl_data(ctx, date_from, date_to)
+    else:
+        p = await _period(ctx, date_from, date_to)
+        if kind == "staff":
+            ctx.require_feature("REPORTS_ADVANCED")
+            d = await staff_data(ctx, p)
+        elif kind == "sales":
+            d = await sales_data(ctx, p)
+        elif kind == "gst":
+            d = await gst_data(ctx, p)
+        else:
+            d = await items_data(ctx, p)
+    hotel = (await ctx.db.execute(select(Hotel.name))).scalar_one()
+    return {
+        "title": f"{printable.TITLES[kind]} {d['from']} to {d['to']}",
+        "blocks": [*printable.header(hotel, kind, d, now()), *printable.blocks(kind, d)],
+    }
 
 
 @router.get("/reports/{kind}.csv", response_class=Response)

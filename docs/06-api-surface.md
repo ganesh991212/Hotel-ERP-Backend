@@ -62,6 +62,9 @@ response; design in docs/14 "Reports"):
 - `GET /reports/sales`: per day and in total: bills, gross, discount, taxable, CGST, SGST, other tax, service charge,
   round off, total; paid / unpaid; cancelled (by hand) and replaced bills kept apart; money received by CASH/UPI/CARD
   by the day it was taken; `unbilled` (orders on no live bill: a warning, never sales).
+- `GET /reports/{sales|items|categories|gst|pnl|staff}.print?from=&to=` (`report.view`; staff also needs
+  `REPORTS_ADVANCED`): `{title, blocks}` in the bill block format (English, rupees formatted on the server), the same
+  figures as the JSON report; the app renders them as an A4 PDF.
 - `GET /reports/pnl?from=&to=` (`report.view`): profit and loss by **whole months** (default the last 6, at most 12):
   per month and in total `bills`, `sales_minor` (before GST, after discounts), `service_charge_minor`,
   `income_minor`, `expenses[]` by category, `expenses_minor`, `operating_profit_minor`, `margin_pct`,

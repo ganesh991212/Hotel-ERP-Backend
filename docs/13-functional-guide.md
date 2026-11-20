@@ -310,6 +310,9 @@ rupees).
   moving it to another category later does not change past reports. Older bills that could not be matched show as
   "Not recorded". Download it as CSV like the other reports.
   Cancelled bills are left out.
+- **PDF** (next to Download CSV, every report tab): an A4 PDF of what is on screen, with the hotel, report, dates,
+  time zone, "what it counts" line and when it was made on top, and "Page 1 of 3" at the bottom. It opens the device's
+  print / save / share sheet. Printed in English, like bills.
 - **Profit & loss** (tab; Last 6 / Last 12 months): one card per month, newest first, and a total. **Sales before
   GST** (issued bills after discounts) + service charge − **expenses** (by category, from the Expenses screen, on the
   day spent) = **operating profit** (or loss) and its % of sales. **GST collected** is shown separately as owed to
@@ -427,6 +430,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Reports as PDF (section 13) |
 | 2026-11-20 | Keyboard shortcuts for a counter PC (section 18) |
 | 2026-11-20 | Profit & loss by month; Overview month net now excludes GST (sections 13) |
 | 2026-11-20 | Company GST (B2B) bills; B2B list in the GST report (sections 10, 13) |

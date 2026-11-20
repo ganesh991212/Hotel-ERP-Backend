@@ -574,3 +574,35 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
 - Plain keys (`/`, `T`, `?`) do nothing while a text field has focus; modifier keys always work (avoids 2).
 - **?** opens the list; buttons show their key in the tooltip (avoids 3).
 - No per-item short codes yet: search-and-Enter covers most of it without a new menu field to maintain.
+
+## Reports as PDF (checklist item 7) - 2026-11-20
+
+### How others do it
+- **Odoo POS report add-ons**: a printable sales report for Today / Last 7 days / This month / a custom range,
+  grouped by day, week or month; session Z-reports as PDF (https://apps.odoo.com/apps/modules/18.0/tamadoo_pos_daily_sales_report,
+  https://apps.odoo.com/apps/modules/19.0/pos_sales_report, https://apps.odoo.com/apps/modules/17.0/print_pos_session_report,
+  https://apps.odoo.com/apps/modules/17.0/aminitech_pos_zreport).
+- **Rezku**: exports are CSV only and limited to 90 days (https://support.rezku.com/portal/en/kb/articles/exports-list).
+- **Otter, Atlas, Andromeda**: an Export button per summary table (https://helpdesk.tryotter.com/hc/en-us/articles/27241942607635,
+  https://help.atlas.kitchen/reports/sales/sales-order-report,
+  https://andromeda.freshdesk.com/support/solutions/articles/31000178952-reports-in-andromeda-pos).
+- No Petpooja or Square documentation on PDF report problems was found; the mistakes below are partly our own
+  inference ([Likely]).
+
+### Their mistakes
+1. A PDF that **does not say what it counts**: no period, time zone, or basis line, so a printed page cannot be
+   checked later. [Likely]
+2. **Regional item names as empty boxes**: PDF fonts without Telugu / Devanagari glyphs. [Likely]
+3. **Totals that differ** from the screen because the PDF is computed separately. [Likely]
+4. Long reports **cut off** on one page, with no page numbers. [Likely]
+
+### Our choice
+- The PDF is laid out on the device from **exactly the JSON the screen shows** (the server computes every figure;
+  the app only formats), so screen, CSV and PDF agree (avoids 3). No new server dependency.
+- Every page has the hotel, report name, period, time zone and "generated at"; the basis line is printed under the
+  title (avoids 1). Page numbers "Page 2 of 5"; long lists flow across pages (avoids 4).
+- **English**, like every printed document (docs/07): the PDF library does not shape Telugu / Devanagari
+  conjuncts correctly ([Likely]), so translated labels would print wrongly. Item names typed in a regional script
+  fall back to the Noto fonts shipped with the app so they show glyphs, not boxes (avoids 2, partly).
+- A4 portrait, shared or saved through the device's own print / share sheet. The bills register stays CSV (it is for
+  the accountant's spreadsheet).

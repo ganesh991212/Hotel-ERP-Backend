@@ -172,7 +172,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 4 | Kitchen display | 8 | 100% | 8.0 | Done |
 | 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
 | 6 | Live dashboard | 6 | 90% | 5.4 | Mostly done (profit needs inventory) |
-| 7 | Reports | 7 | 90% | 6.3 | Mostly done (PDF left) |
+| 7 | Reports | 7 | 100% | 7.0 | Done |
 | 8 | Finance and GST | 7 | 90% | 6.3 | Mostly done (IGST open) |
 | 9 | Inventory | 7 | 0% | 0 | Missing |
 | 10 | Recipes and food cost | 5 | 0% | 0 | Missing |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **63.2** | |
+| | **Total** | **100** | | **63.9** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -242,7 +242,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] Category-wise sales (category snapshotted on order and bill lines; adds up to the item totals)
 - [x] Staff-wise: bills, discounts given, money received, cancellations (plan feature REPORTS_ADVANCED)
 - [x] Export CSV for every report, plus the bills register for the accountant
-- [ ] Export PDF
+- [x] Export PDF (A4, every report; server print blocks = the same figures as the screen; page numbers)
 
 ### 8. Finance and GST (7)
 - [x] GST invoices; expenses with global and hotel categories; month revenue minus expenses

@@ -8,6 +8,7 @@ from sqlalchemy import text
 
 from app.core.db import tenant_session
 from app.platform.gstin import checksum_char
+from app.printing.documents import rs
 from app.reports.router import rupees
 from tests.conftest import h, make_hotel
 
@@ -186,3 +187,23 @@ async def test_reports_are_isolated_per_hotel(client, root, day):
     assert (await _get(client, other, "staff")).json()["staff"] == []
     async with tenant_session(uuid.UUID(other["hotel"]["id"])) as db:
         assert (await db.execute(text("select count(*) from bill_lines"))).scalar() == 0
+
+
+async def test_print_blocks_carry_the_same_figures_as_the_screen(client, day):
+    hp, b = day["hp"], day["bill"]
+    for kind in ("sales", "items", "categories", "gst", "pnl", "staff"):
+        r = await _get(client, hp, f"{kind}.print")
+        assert r.status_code == 200, (kind, r.text)
+        blocks = r.json()["blocks"]
+        kinds = {x[0] for x in blocks}
+        assert kinds <= {"title", "center", "small", "text", "bold", "row", "total", "divider"}, kind
+        text = " ".join(" ".join(str(v) for v in x[1:]) for x in blocks)
+        assert "Generated" in text and day["hp"]["hotel"]["name"] in text, "every page says what and when"
+        if kind == "sales":
+            assert rs(b["total_minor"]) in text and "Cancelled" in text
+        if kind == "gst":
+            assert "Documents issued" in text
+        if kind == "pnl":
+            assert "not income" in text and "(so far)" in text
+    assert (await _get(client, hp, "nope.print")).json()["code"] == "unknown_report"
+    assert (await _get(client, hp, "sales.print", who="Kiran")).status_code == 403
