@@ -70,3 +70,49 @@ code. Sources are vendor material and user forums unless stated; vendor claims a
   percentages (rarely needed; Square's portion count is the same idea).
 - Not yet: a discount per guest bill (Toast's "discount does not follow the item" mistake is avoided by not carrying
   a whole-bill discount into the split at all; a guest discount comes later).
+
+## Menu variants (half/full) and add-ons (checklist item 5) - 2026-11-20
+
+### How others do it
+- **Petpooja** (India): "item-wise variations, and add-ons with separate pricing for each customisation"; menu setup
+  is categories, variations, add-ons, recipes and tax mapping, kept the same across dine-in and delivery. (Vendor
+  material; screens not public.)
+- **Toast**: portions (e.g. 1st half / 2nd half) and modifier groups attached to items; groups can be required or
+  optional, with min/max choices.
+- **Square**: modifier sets attached to items, with required/optional and pre-selected options.
+- Common pattern: a variation group (Half / Full, Small / Large) with its own price per option, plus reusable
+  add-on groups ("Extras", "Choose your bread") with rules for how many may be picked.
+
+### Their mistakes (user reports)
+1. **Modifier rules that behave differently by device** (Square: optional modifiers forced as required on iOS) and
+   pre-selected modifier bugs that silently add items.
+2. **Can't see where a modifier is used** (Toast: modifier items "don't show which groups they're used in"), so
+   owners can't safely change or delete them; large menus become unmanageable.
+3. **Hidden from the till** when a visibility flag is off (Toast "Visible to POS"): staff can't sell what's on the menu.
+4. **Online customers see a huge raw list of modifiers** (Square), because one list serves every channel.
+5. **The same option can't be picked twice** in a group (Square), e.g. "extra cheese x2".
+6. **Required-before-optional prompting order** forces extra taps on every order (Toast).
+
+### GST (India)
+- Food and drink served by a restaurant is one **composite supply**, taxed at the rate of the principal supply
+  (restaurant service): add-ons served with the dish take the **dish's GST rate**, not a rate of their own. Things sold
+  as separate goods (e.g. packaged goods, cigarettes) are outside this; we do not model them as add-ons.
+  (Commentary sources; rates must still come from effective-dated tax config, rule 7.)
+
+### Our choice
+- **Variants** belong to one item (Half ₹180 / Full ₹320). If an item has variants, one must be chosen and its price
+  replaces the item price. Each variant can be marked sold out on its own (half biryani out, full still on).
+- **Add-on groups** are reusable across items ("Extras": raita ₹30, extra gravy ₹40) with `min`/`max` picks
+  (0..n optional, 1..1 "choose one"). The menu screen shows **which items use each group** (avoids mistake 2).
+  An add-on can be picked more than once only if the group allows it (`max` counts total picks; mistake 5).
+- **One rule set everywhere**: the server validates variant and add-on choices for waiters, admins and QR diners
+  alike (no per-device behaviour; mistake 1). Nothing is pre-selected.
+- **Prices from the server only** (rule 4): clients send `variant_id` and add-on ids with counts; the server prices
+  `unit = variant (or item) + add-ons`, and the add-ons take the item's GST rate (composite supply).
+- **Snapshot on the order**: the order line keeps the variant name, each add-on's name and price at that moment, so
+  later menu edits never change an order, a KOT or a bill. The bill line reads "Chicken Biryani (Half) + Raita" with
+  the combined unit price; the KOT shows the variant in bold and add-ons underneath for the chef.
+- **One list for staff and diners**, but sold-out variants/add-ons are hidden from diners and shown greyed for
+  staff (no separate "visible to POS" flag to forget; mistake 3).
+- Composer: pick the variant first (one tap, required), add-ons on the same sheet (mistake 6 avoided by showing
+  both at once, not as successive prompts).

@@ -47,6 +47,8 @@ def kot_blocks(
         if it.get("status") == "CANCELLED":
             continue
         blocks.append(("bold", f"{it['qty']} x {it['name']}"))
+        for a in it.get("addons") or []:  # add-ons under the dish, for the chef
+            blocks.append(("text", f"   + {a['qty']} x {a['name']}" if a.get("qty", 1) > 1 else f"   + {a['name']}"))
         if it.get("note"):
             blocks.append(("text", f"   > {it['note']}"))
     blocks.append(("divider",))

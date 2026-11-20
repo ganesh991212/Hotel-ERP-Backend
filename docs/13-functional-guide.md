@@ -112,6 +112,16 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 - **Sold out** switch (chefs and servers may use it): the item disappears from QR ordering instantly and cannot be
   ordered.
 - Prices always come from the server; a diner's phone or a waiter's tablet never sets a price.
+- **Sizes** (Menu > item > Sizes): give a dish two or more sizes with their own price, e.g. Half ₹180 / Full ₹320.
+  Then everyone ordering it (waiter, admin, QR diner) must pick a size. One size can be marked sold out on its own
+  (half biryani finished, full still on); if every size is sold out the dish shows as sold out.
+- **Add-ons** (Menu > Add-on groups): make a group once, e.g. "Extras" (Raita ₹30, Cheese ₹40; pick up to 3) or
+  "Choose your bread" (Roti / Naan; pick exactly 1), then attach it to the dishes that offer it. Each group shows
+  which dishes use it. The same add-on can be picked more than once (2 x Cheese) if the group allows that many.
+- When ordering, the size and add-ons are chosen on the same sheet. The price shown is the server's: size plus
+  add-ons. Add-ons are taxed at the dish's GST rate. The kitchen ticket prints the add-ons under the dish; the bill
+  line reads "Biryani (Half) + Raita, 2 x Cheese".
+- Changing a price later never changes an order already placed or its bill.
 
 ## 9. Tables and QR codes
 
@@ -314,6 +324,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Menu sizes (half/full) and add-ons (section 8) |
 | 2026-11-20 | Split by items: one GST bill per guest (section 10) |
 | 2026-11-20 | Reports: sales by day, items, GST summary, staff, bills register, CSV; Overview revenue now counts bills (section 13) |
 | 2026-11-20 | Part payments and equal split (sections 10, 13) |

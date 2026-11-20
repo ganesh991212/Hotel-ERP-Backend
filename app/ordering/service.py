@@ -11,10 +11,14 @@ from app.core.config import get_settings
 from app.core.errors import bad_request, conflict
 from app.core.security import now
 from app.models import (
+    Addon,
+    AddonGroup,
     Assignment,
     DiningTable,
     HotelTaxProfile,
     MenuItem,
+    MenuItemAddonGroup,
+    MenuItemVariant,
     Order,
     OrderItem,
     OrderItemEvent,
@@ -43,6 +47,84 @@ class LineIn:
     item_id: UUID
     qty: int
     note: str | None = None
+    variant_id: UUID | None = None
+    addons: tuple[tuple[UUID, int], ...] = ()  # (addon id, picks per unit)
+
+
+@dataclass
+class _Choices:
+    """The menu's variants and add-on groups for the items in one order."""
+
+    variants: dict[UUID, list[MenuItemVariant]]
+    groups: dict[UUID, list[AddonGroup]]  # item -> its groups
+    addons: dict[UUID, Addon]  # addon id -> addon (only groups linked to these items)
+
+
+async def _choices(db: AsyncSession, item_ids: set[UUID]) -> _Choices:
+    variants: dict[UUID, list[MenuItemVariant]] = {}
+    for v in (
+        await db.execute(
+            select(MenuItemVariant).where(MenuItemVariant.item_id.in_(item_ids)).order_by(MenuItemVariant.sort)
+        )
+    ).scalars():
+        variants.setdefault(v.item_id, []).append(v)
+    links = (
+        await db.execute(
+            select(MenuItemAddonGroup.item_id, AddonGroup)
+            .join(AddonGroup, AddonGroup.id == MenuItemAddonGroup.group_id)
+            .where(MenuItemAddonGroup.item_id.in_(item_ids))
+            .order_by(MenuItemAddonGroup.sort)
+        )
+    ).all()
+    groups: dict[UUID, list[AddonGroup]] = {}
+    for item_id, g in links:
+        groups.setdefault(item_id, []).append(g)
+    group_ids = {g.id for _, g in links}
+    addons = {}
+    if group_ids:
+        addons = {a.id: a for a in (await db.execute(select(Addon).where(Addon.group_id.in_(group_ids)))).scalars()}
+    return _Choices(variants, groups, addons)
+
+
+def _choose(item: MenuItem, ln: "LineIn", c: _Choices) -> tuple[int, str, MenuItemVariant | None, tuple]:
+    """Validate one line's variant and add-ons against the menu; returns (unit price, name, variant, picks).
+    The same rules for every channel: waiter, admin and QR diner (docs/14)."""
+    item_ref = {"item_id": str(item.id)}
+    variants = c.variants.get(item.id, [])
+    variant = None
+    if variants:
+        variant = next((v for v in variants if v.id == ln.variant_id), None)
+        if variant is None:
+            raise bad_request("variant_required", f"Choose a size for {item.name}", item_ref)
+        if not variant.is_available:
+            raise conflict("item_unavailable", f"{item.name} ({variant.name}) is sold out", item_ref)
+    elif ln.variant_id is not None:
+        raise bad_request("bad_variant", f"{item.name} has no sizes", item_ref)
+    groups = c.groups.get(item.id, [])
+    allowed = {g.id for g in groups}
+    picks: list[pricing.AddonPick] = []
+    per_group: dict[UUID, int] = {}
+    seen: set[UUID] = set()
+    for addon_id, qty in ln.addons:
+        a = c.addons.get(addon_id)
+        if a is None or a.group_id not in allowed or addon_id in seen or not 1 <= qty <= 20:
+            raise bad_request("bad_addon", f"That add-on is not offered with {item.name}", item_ref)
+        if not a.is_available:
+            raise conflict("item_unavailable", f"{a.name} is sold out", item_ref)
+        seen.add(addon_id)
+        per_group[a.group_id] = per_group.get(a.group_id, 0) + qty
+        picks.append(pricing.AddonPick(str(a.id), a.name, a.price_minor, qty))
+    for g in groups:
+        n = per_group.get(g.id, 0)
+        if not g.min_select <= n <= g.max_select:
+            raise bad_request(
+                "addon_count",
+                f"{item.name}: pick {g.min_select} to {g.max_select} from {g.name}",
+                {**item_ref, "group": g.name, "min": g.min_select, "max": g.max_select},
+            )
+    base = variant.price_minor if variant else item.price_minor
+    name = f"{item.name} ({variant.name})" if variant else item.name
+    return pricing.unit_price(base, tuple(picks)), name, variant, tuple(picks)
 
 
 @dataclass
@@ -71,6 +153,7 @@ async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
         for r in (await db.execute(select(TaxRule))).scalars()
     ]
     today = date.today()
+    choices = await _choices(db, ids)
     price_lines = []
     for ln in lines:
         item = items.get(ln.item_id)
@@ -80,21 +163,29 @@ async def quote(db: AsyncSession, lines: list[LineIn]) -> pricing.Totals:
             raise conflict("item_unavailable", f"{item.name} is sold out", {"item_id": str(item.id)})
         if not 1 <= ln.qty <= s.max_qty_per_line:
             raise bad_request("bad_quantity", "Quantity out of range", {"item_id": str(item.id)})
+        unit, name, variant, picks = _choose(item, ln, choices)
         price_lines.append(
             pricing.PriceLine(
                 str(item.id),
-                item.name,
+                name,
                 ln.qty,
-                item.price_minor,
-                pricing.tax_rate_for(item.tax_code, today, rules, reg),
+                unit,
+                pricing.tax_rate_for(item.tax_code, today, rules, reg),  # add-ons take the dish's rate
+                variant_id=str(variant.id) if variant else None,
+                variant_name=variant.name if variant else None,
+                addons=picks,
             )
         )
     return pricing.price(price_lines, profile.service_charge_bp if profile else 0)
 
 
+def _line_json(p: pricing.PricedLine) -> dict:
+    return {**p.__dict__, "addons": [a.__dict__ for a in p.addons]}
+
+
 def totals_json(t: pricing.Totals) -> dict:
     return {
-        "lines": [p.__dict__ for p in t.lines],
+        "lines": [_line_json(p) for p in t.lines],
         "subtotal_minor": t.subtotal_minor,
         "tax_minor": t.tax_minor,
         "service_charge_minor": t.service_charge_minor,
@@ -133,6 +224,8 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
                 "unit_price_minor": i.unit_price_minor,
                 "line_total_minor": i.line_total_minor,
                 "status": i.status,
+                "variant_name": i.variant_name,
+                "addons": i.addons or [],
             }
             for i in items
         ],
@@ -251,8 +344,8 @@ async def create_order(
     )
     db.add(o)
     await db.flush()
-    notes = {ln.item_id: ln.note for ln in lines}
-    for p in totals.lines:
+    # Lines are matched by position: the same dish can be on an order twice (Half and Full).
+    for ln, p in zip(lines, totals.lines, strict=True):
         it = OrderItem(
             hotel_id=hotel_id,
             order_id=o.id,
@@ -264,7 +357,10 @@ async def create_order(
             line_total_minor=p.line_total_minor,
             est_prep_minutes=prep[UUID(p.item_id)],
             status="PLACED",
-            note=notes.get(UUID(p.item_id)),
+            note=ln.note,
+            variant_id=UUID(p.variant_id) if p.variant_id else None,
+            variant_name=p.variant_name,
+            addons=[a.__dict__ for a in p.addons] or None,
         )
         db.add(it)
         await db.flush()

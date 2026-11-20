@@ -144,5 +144,20 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - Discounts: a discounted bill is not split (`bill_discounted`; cancel it first), because the discount would be
   lost. Guest bills cannot be discounted yet; a per-guest discount comes later.
 
+## Variants and add-ons (added 2026-11-20; prior art in docs/14)
+- `menu_item_variants(item_id, name, price_minor, is_available, sort)`: an item has none or two to ten sizes (Half /
+  Full). With sizes, one must be chosen and its price replaces the item price; each size can be sold out alone.
+- `addon_groups(name, min_select, max_select)` with `addons(name, price_minor, is_available)`, reusable across
+  items via `menu_item_addon_groups(item_id, group_id, sort)`. `min..max` counts total picks in the group (0..3
+  optional extras; 1..1 "choose one"). Picking the same add-on twice is `qty`, not two entries.
+- Every channel goes through one check (`ordering.service._choose`): size required/valid/available, add-on offered
+  with this item/available, group counts. Nothing is pre-selected.
+- Price per unit = size (or item) price + add-ons x picks; **add-ons take the dish's GST rate** (restaurant food is
+  one composite supply). Rates still come from effective-dated tax rules (rule 7).
+- Order lines snapshot `variant_id`, `variant_name`, `addons` [{id, name, price_minor, qty}]; `name` reads
+  "Biryani (Half)". Bill lines read "Biryani (Half) + Raita, 2 x Cheese", so different add-ons never merge.
+- Lines are matched by position when an order is created: the same dish can be on one order twice.
+- All four tables have `hotel_id` and RLS (migration 0010).
+
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

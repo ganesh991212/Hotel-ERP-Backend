@@ -13,12 +13,25 @@ class TaxRuleRow:
 
 
 @dataclass(frozen=True)
+class AddonPick:
+    """One chosen add-on at its price of the moment; `qty` picks of it on each unit of the dish."""
+
+    id: str
+    name: str
+    price_minor: int
+    qty: int = 1
+
+
+@dataclass(frozen=True)
 class PriceLine:
     item_id: str
     name: str
     qty: int
-    unit_price_minor: int
+    unit_price_minor: int  # dish (or variant) + add-ons, per unit
     tax_rate_bp: int
+    variant_id: str | None = None
+    variant_name: str | None = None
+    addons: tuple[AddonPick, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -30,6 +43,25 @@ class PricedLine:
     tax_rate_bp: int
     line_total_minor: int
     tax_minor: int
+    variant_id: str | None = None
+    variant_name: str | None = None
+    addons: tuple[AddonPick, ...] = ()
+
+
+def unit_price(base_minor: int, addons: tuple[AddonPick, ...]) -> int:
+    """A unit of the dish with its add-ons. Add-ons served with a dish take the dish's GST rate (composite
+    supply, docs/14), so they are simply part of the unit price."""
+    return base_minor + sum(a.price_minor * a.qty for a in addons)
+
+
+def addons_label(addons) -> str:
+    """'Raita, 2 x Extra cheese' for bills and lists (dicts from a snapshot or AddonPick)."""
+
+    def part(a) -> str:
+        name, qty = (a["name"], a.get("qty", 1)) if isinstance(a, dict) else (a.name, a.qty)
+        return f"{qty} x {name}" if qty > 1 else name
+
+    return ", ".join(part(a) for a in addons or [])
 
 
 @dataclass(frozen=True)
@@ -69,6 +101,9 @@ def price(lines: list[PriceLine], service_charge_bp: int = 0) -> Totals:
                 tax_rate_bp=ln.tax_rate_bp,
                 line_total_minor=total,
                 tax_minor=bp_of(total, ln.tax_rate_bp),
+                variant_id=ln.variant_id,
+                variant_name=ln.variant_name,
+                addons=ln.addons,
             )
         )
     subtotal = sum(p.line_total_minor for p in priced)

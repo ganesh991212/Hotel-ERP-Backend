@@ -265,6 +265,59 @@ class MenuItem(Base):
     sort: Mapped[int] = mapped_column(Integer, server_default="0")
 
 
+class MenuItemVariant(Base):
+    """Half / Full, Small / Large: if an item has variants, one is chosen and its price replaces the item's."""
+
+    __tablename__ = "menu_item_variants"
+    __table_args__ = (UniqueConstraint("item_id", "name", name="uq_variants_item_name"),)
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("menu_items.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(40))
+    price_minor: Mapped[int] = mapped_column(BigInteger)
+    is_available: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    sort: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
+class AddonGroup(Base):
+    """A reusable set of add-ons ("Extras", "Choose your bread") with how many may be picked in total."""
+
+    __tablename__ = "addon_groups"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    name: Mapped[str] = mapped_column(String(60))
+    min_select: Mapped[int] = mapped_column(Integer, server_default="0")
+    max_select: Mapped[int] = mapped_column(Integer, server_default="1")
+    sort: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
+class Addon(Base):
+    __tablename__ = "addons"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("addon_groups.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(60))
+    price_minor: Mapped[int] = mapped_column(BigInteger, server_default="0")
+    is_available: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    sort: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
+class MenuItemAddonGroup(Base):
+    __tablename__ = "menu_item_addon_groups"
+    __table_args__ = (UniqueConstraint("item_id", "group_id", name="uq_item_addon_group"),)
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("menu_items.id", ondelete="CASCADE"))
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("addon_groups.id", ondelete="CASCADE"), index=True
+    )
+    sort: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
 class TaxRule(Base):
     """Effective-dated tax rates in basis points. Never constants in code (rule 7)."""
 
@@ -334,6 +387,11 @@ class OrderItem(Base):
     est_prep_minutes: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(12))
     note: Mapped[str | None] = mapped_column(Text)
+    # Snapshot of the choice (docs/03 "Variants and add-ons"): `name` already reads "Biryani (Half)";
+    # addons = [{"id", "name", "price_minor", "qty"}] at the price of the moment, included in unit_price_minor.
+    variant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    variant_name: Mapped[str | None] = mapped_column(String(40))
+    addons: Mapped[list | None] = mapped_column(JSONB)
 
 
 class OrderItemEvent(Base):
@@ -595,4 +653,8 @@ TENANT_TABLES = [
     "device_tokens",
     "hotel_branding",
     "bill_payments",
+    "menu_item_variants",
+    "addon_groups",
+    "addons",
+    "menu_item_addon_groups",
 ]

@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import bad_request, conflict, forbidden, not_found
 from app.core.security import now
 from app.models import Bill, BillLine, BillPayment, DiningTable, Hotel, HotelTaxProfile, Order, OrderItem, TableSession
-from app.ordering.pricing import apply_discount, bp_of, discount_bp_of, discount_minor_for
+from app.ordering.pricing import addons_label, apply_discount, bp_of, discount_bp_of, discount_minor_for
 from app.printing.documents import bill_blocks
 
 DOC_TYPE = {"REGULAR": "TAX_INVOICE", "COMPOSITION": "BILL_OF_SUPPLY", "UNREGISTERED": "BILL"}
@@ -246,7 +246,9 @@ async def _grouped(db: AsyncSession, orders: list[Order]) -> tuple[dict[tuple, l
     )
     grouped: dict[tuple, list[int]] = defaultdict(lambda: [0, 0])
     for it in items:
-        key = (it.name, it.unit_price_minor, it.tax_rate_bp)
+        # Add-ons are part of the line's name, so "Biryani (Half) + Raita" and "+ Salad" never merge.
+        name = f"{it.name} + {addons_label(it.addons)}" if it.addons else it.name
+        key = (name, it.unit_price_minor, it.tax_rate_bp)
         grouped[key][0] += it.qty
         grouped[key][1] += it.line_total_minor
     return grouped, list(items)

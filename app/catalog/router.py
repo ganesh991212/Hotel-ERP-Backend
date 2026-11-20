@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
+from app.catalog.options import options_for, with_options
 from app.core.deps import Ctx, HotelCtx, count
 from app.core.errors import bad_request, not_found
 from app.floor.router import current_outlet, outlet_channel
@@ -34,6 +35,10 @@ class ItemOut(BaseModel):
     est_prep_minutes: int
     is_available: bool
     sort: int
+    # Sizes and add-on groups (docs/03 "Variants and add-ons"); managed through /items/{id}/variants and
+    # /items/{id}/addon-groups.
+    variants: list[dict] = []
+    addon_groups: list[dict] = []
 
 
 class ItemIn(BaseModel):
@@ -104,7 +109,8 @@ async def delete_category(category_id: UUID, ctx: Ctx = HotelCtx("menu.manage"))
 @router.get("/items", response_model=list[ItemOut])
 async def list_items(ctx: Ctx = HotelCtx()) -> list[ItemOut]:
     rows = (await ctx.db.execute(select(MenuItem).order_by(MenuItem.sort, MenuItem.name))).scalars()
-    return [_item_out(i) for i in rows]
+    opts = await options_for(ctx.db)
+    return [ItemOut(**with_options(_item_out(i).model_dump(), opts, i.id)) for i in rows]
 
 
 @router.post("/items", response_model=ItemOut, status_code=201)

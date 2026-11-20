@@ -2691,6 +2691,534 @@
     }
    }
   },
+  "/api/v1/items/{item_id}/variants": {
+   "put": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Set Variants",
+    "description": "Replace the item's sizes. Orders already placed keep their own copy, so editing never changes them.",
+    "operationId": "set_variants_api_v1_items__item_id__variants_put",
+    "parameters": [
+     {
+      "name": "item_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Item Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/VariantsIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response Set Variants Api V1 Items  Item Id  Variants Put"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/variants/{variant_id}/availability": {
+   "post": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Variant Availability",
+    "description": "Half sold out, full still on (kitchen staff can do this, like item availability).",
+    "operationId": "variant_availability_api_v1_variants__variant_id__availability_post",
+    "parameters": [
+     {
+      "name": "variant_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Variant Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AvailabilityIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Variant Availability Api V1 Variants  Variant Id  Availability Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/addon-groups": {
+   "get": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "List Groups",
+    "operationId": "list_groups_api_v1_addon_groups_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response List Groups Api V1 Addon Groups Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Create Group",
+    "operationId": "create_group_api_v1_addon_groups_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/GroupIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Create Group Api V1 Addon Groups Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/addon-groups/{group_id}": {
+   "put": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Update Group",
+    "operationId": "update_group_api_v1_addon_groups__group_id__put",
+    "parameters": [
+     {
+      "name": "group_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Group Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/GroupIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Update Group Api V1 Addon Groups  Group Id  Put"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Delete Group",
+    "description": "Allowed even while items use it (they simply stop offering it); orders keep their own copy.",
+    "operationId": "delete_group_api_v1_addon_groups__group_id__delete",
+    "parameters": [
+     {
+      "name": "group_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Group Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/addons/{addon_id}/availability": {
+   "post": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Addon Availability",
+    "operationId": "addon_availability_api_v1_addons__addon_id__availability_post",
+    "parameters": [
+     {
+      "name": "addon_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Addon Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AvailabilityIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Addon Availability Api V1 Addons  Addon Id  Availability Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/items/{item_id}/addon-groups": {
+   "put": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "Set Item Groups",
+    "description": "Which add-on groups this item offers, in the order shown.",
+    "operationId": "set_item_groups_api_v1_items__item_id__addon_groups_put",
+    "parameters": [
+     {
+      "name": "item_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Item Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ItemGroupsIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response Set Item Groups Api V1 Items  Item Id  Addon Groups Put"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/v1/orders/quote": {
    "post": {
     "tags": [
@@ -6592,6 +7120,66 @@
  },
  "components": {
   "schemas": {
+   "AddonIn": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "price_minor": {
+      "type": "integer",
+      "maximum": 100000000.0,
+      "minimum": 0.0,
+      "title": "Price Minor",
+      "default": 0
+     },
+     "is_available": {
+      "type": "boolean",
+      "title": "Is Available",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "AddonIn"
+   },
+   "AddonModel": {
+    "properties": {
+     "addon_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Addon Id"
+     },
+     "qty": {
+      "type": "integer",
+      "maximum": 20.0,
+      "minimum": 1.0,
+      "title": "Qty",
+      "default": 1
+     }
+    },
+    "type": "object",
+    "required": [
+     "addon_id"
+    ],
+    "title": "AddonModel"
+   },
    "AdminIn": {
     "properties": {
      "name": {
@@ -7036,6 +7624,46 @@
     "type": "object",
     "title": "GlobalCategoryPatch"
    },
+   "GroupIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "min_select": {
+      "type": "integer",
+      "maximum": 20.0,
+      "minimum": 0.0,
+      "title": "Min Select",
+      "default": 0
+     },
+     "max_select": {
+      "type": "integer",
+      "maximum": 20.0,
+      "minimum": 1.0,
+      "title": "Max Select",
+      "default": 1
+     },
+     "addons": {
+      "items": {
+       "$ref": "#/components/schemas/AddonIn"
+      },
+      "type": "array",
+      "maxItems": 30,
+      "minItems": 1,
+      "title": "Addons"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "addons"
+    ],
+    "title": "GroupIn",
+    "description": "`min_select`..`max_select` picks in total (\"Extras\": 0..3; \"Choose your bread\": 1..1)."
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -7259,6 +7887,24 @@
     ],
     "title": "HotelOut"
    },
+   "ItemGroupsIn": {
+    "properties": {
+     "group_ids": {
+      "items": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "title": "Group Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "group_ids"
+    ],
+    "title": "ItemGroupsIn"
+   },
    "ItemIn": {
     "properties": {
      "category_id": {
@@ -7377,6 +8023,24 @@
      "sort": {
       "type": "integer",
       "title": "Sort"
+     },
+     "variants": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Variants",
+      "default": []
+     },
+     "addon_groups": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Addon Groups",
+      "default": []
      }
     },
     "type": "object",
@@ -7532,6 +8196,26 @@
        }
       ],
       "title": "Note"
+     },
+     "variant_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Variant Id"
+     },
+     "addons": {
+      "items": {
+       "$ref": "#/components/schemas/AddonModel"
+      },
+      "type": "array",
+      "maxItems": 20,
+      "title": "Addons"
      }
     },
     "type": "object",
@@ -8798,6 +9482,63 @@
      "type"
     ],
     "title": "ValidationError"
+   },
+   "VariantIn": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "price_minor": {
+      "type": "integer",
+      "maximum": 100000000.0,
+      "minimum": 0.0,
+      "title": "Price Minor"
+     },
+     "is_available": {
+      "type": "boolean",
+      "title": "Is Available",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "price_minor"
+    ],
+    "title": "VariantIn"
+   },
+   "VariantsIn": {
+    "properties": {
+     "variants": {
+      "items": {
+       "$ref": "#/components/schemas/VariantIn"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "title": "Variants"
+     }
+    },
+    "type": "object",
+    "required": [
+     "variants"
+    ],
+    "title": "VariantsIn",
+    "description": "The item's full list of sizes, in order. Empty = no sizes (the item's own price applies). Two or more\notherwise: a single \"variant\" is just the price."
    },
    "VoidIn": {
     "properties": {

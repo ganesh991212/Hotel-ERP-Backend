@@ -12,7 +12,20 @@ Base `/api/v1`. JSON. Errors: `{code, message, details}`. List endpoints are cur
 `/outlets`, `/users`, `/roles`, `/areas`, `/tables` (+ `/tables/{id}/qr`, `/tables/qr-sheet`), `/stations`, `/settings`
 
 ## Catalog
-`/menus`, `/categories`, `/items` (+ `/items/{id}/availability`), `/modifier-groups`
+`/menus`, `/categories`, `/items` (+ `/items/{id}/availability`)
+
+Variants and add-ons (built 2026-11-20; docs/03 "Variants and add-ons"):
+- `GET /items` and the diner menu `GET /d/{qr}` add per item `variants[]` `{id, name, price_minor, is_available}` and
+  `addon_groups[]` `{id, name, min_select, max_select, addons[]}`. Diners never see sold-out sizes/add-ons; an item
+  whose sizes are all sold out is shown sold out.
+- `PUT /items/{id}/variants {variants: [{id?, name, price_minor, is_available}]}` (none, or 2 to 10; `menu.manage`).
+- `POST /variants/{id}/availability`, `POST /addons/{id}/availability` (`menu.availability`).
+- `GET /addon-groups` (with `used_by` item names), `POST /addon-groups`, `PUT /addon-groups/{id}`
+  `{name, min_select, max_select, addons: [{id?, name, price_minor, is_available}]}`, `DELETE /addon-groups/{id}`.
+- `PUT /items/{id}/addon-groups {group_ids}` (order = display order).
+- Order and quote lines accept `variant_id` and `addons: [{addon_id, qty}]` (ids only; priced on the server).
+  Errors: `variant_required`, `bad_variant`, `bad_addon`, `addon_count` (`details.group/min/max`), `item_unavailable`.
+  Order items return `variant_name` and `addons[]`.
 
 ## Diner (token = table QR, then table-session token)
 `GET /d/{qr_token}` (outlet + menu, cacheable), `POST /d/{qr_token}/session`, `POST /d/orders`, `GET /d/orders/{id}`, `POST /d/orders/{id}/rating`, `POST /d/call-waiter`, `POST /d/bill-request`
