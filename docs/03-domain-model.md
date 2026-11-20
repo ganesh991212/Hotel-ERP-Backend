@@ -238,6 +238,16 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   only its dishes and the order number and table) when an order spans several stations; `blocks` is the full ticket.
 - Display and print only: assignment, the strict queue and "ready" stay per order (docs/04).
 
+## Attendance (added 2026-11-20; prior art in docs/14)
+
+- `attendance(id, hotel_id, user_id, clock_in_at, clock_out_at?, corrected_by?, correction_reason?, original_in_at?,
+  original_out_at?)`, RLS per hotel; at most one open shift per person (partial unique index).
+- Clock in / out only on the person's own login. A chef's clock drives `chef_profiles.on_shift` (clocking out returns
+  their queued orders to routing, as the kitchen switch does).
+- Open for more than 16 hours: `missing_clock_out` in the sheet; never closed by the system. A correction
+  (`attendance.manage`) needs a reason, keeps the punched times once in `original_*`, and is audited.
+- Permission `attendance.manage` (HOTEL_ADMIN, MANAGER).
+
 ## B2B invoices (added 2026-11-20; prior art in docs/14)
 
 - `bills.buyer_name`, `buyer_gstin`, `buyer_address` (name and GSTIN together or neither): the registered buyer on a

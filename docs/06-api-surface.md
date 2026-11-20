@@ -62,6 +62,11 @@ response; design in docs/14 "Reports"):
 - `GET /reports/sales`: per day and in total: bills, gross, discount, taxable, CGST, SGST, other tax, service charge,
   round off, total; paid / unpaid; cancelled (by hand) and replaced bills kept apart; money received by CASH/UPI/CARD
   by the day it was taken; `unbilled` (orders on no live bill: a warning, never sales).
+- Attendance: `GET /attendance/me`, `POST /attendance/clock-in` (`already_clocked_in`), `POST /attendance/clock-out`
+  (`not_clocked_in`) for anyone signed in to a hotel; `GET /attendance?from=&to=` (`attendance.manage`, hotel-local
+  days, default today, "from" alone runs to today, max 62 days): `shifts[]` (minutes, open, missing_clock_out,
+  corrected) and `people[]` (days, shifts, minutes, missing_clock_outs); `POST /attendance/{id}/fix {clock_in_at?,
+  clock_out_at?, reason}` (`future_time`, `bad_times`).
 - `GET /reports/{sales|items|categories|gst|pnl|staff}.print?from=&to=` (`report.view`; staff also needs
   `REPORTS_ADVANCED`): `{title, blocks}` in the bill block format (English, rupees formatted on the server), the same
   figures as the JSON report; the app renders them as an A4 PDF.

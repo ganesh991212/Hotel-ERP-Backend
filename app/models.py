@@ -274,6 +274,22 @@ class HeldOrder(Base):
     created_at: Mapped[datetime] = created()
 
 
+class Attendance(Base):
+    """One shift worked: clocked in on the person's own login, clocked out the same way (docs/14 "Attendance").
+    A manager's correction keeps the original times and needs a reason."""
+
+    __tablename__ = "attendance"
+    id: Mapped[uuid.UUID] = pk()
+    hotel_id: Mapped[uuid.UUID] = hotel_fk()
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
+    clock_in_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    clock_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    corrected_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    correction_reason: Mapped[str | None] = mapped_column(String(200))
+    original_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    original_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class TableSession(Base):
     __tablename__ = "table_sessions"
     id: Mapped[uuid.UUID] = pk()
@@ -806,5 +822,6 @@ TENANT_TABLES = [
     "day_closes",
     "bookings",
     "held_orders",
+    "attendance",
     "kitchen_stations",
 ]

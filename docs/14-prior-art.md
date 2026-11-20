@@ -606,3 +606,32 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
   fall back to the Noto fonts shipped with the app so they show glyphs, not boxes (avoids 2, partly).
 - A4 portrait, shared or saved through the device's own print / share sheet. The bills register stays CSV (it is for
   the accountant's spreadsheet).
+
+## Attendance: clock in / clock out (checklist item 13) - 2026-11-20
+
+### How others do it
+- **Petpooja Payroll / Attendo**: fingerprint pads at the counter "so friends can't punch for friends", shifts with
+  late / overtime rules and a holiday calendar; attendance flows into payroll and Tally
+  (https://blog.petpooja.com/people-payroll/fingerprint-attendance-system-small-business-india/,
+  https://blog.petpooja.com/people-payroll/petpooja-payroll-features/, https://blog.petpooja.com/poss/attendance-management-system/).
+- Petpooja notes restaurant staff mix part-time, daily-wage, full-time and festival hires, and that multi-screen
+  time tracking is resisted during busy service; clocking in must be one tap
+  (https://blog.petpooja.com/industry-business-guides/time-tracking-vs-punch-in-system-comparison/,
+  https://blog.petpooja.com/people-payroll/smart-staff-management-indian-smes-2026/).
+- Sources are vendor marketing; no Toast or independent review was found.
+
+### Their mistakes
+1. **Biometrics** for a small restaurant: extra hardware and fingerprints are sensitive personal data to keep safe.
+2. **Missed clock-outs closed automatically** at a fixed time, so paid hours are invented. [Likely]
+3. Managers **edit punches silently**, so staff stop trusting the hours. [Likely]
+4. Attendance separate from the kitchen: a chef who went home still gets orders routed to them. [Likely]
+
+### Our choice
+- **One tap on your own login** ("Clock in" / "Clock out" on My work). Everyone has their own account and password,
+  so a colleague's login is needed to punch for them; no fingerprints, no photos, no location (avoids 1).
+- A shift still open after 16 hours is shown as **"No clock-out"** for a manager to fix; never closed by itself
+  (avoids 2).
+- A manager's correction needs a **reason**, keeps the original times and is in the audit log (avoids 3).
+- For chefs, **clocking in puts them on shift and clocking out takes them off** (their queued orders go back to the
+  board, as with the kitchen switch), so routing follows who is actually there (avoids 4).
+- Hours per person per day for a date range, from the server. Planned shifts (rota, lateness) come next.

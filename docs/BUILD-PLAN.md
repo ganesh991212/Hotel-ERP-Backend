@@ -178,14 +178,14 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 10 | Recipes and food cost | 5 | 0% | 0 | Missing |
 | 11 | Purchases and suppliers | 4 | 0% | 0 | Missing |
 | 12 | Customers (CRM) | 4 | 0% | 0 | Missing |
-| 13 | Staff, shifts, attendance | 4 | 50% | 2.0 | Partial |
+| 13 | Staff, shifts, attendance | 4 | 70% | 2.8 | Partial |
 | 14 | Reservations and waitlist | 3 | 100% | 3.0 | Done |
 | 15 | Delivery (own riders) | 2 | 0% | 0 | Missing |
 | 16 | Integrations | 6 | 25% | 1.5 | Partial |
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **63.9** | |
+| | **Total** | **100** | | **64.7** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -272,7 +272,8 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 
 ### 13. Staff, shifts, attendance (4)
 - [x] Staff, roles, chef on/off shift, password change and reset, "My work"
-- [ ] Attendance (clock in/out) and shift schedule
+- [x] Attendance: clock in/out on own login; chefs on/off shift with the clock; missed clock-outs flagged; corrections need a reason
+- [ ] Shift schedule (rota) and lateness
 - [ ] Cash handover per shift
 
 ### 14. Reservations and waitlist (3)

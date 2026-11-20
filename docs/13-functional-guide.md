@@ -256,6 +256,8 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 | kot.print | Print kitchen tickets (and hand orders to the kitchen on paper) |
 | bill.manage | Create, print and settle bills |
 | bill.void | Void an issued bill (reason required) |
+| dayclose.manage | Count the cash drawer and close the day |
+| attendance.manage | See everyone's attendance and correct clock-in / clock-out times |
 
 ## 12. Expenses
 
@@ -329,6 +331,17 @@ rupees).
 
 What happens: reports are read-only and computed on the server from the bills; nothing is stored or changed.
 Servers and chefs cannot open them.
+
+### Attendance
+
+- Everyone clocks in and out on their **own login**: the **Clock in** button on Overview (owners, managers) or My
+  work (everyone else); it then shows "Clock out (in since 2:44 PM)". No fingerprints, photos or location.
+- **Chefs**: clocking in puts you on shift in the kitchen; clocking out takes you off (orders waiting in your queue go
+  back to the other chefs).
+- **Attendance** (Overview, managers): Today or Last 7 days; each person's days and hours, and every shift. A shift
+  still open after 16 hours says **No clock-out**: the system never guesses the time. Tap the pencil to set the
+  clock-out time with a **reason**; the original punch is kept and the change is recorded with your name. Nobody
+  can fix their own hours unless they manage attendance.
 
 ## 14. Settings (hotel admin)
 
@@ -430,6 +443,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Attendance: clock in / out, corrections with a reason (sections 11, 13) |
 | 2026-11-20 | Reports as PDF (section 13) |
 | 2026-11-20 | Keyboard shortcuts for a counter PC (section 18) |
 | 2026-11-20 | Profit & loss by month; Overview month net now excludes GST (sections 13) |

@@ -26,6 +26,7 @@ PERMISSIONS: dict[str, str] = {
     "bill.manage": "Create, print and settle table bills",
     "bill.void": "Void an issued bill (reason required)",
     "dayclose.manage": "Count the cash drawer and close the day",
+    "attendance.manage": "See everyone's attendance and correct clock-in / clock-out times",
 }
 
 ALL = set(PERMISSIONS)
