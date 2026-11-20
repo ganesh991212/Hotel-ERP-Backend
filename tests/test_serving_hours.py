@@ -44,7 +44,7 @@ async def test_diners_cannot_order_outside_the_hours(client, hs):
     menu = (await client.get(f"{API}/d/{qr}")).json()
     section = menu["categories"][0]
     assert section["open_now"] is False and section["hours"] == "-".join(_later())
-    assert all(not i["is_available"] for i in section["items"])
+    # Dishes stay "available" (not sold out); the section is closed, and the server refuses them below.
     q = await client.post(f"{API}/d/{qr}/quote", json={"items": [{"item_id": hs["items"]["Naan"], "qty": 1}]})
     assert q.status_code == 409 and q.json()["code"] == "outside_hours"
 

@@ -190,7 +190,8 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
 - `quote` refuses dishes from a category outside its hours: `outside_hours` (409, details: items, category, hours).
   QR diners can never override; staff orders may send `allow_outside_hours: true` after the app warned. The staff
   composer's running quote always prices (only placing the order warns).
-- The diner menu marks such a section `open_now: false` with its `hours`, and its dishes unavailable.
+- The diner menu marks such a section `open_now: false` with its `hours` (dishes keep their real sold-out state, so
+  the menu says "Served 07:00-11:00", not "Sold out").
 
 ## Audit
 `audit_log(id, hotel_id, actor, action, entity, entity_id, before, after, at)`.

@@ -96,7 +96,7 @@ async def menu(qr_token: str) -> dict:
                                     "description": i.description,
                                     "is_veg": i.is_veg,
                                     "price_minor": i.price_minor,
-                                    "is_available": i.is_available and open_now[c.id],
+                                    "is_available": i.is_available,
                                     "est_prep_minutes": i.est_prep_minutes,
                                     "offer": offers.get(i.id),
                                 },
