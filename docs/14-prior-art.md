@@ -349,3 +349,36 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
   every ticket; the full ticket is still available.
 - **Kitchen screen**: a station picker ("All", "Kitchen", "Bar"...) shows each device only its station's dishes;
   remembered on that device. The order is still accepted and marked ready by its chef.
+
+## Live dashboard: vs same day last week, payment mix (checklist item 6) - 2026-11-20
+
+### How others do it
+- **Square** (Restaurants daily sales): "week over week" is the change against the **same day last week**; when that
+  day has no data it shows **no change at all** rather than a number.
+  (https://squareup.com/help/us/en/article/8579-review-daily-sales-for-your-restaurant)
+- **Toast**: hour-by-hour sales against the same day last week, for daypart staffing.
+  (https://pos.toasttab.com/th-us/blog/on-the-line/restaurant-pos-reports)
+- **Petpooja**: a daily revenue tracker records how guests paid (cash / UPI / card) beside covers; it warns that one
+  day is a weak baseline (weather, a local holiday) and that the comparison that means most is your own pattern.
+  (https://blog.petpooja.com/operations-workflows/important-restaurant-analytics-you-must-know/,
+  https://blog.petpooja.com/templates-checklist/restaurant-daily-revenue-tracker-template/)
+- **Atlas** (sales trends): compares windows that don't line up (a whole earlier period against a partial current one).
+  (https://help.atlas.kitchen/reports/sales/sales-trends-beta)
+
+### Their mistakes
+1. **Partial day against a whole day**: at 2 pm "today" is compared with all of last Tuesday, so every morning looks
+   like a collapse.
+2. **"-100%" or "+inf%"** when last week had no sales (a new outlet, a holiday closure).
+3. Payment mix computed from **bill totals** instead of money received, so part-paid and unpaid bills distort it, and
+   the dashboard disagrees with the cash drawer.
+4. Hour-level comparison of a single day is noise presented as signal.
+
+### Our choice
+- Compare **today so far** with the **same weekday last week up to the same hotel-local time** (avoids 1). Revenue uses
+  the same bill definition as Reports and the Overview revenue tile.
+- No sales last week up to that time -> the server sends `null` and the app says "No sales to compare", never a
+  percentage (avoids 2). The server computes the change; the app only shows it, with an up/down icon and words, not
+  colour alone.
+- Payment mix = **money received today by method** (`bill_payments`), the same definition as Reports and Day close,
+  so the Overview, the reports and the drawer agree (avoids 3).
+- No hour-by-hour comparison; the 7-day chart already shows the pattern (avoids 4).

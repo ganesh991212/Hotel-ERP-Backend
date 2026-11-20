@@ -247,7 +247,9 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
 ## 13. Overview and "My work"
 
 - **Hotel Overview** (owners and managers): orders today, revenue today (issued bills, not cancelled: the same
-  number the Reports show), average bill, food served but not billed yet (a warning), open orders by status, tables
+  number the Reports show) with the change against **the same weekday last week up to the same time** (an up or
+  down arrow and the amount and percentage; "No sales to compare" when there were none then), **money received today
+  by cash / UPI / card** (the same figures as Reports and Close the day), average bill, food served but not billed yet (a warning), open orders by status, tables
   busy, orders by hour, last 7 days, channels, top items, month revenue / expenses / net, average times (waiting for a
   chef, cooking, ready-to-table, total), each chef's completed orders and queue, each server's served orders and
   speed, live orders.
@@ -384,6 +386,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Overview: vs same day last week and payment mix (section 13) |
 | 2026-11-20 | Kitchen stations: a ticket and a screen per station (sections 7, 8) |
 | 2026-11-20 | Bookings and walk-in waitlist (section 6) |
 | 2026-11-20 | Move and merge tables (section 6) |

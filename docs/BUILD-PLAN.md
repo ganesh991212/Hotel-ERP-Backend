@@ -171,7 +171,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 3 | Tables / floor plan | 6 | 100% | 6.0 | Done |
 | 4 | Kitchen display | 8 | 90% | 7.2 | Mostly done |
 | 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
-| 6 | Live dashboard | 6 | 70% | 4.2 | Mostly done |
+| 6 | Live dashboard | 6 | 90% | 5.4 | Mostly done (profit needs inventory) |
 | 7 | Reports | 7 | 80% | 5.6 | Mostly done |
 | 8 | Finance and GST | 7 | 70% | 4.9 | Mostly done |
 | 9 | Inventory | 7 | 0% | 0 | Missing |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **58.3** | |
+| | **Total** | **100** | | **59.5** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -230,8 +230,8 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 
 ### 6. Live dashboard (6)
 - [x] Orders, revenue, average ticket, by hour, 7 days, channels, top items, month net, timings, chefs, servers
-- [ ] Compare with the same day last week
-- [ ] Payment mix (cash / UPI / card)
+- [x] Compare with the same day last week (up to the same hotel-local time; no percentage when last week had no sales)
+- [x] Payment mix (cash / UPI / card): money received today, the same definition as Reports and Day close
 - [ ] Gross profit and food cost % (needs 10)
 
 ### 7. Reports (7)
