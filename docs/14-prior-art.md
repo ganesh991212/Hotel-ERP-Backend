@@ -442,3 +442,38 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
 - Close the day shows **how many holds are still waiting**, and the floor shows a "Held" count per table / takeaway
   (avoids 4). Discarding a hold is audited.
 - Scope: one hold per "Hold" tap; tables and takeaway alike. Course firing stays out.
+
+## Target time per dish and "Delayed" (checklist item 4) - 2026-11-20
+
+### How others do it
+- **Toast**: time thresholds per kitchen; a ticket changes colour the longer it is unfulfilled
+  (https://support.toasttab.com/en/article/Basic-Kitchen-Configuration?lang=en_US).
+- **MenuTiger / NextOrder-style KDS**: each product has a prep time; with several items the ticket counts down from
+  the **slowest** item (https://menutiger.helpscoutdocs.com/article/383-how-do-i-change-the-appearance-and-preparation-times-for-my-kitchen-display-system-kds,
+  https://nextorder.com/en-nz/products/kitchen-display-screen).
+- **Sapaad**: flags a delay per item when it runs past its preparation time
+  (https://kb.sapaad.com/help/how-do-i-know-when-there-is-a-delay-in-the-preparation-of-an-item).
+- **GoTab, Epson TrueOrder, Bank of America KDS**: two thresholds (caution then late), often per order type, shown as
+  blue/yellow/red (https://success.gotab.io/knowledge/kds-ticket-timer,
+  https://files.support.epson.com/pdf/pos/kds/111-56-qum-013_r3.36_trueorder_kds_order_timers-quick_user_manual.pdf,
+  https://merchanthelp.bankofamerica.com/Kitchen-Display-Order-Management).
+- A KDS vendor blog: set thresholds to the kitchen's **real** targets, or every ticket looks late
+  (https://crumb-pos.vercel.app/blog/kds-best-practices).
+
+### Their mistakes
+1. **Colour alone** (yellow/red) says "late": unreadable for colour-blind cooks and on washed-out kitchen TVs.
+2. **One threshold for everything**: chai is held to the biryani's 20 minutes, or the biryani to the chai's 4.
+3. The clock starts when the **cook starts**, so time spent waiting for a chef never counts, while the guest has been
+   waiting since they ordered.
+4. Lateness is shown on the screen but **never measured**, so nobody knows whether the kitchen is improving.
+5. Changing a dish's prep time later moves the goalposts for orders already cooking.
+
+### Our choice
+- Each dish already has its prep time. When an order is placed, the server fixes a **due time** for every line:
+  placed + the outlet's chef pick-up time + that dish's prep time; the order is due when its slowest line is (avoids
+  2, 3). It is a snapshot, so later menu edits don't change it (avoids 5).
+- The kitchen card says **"Due in 4 min"**, **"Due now"** or **"Delayed 3 min"** with a clock / warning icon as well
+  as colour (avoids 1). With a station selected, the card uses that station's dishes only (the bar's chai is due long
+  before the kitchen's biryani).
+- The Overview reports **on time today**: orders ready by their due time, out of all orders made ready (avoids 4).
+- No per-order-type thresholds yet: one rule, visible and explained in the guide.

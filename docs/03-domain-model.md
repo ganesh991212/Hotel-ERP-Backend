@@ -238,6 +238,13 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   only its dishes and the order number and table) when an order spans several stations; `blocks` is the full ticket.
 - Display and print only: assignment, the strict queue and "ready" stay per order (docs/04).
 
+## Target times (added 2026-11-20; prior art in docs/14)
+
+- `order_items.due_at` = placed + the outlet's chef pick-up time (`pickup_alert_minutes`, 0 if off) + that dish's
+  `est_prep_minutes`; `orders.due_at` = the slowest line's. Fixed when the order is placed (later menu edits never
+  move it). An order is **delayed** while not ready after its due time; it was **on time** if `ready_at <= due_at`.
+- Migration 0021 back-fills both from `created_at` for orders placed before.
+
 ## Hold / resume (added 2026-11-20; prior art in docs/14)
 
 - `held_orders(id, hotel_id, table_id?, customer_name?, note?, items jsonb, created_by, created_at)`: a cart put on

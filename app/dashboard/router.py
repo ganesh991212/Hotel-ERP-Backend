@@ -164,6 +164,20 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
             "p90_minutes": round(float(p90), 1) if p90 is not None else None,
         }
 
+    # On time today: orders made ready by the due time fixed when they were placed (docs/14 "Target time").
+    ready_n, on_time_n = (
+        await db.execute(
+            select(func.count(), func.count().filter(Order.ready_at <= Order.due_at)).where(
+                is_today, Order.ready_at.is_not(None), Order.due_at.is_not(None)
+            )
+        )
+    ).one()
+    on_time = {
+        "ready": int(ready_n),
+        "on_time": int(on_time_n),
+        "pct": round(on_time_n * 100 / ready_n) if ready_n else None,
+    }
+
     servers = []
     serve_m = minutes(Order.ready_at, Order.served_at)
     for name, n, avg in (
@@ -250,6 +264,7 @@ async def summary(ctx: Ctx = HotelCtx("dashboard.view")) -> dict:
         "tables_busy": tables_busy,
         "chefs": chefs,
         "timings": timings,
+        "on_time": on_time,  # ready by the due time fixed when placed (docs/14)
         "servers": servers,
         "live_orders": [await order_json(db, o) for o in live],
         "generated_at": now().isoformat(),

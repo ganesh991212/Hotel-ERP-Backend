@@ -463,6 +463,7 @@ class Order(Base):
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # target, fixed when placed (docs/14)
     pickup_alerted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # no-pickup alert sent
     served_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     served_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
@@ -500,6 +501,7 @@ class OrderItem(Base):
     station_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     station_name: Mapped[str | None] = mapped_column(String(40))
     category_name: Mapped[str | None] = mapped_column(String(80))  # snapshot, for category-wise sales
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # placed + pick-up + this dish's prep
     # Position on the order as entered (KOT and order screens list items in this order).
     line_no: Mapped[int] = mapped_column(SmallInteger, server_default="0")
     # Happy hour (docs/03): the dish/size price before the rule, and the rule's name; NULL when no rule applied.

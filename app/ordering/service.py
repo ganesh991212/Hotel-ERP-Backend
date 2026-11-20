@@ -1,6 +1,7 @@
 """Order creation and state machine. Prices are computed here, never accepted from clients (rule 4)."""
 
 from dataclasses import dataclass
+from datetime import timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -295,6 +296,7 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
                 "components": i.components or [],
                 "station": {"id": str(i.station_id), "name": i.station_name} if i.station_name else None,
                 "list_unit_price_minor": i.list_unit_price_minor,
+                "due_at": i.due_at.isoformat() if i.due_at else None,
             }
             for i in items
         ],
@@ -303,6 +305,7 @@ async def order_json(db: AsyncSession, o: Order) -> dict:
         "service_charge_minor": o.service_charge_minor,
         "total_minor": o.total_minor,
         "est_prep_minutes": o.est_prep_minutes,
+        "due_at": o.due_at.isoformat() if o.due_at else None,  # ready by then, or the kitchen shows "Delayed"
         "on_paper": o.on_paper,
         "kot_print_count": o.kot_print_count,
         "bill_id": str(o.bill_id) if o.bill_id else None,
@@ -398,6 +401,9 @@ async def create_order(
         (await db.execute(select(MenuItem).where(MenuItem.id.in_({ln.item_id for ln in lines})))).scalars()
     )
     prep = {i.id: i.est_prep_minutes for i in menu_items}
+    # Target times (docs/14): the guest waits from now, so a chef's pick-up time counts as well as the cooking.
+    placed_at = now()
+    allowance = timedelta(minutes=outlet.pickup_alert_minutes or 0)
     from app.catalog.options import station_for_items
 
     stations = await station_for_items(db, menu_items)  # snapshot: where each dish's ticket goes
@@ -427,6 +433,7 @@ async def create_order(
         service_charge_minor=totals.service_charge_minor,
         total_minor=totals.total_minor,
         est_prep_minutes=max(prep.values()),  # items cook in parallel; the slowest sets the order time
+        due_at=placed_at + allowance + timedelta(minutes=max(prep.values())),
     )
     db.add(o)
     await db.flush()
@@ -443,6 +450,7 @@ async def create_order(
             tax_rate_bp=p.tax_rate_bp,
             line_total_minor=p.line_total_minor,
             est_prep_minutes=prep[UUID(p.item_id)],
+            due_at=placed_at + allowance + timedelta(minutes=prep[UUID(p.item_id)]),
             status="PLACED",
             note=ln.note,
             variant_id=UUID(p.variant_id) if p.variant_id else None,

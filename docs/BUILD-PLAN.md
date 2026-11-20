@@ -169,7 +169,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 1 | Point of sale / billing | 10 | 95% | 9.5 | Mostly done |
 | 2 | Orders (all channels) | 6 | 65% | 3.9 | Partial |
 | 3 | Tables / floor plan | 6 | 100% | 6.0 | Done |
-| 4 | Kitchen display | 8 | 90% | 7.2 | Mostly done |
+| 4 | Kitchen display | 8 | 100% | 8.0 | Done |
 | 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
 | 6 | Live dashboard | 6 | 90% | 5.4 | Mostly done (profit needs inventory) |
 | 7 | Reports | 7 | 90% | 6.3 | Mostly done (PDF left) |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **60.7** | |
+| | **Total** | **100** | | **61.5** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -220,7 +220,7 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 - [x] Live board, chef pick-up / auto-assign / paper KOT, strict queue, timers
 - [x] Loud alerts, no-pickup alert, ready notifications
 - [x] Stations (bar, tandoor, Chinese...): a ticket and a screen per station (owner chose split tickets/screens; per-station "ready" deferred)
-- [ ] Target time per dish with "Delayed" flag
+- [x] Target time per dish with "Delayed" flag (due time per line fixed when placed; on-time % on the Overview)
 
 ### 5. Menu and pricing (7)
 - [x] Items, categories, availability, veg/non-veg, prep time, tax rate

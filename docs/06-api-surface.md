@@ -76,6 +76,8 @@ response; design in docs/14 "Reports"):
 
 ## Implemented additions (2026-11-18)
 - `POST /orders/quote`, `POST /d/{qr}/quote`: server-priced totals for carts (clients never compute money).
+- Orders and their lines carry `due_at` (target ready time, fixed when placed). `GET /dashboard/summary` adds
+  `on_time {ready, on_time, pct}` for today (`pct` null when nothing was made ready).
 - Hold / resume (`order.create`; list `order.view`): `POST /held-orders {items, table_id?, customer_name?, note?}`
   (refused if the cart cannot be priced); `GET /held-orders?table_id=|takeaway=true` (oldest first; each with `items`,
   today's `quote` or a `problem`); `DELETE /held-orders/{id}`. `POST /orders {..., held_order_id}` consumes the hold;

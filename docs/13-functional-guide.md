@@ -111,6 +111,11 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   chef's queue can start; the next unlocks when it is marked ready.
 - **Orders per chef at once** (1 to 5) caps each queue.
 - Admins can reassign or reorder with a reason (audited).
+- **Target time**: when an order is placed, each dish gets a **due time** = now + the chef pick-up time (Settings,
+  "no pickup alert after", 5 minutes by default) + that dish's prep time (Menu). The order is due when its slowest dish
+  is. Each card shows **"Due in 4 min"** (clock icon), **"Due now"** (alarm icon) or **"Delayed 3 min"** (warning
+  icon, bold red) next to the waiting / cooking time. With a station picked, the card uses only that station's
+  dishes, so the bar sees when its chai is due. Changing a prep time later does not move orders already placed.
 - Built for phones, tablets and a kitchen TV.
 
 ## 8. Menu
@@ -259,7 +264,7 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   by cash / UPI / card** (the same figures as Reports and Close the day), average bill, food served but not billed yet (a warning), open orders by status, tables
   busy, orders by hour, last 7 days, channels, top items, month revenue / expenses / net, average times (waiting for a
   chef, cooking, ready-to-table, total), each chef's completed orders and queue, each server's served orders and
-  speed, live orders.
+  speed, live orders, and **On time today: 92% (23 of 25 orders ready by their due time)** under Service times.
 - **My work** (everyone else's Overview), today or last 7 days, with the team's average under each average:
   - Chef: orders and items cooked, average cooking time, average wait before starting, queue now.
   - Server: orders served, tables served, average ready-to-table time, orders taken and their value, ready now.
@@ -397,6 +402,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Target time per dish, "Delayed" on the kitchen screen, on time % (sections 7, 13) |
 | 2026-11-20 | Hold / resume an order (section 6, 13) |
 | 2026-11-20 | Reports: sales by category (section 13) |
 | 2026-11-20 | Overview: vs same day last week and payment mix (section 13) |
