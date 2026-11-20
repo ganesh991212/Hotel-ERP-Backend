@@ -32,6 +32,14 @@ class DiscountIn(BaseModel):
         return self
 
 
+class BuyerIn(BaseModel):
+    """A GST-registered buyer (B2B). Checked on the server; an issued bill is never edited, so adding one re-issues."""
+
+    name: str = Field(min_length=2, max_length=120)
+    gstin: str = Field(min_length=15, max_length=15)
+    address: str | None = Field(default=None, max_length=300)
+
+
 class BillIn(BaseModel):
     """A table's bill for this visit (`table_id`), or one takeaway order's bill (`order_id`)."""
 
@@ -40,6 +48,8 @@ class BillIn(BaseModel):
     include_unserved: bool = False
     # With an unpaid bill already open, a discount re-issues it (the old one is cancelled, never edited).
     discount: DiscountIn | None = None
+    # B2B: with an unpaid bill already open, this re-issues it with the buyer (docs/14).
+    buyer: BuyerIn | None = None
 
     @model_validator(mode="after")
     def _one_target(self) -> "BillIn":
@@ -102,6 +112,13 @@ async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
             by_user=ctx.user_id,
             max_bp=await max_discount_bp(ctx),
         )
+    buyer = None
+    if body.buyer:
+        buyer = service.BuyerSpec(
+            name=body.buyer.name.strip(),
+            gstin=body.buyer.gstin.strip().upper(),
+            address=(body.buyer.address or "").strip() or None,
+        )
     if body.order_id:
         b, replaced = await service.create_order_bill(
             ctx.db,
@@ -110,6 +127,7 @@ async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
             user_id=ctx.user_id,
             include_unserved=body.include_unserved,
             discount=discount,
+            buyer=buyer,
         )
     else:
         b, replaced = await service.create_bill(
@@ -119,10 +137,13 @@ async def create(body: BillIn, ctx: Ctx = HotelCtx("bill.manage")) -> dict:
             user_id=ctx.user_id,
             include_unserved=body.include_unserved,
             discount=discount,
+            buyer=buyer,
         )
     after = {"invoice_no": b.invoice_no, "total_minor": b.total_minor, "replaced": replaced}
     if b.discount_minor:
         after |= {"discount_minor": b.discount_minor, "discount_reason": b.discount_reason}
+    if b.buyer_gstin:
+        after |= {"buyer_gstin": b.buyer_gstin}
     await ctx.audit("bill.create", "bill", b.id, after=after)
     ctx.emit(f"outlet:{b.outlet_id}", {"type": "bill.created", "table_id": str(b.table_id)})
     return {**await service.bill_json(ctx.db, b), "replaced_invoice_nos": replaced}

@@ -477,3 +477,38 @@ queue (rule 10) and assignment (rule 5) don't change. Full per-station item trac
   before the kitchen's biryani).
 - The Overview reports **on time today**: orders ready by their due time, out of all orders made ready (avoids 4).
 - No per-order-type thresholds yet: one rule, visible and explained in the guide.
+
+## B2B invoices: the buyer's GSTIN on the bill (checklist item 8) - 2026-11-20
+
+### How others do it
+- **Petpooja**: a bill issued to a customer's GSTIN is B2B; dine-in and takeaway bills are B2C. A guest asking for a
+  GSTIN is flagged on the bill, not billed as a normal table
+  (https://blog.petpooja.com/finance-compliance/gst-billing-for-restaurants/,
+  https://blog.petpooja.com/glossary/gstr-1/). Petpooja also notes most restaurant bills do not need e-invoicing
+  (https://blog.petpooja.com/finance-compliance/e-invoice-for-restaurants-most-bills-do-not-need/).
+- **GSTR-1**: each B2B invoice is reported on its own line: number, date, buyer GSTIN, taxable value, tax
+  (https://docs.frappe.io/erpnext/gstr-1-missing-or-mismatch, https://www.patronaccounting.com/blog/restaurant-gst-return-documents-required-checklist).
+- Other sources: https://restro-logic.pages.dev/blog/restaurant-gst-reporting-india.html,
+  https://xiotch.web.app/blog/gst-billing-guide-restaurants-india/, https://cdn.gofrugal.com/blog/billing-vs-invoice/
+  (vendor marketing; claims unverified).
+
+### Their mistakes
+1. **Invalid GSTINs** typed by hand go onto invoices; the buyer cannot claim credit and the hotel must amend next
+   month (https://www.gimbooks.com/blog/10-common-gst-invoice-errors/amp/). Since July 2025 GSTR-3B is filled from
+   GSTR-1 and locked, so the error is locked in too.
+2. **B2B mixed into B2C** totals: GSTR-1 mismatches and notices (https://vasyerp.com/the-retail-guru/?p=62134).
+3. A **wrong place of supply**: an other-state company billed CGST + SGST where IGST may apply.
+4. The **recipient edited on an issued invoice**, or lost when the bill is re-issued for extra items.
+
+### Our choice
+- The buyer (company name, GSTIN, address) is added when billing, or to an **unpaid** bill by re-issuing it (the old
+  number is cancelled and kept, like a discount); an issued invoice is never edited (avoids 4). Re-billing for more
+  items **keeps** the buyer; a split refuses rather than drop it (avoids 4).
+- The GSTIN is checked on the server (format and check digit); a mistyped one is refused (avoids 1).
+- Only a **GST-registered** hotel (tax invoice) can issue B2B bills.
+- **Other-state GSTINs are refused for now** ("inter-state B2B needs IGST"), so we never print CGST + SGST where IGST may
+  be due (avoids 3). [Likely] Under section 12(2) of the IGST Act the place of supply for a registered buyer is the
+  buyer's location, which would make those bills IGST. To be confirmed with the owner's CA before we support it.
+- The GST report lists **B2B invoices one per line** (invoice, date, buyer GSTIN, name, taxable, rate, CGST, SGST)
+  and the B2C totals separately; the CSV has both (avoids 2).
+- No e-invoicing (IRN) yet: it applies only above the turnover threshold.

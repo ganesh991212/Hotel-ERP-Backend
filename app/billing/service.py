@@ -13,6 +13,7 @@ from app.core.errors import bad_request, conflict, forbidden, not_found
 from app.core.security import now
 from app.models import Bill, BillLine, BillPayment, DiningTable, Hotel, HotelTaxProfile, Order, OrderItem, TableSession
 from app.ordering.pricing import addons_label, apply_discount, bp_of, discount_bp_of, discount_minor_for
+from app.platform.gstin import is_valid_gstin
 from app.printing.documents import bill_blocks
 
 DOC_TYPE = {"REGULAR": "TAX_INVOICE", "COMPOSITION": "BILL_OF_SUPPLY", "UNREGISTERED": "BILL"}
@@ -37,6 +38,36 @@ def split_gst(tax_minor: int) -> tuple[int, int]:
     """Intra-state dine-in: CGST + SGST halves. The odd paisa goes to CGST so the parts always sum exactly."""
     cgst = (tax_minor + 1) // 2
     return cgst, tax_minor - cgst
+
+
+@dataclass(frozen=True)
+class BuyerSpec:
+    """A GST-registered buyer for a B2B bill (docs/14). Validated by `check_buyer` before any bill is cancelled."""
+
+    name: str
+    gstin: str
+    address: str | None = None
+
+
+def _buyer_of(bill: Bill) -> BuyerSpec | None:
+    return BuyerSpec(bill.buyer_name, bill.buyer_gstin, bill.buyer_address) if bill.buyer_gstin else None
+
+
+async def check_buyer(db: AsyncSession, buyer: BuyerSpec) -> None:
+    """B2B only on a tax invoice, same state only for now (other-state buyers may need IGST: docs/14)."""
+    profile = (await db.execute(select(HotelTaxProfile))).scalar_one_or_none()
+    if not profile or profile.gst_registration != "REGULAR":
+        raise bad_request("not_tax_invoice", "Only a GST-registered hotel can issue a B2B tax invoice")
+    if not is_valid_gstin(buyer.gstin):
+        raise bad_request("bad_gstin", "That GSTIN is not valid; check it with the guest")
+    if buyer.gstin == profile.gstin:
+        raise bad_request("bad_gstin", "That is this hotel's own GSTIN")
+    if profile.state_code and buyer.gstin[:2] != profile.state_code:
+        raise bad_request(
+            "interstate_b2b",
+            "This GSTIN is from another state; inter-state B2B bills need IGST, which is not supported yet",
+            {"buyer_state": buyer.gstin[:2], "hotel_state": profile.state_code},
+        )
 
 
 @dataclass(frozen=True)
@@ -69,6 +100,7 @@ async def create_bill(
     user_id: UUID,
     include_unserved: bool,
     discount: DiscountSpec | None = None,
+    buyer: BuyerSpec | None = None,
 ) -> tuple[Bill, list[str]]:
     """One bill per table visit (docs/03 "Billing a table visit"). If the table already has an issued, unpaid
     bill and the guest ordered more, that bill is cancelled (a GST invoice cannot be edited; the cancelled number
@@ -92,8 +124,8 @@ async def create_bill(
         .scalars()
         .all()
     )
-    # Re-billing with nothing new is only meaningful to apply a discount to the open bill.
-    if not has_new and not (discount and open_bills):
+    # Re-billing with nothing new is only meaningful to apply a discount or add the buyer to the open bill.
+    if not has_new and not ((discount or buyer) and open_bills):
         raise bad_request("nothing_to_bill", "This table has no orders to bill")
     orders = await _unbilled(db, table_id)
     already = [o for b in open_bills for o in (await db.execute(select(Order).where(Order.bill_id == b.id))).scalars()]
@@ -102,7 +134,11 @@ async def create_bill(
         # The client warns ("still being prepared: bill anyway?") and retries with include_unserved.
         raise conflict("orders_not_served", "Some orders are not served yet", {"orders": unserved})
     replaced = []
-    why = "Items added" if has_new else "Discount applied"
+    why = "Items added" if has_new else ("Discount applied" if discount else "Buyer's GST details added")
+    # The buyer stays on the bill when it is re-issued for more food (never silently dropped).
+    buyer = buyer or next((x for x in map(_buyer_of, open_bills) if x), None)
+    if buyer:
+        await check_buyer(db, buyer)
     for old in open_bills:
         await void(db, old, f"{why}{REPLACED_MARK}a new bill", keep_payments=True)
         replaced.append(old)
@@ -115,6 +151,7 @@ async def create_bill(
         orders=orders,
         user_id=user_id,
         discount=discount,
+        buyer=buyer,
     )
     # Covers: the visit's guests, once. Food ordered after a split gets its own bill without counting guests again.
     has_split = (
@@ -141,6 +178,7 @@ async def create_order_bill(
     user_id: UUID,
     include_unserved: bool,
     discount: DiscountSpec | None = None,
+    buyer: BuyerSpec | None = None,
 ) -> tuple[Bill, list[str]]:
     """Bill one takeaway / counter order (no table, so no table visit). Usually paid at the counter before or at
     pickup; billing while it is still cooking warns like a table bill."""
@@ -151,19 +189,31 @@ async def create_order_bill(
     if o.table_id is not None:
         raise bad_request("table_order", "Bill table orders by table: one bill per table visit")
     old_bill = await db.get(Bill, o.bill_id, with_for_update=True) if o.bill_id else None
-    if old_bill is not None and not (discount and old_bill.status == "ISSUED"):
+    if old_bill is not None and not ((discount or buyer) and old_bill.status == "ISSUED"):
         raise conflict("already_billed", "This order already has a bill")
     if o.status in ("CANCELLED", "PLACED"):
         raise conflict("bad_order_state", f"Order is {o.status}")
     if o.status != "SERVED" and not include_unserved:
         raise conflict("orders_not_served", "This order is not handed over yet", {"orders": [o.number]})
-    if old_bill is not None:  # applying a discount to the unpaid bill: cancel it, issue a new one
-        await void(db, old_bill, f"Discount applied{REPLACED_MARK}a new bill", keep_payments=True)
+    why = "Discount applied" if discount else "Buyer's GST details added"
+    if old_bill is not None:
+        buyer = buyer or _buyer_of(old_bill)
+    if buyer:
+        await check_buyer(db, buyer)
+    if old_bill is not None:  # a discount or the buyer on the unpaid bill: cancel it, issue a new one
+        await void(db, old_bill, f"{why}{REPLACED_MARK}a new bill", keep_payments=True)
     bill = await _issue(
-        db, hotel_id=hotel_id, outlet_id=o.outlet_id, table_id=None, orders=[o], user_id=user_id, discount=discount
+        db,
+        hotel_id=hotel_id,
+        outlet_id=o.outlet_id,
+        table_id=None,
+        orders=[o],
+        user_id=user_id,
+        discount=discount,
+        buyer=buyer,
     )
     if old_bill is not None:
-        old_bill.void_reason = f"Discount applied{REPLACED_MARK}{bill.invoice_no}"
+        old_bill.void_reason = f"{why}{REPLACED_MARK}{bill.invoice_no}"
         await _carry_payments(db, [old_bill], bill)
     return bill, [old_bill.invoice_no] if old_bill is not None else []
 
@@ -345,6 +395,13 @@ async def split_by_items(
     open_bill = await _split_open_bill(db, table_id)
     if open_bill and await paid_minor(db, open_bill):
         raise conflict("has_payments", "Part of this bill is paid; remove those payments first")
+    if open_bill and open_bill.buyer_gstin:
+        # One B2B invoice for the company; splitting would drop the buyer from the guest bills.
+        raise conflict(
+            "bill_has_buyer",
+            "This bill is for a company (GSTIN); it cannot be split by items",
+            {"invoice_no": open_bill.invoice_no},
+        )
     if open_bill and open_bill.discount_minor:
         # Splitting would drop the discount (guests would pay more). Discounts per guest bill come later.
         raise conflict(
@@ -449,6 +506,7 @@ async def _issue(
     orders: list[Order],
     user_id: UUID,
     discount: DiscountSpec | None = None,
+    buyer: BuyerSpec | None = None,
 ) -> Bill:
     """Issue one GST bill covering exactly these orders. Caller holds the hotel's bill-number lock."""
     profile = (await db.execute(select(HotelTaxProfile))).scalar_one_or_none()
@@ -498,6 +556,9 @@ async def _issue(
         discount_minor=discount_minor,
         discount_reason=discount.reason if discount else None,
         discount_by=discount.by_user if discount else None,
+        buyer_name=buyer.name if buyer else None,
+        buyer_gstin=buyer.gstin if buyer else None,
+        buyer_address=buyer.address if buyer else None,
         created_by=user_id,
     )
     db.add(bill)
@@ -582,7 +643,10 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
     profile = await db.get(HotelTaxProfile, bill.hotel_id)
     table = await db.get(DiningTable, bill.table_id) if bill.table_id else None
     anchor = bill.split_group_id or bill.id
-    orders = (await db.execute(select(Order.number).where(Order.bill_id == anchor).order_by(Order.number))).scalars()
+    order_rows = (
+        await db.execute(select(Order.id, Order.number).where(Order.bill_id == anchor).order_by(Order.number))
+    ).all()
+    orders = [n for _, n in order_rows]
     by_rate = tax_by_rate(bill.tax_minor, lines)
     groups = [
         {"rate_bp": r, "tax_minor": t, "cgst_minor": split_gst(t)[0], "sgst_minor": split_gst(t)[1]}
@@ -602,6 +666,10 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
         "guests": bill.guests,
         "discount_minor": bill.discount_minor,
         "discount_reason": bill.discount_reason,
+        # B2B: the registered buyer printed on the tax invoice (docs/14); None for an ordinary (B2C) bill.
+        "buyer": {"name": bill.buyer_name, "gstin": bill.buyer_gstin, "address": bill.buyer_address}
+        if bill.buyer_gstin
+        else None,
         "taxable_minor": bill.subtotal_minor - bill.discount_minor,
         "tax_minor": bill.tax_minor,
         "cgst_minor": bill.cgst_minor,
@@ -630,6 +698,7 @@ async def bill_json(db: AsyncSession, bill: Bill, copy_no: int | None = None) ->
         "void_reason": bill.void_reason,
         "created_at": bill.created_at.isoformat() if bill.created_at else None,
         "orders": list(orders),
+        "order_ids": [str(i) for i, _ in order_rows],  # a takeaway bill opened on its own re-issues by its order
         "split": await _split_json(db, bill),
         "tax_groups": groups,
         "lines": [

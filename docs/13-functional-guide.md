@@ -200,6 +200,12 @@ Menu, Tables, Team, Expenses**. Top bar: hotel logo and name, language, **Settin
   the same warning if the food is not handed over yet. The bill says "Takeaway" and the guest's name.
 - **Bill contents**: hotel details and GSTIN, bill type, number, table, date, items, subtotal, CGST and SGST per rate,
   service charge (if set), total, payment method once paid.
+- **Company GST bill** (B2B; GST-registered hotels only, on an unpaid bill): type the company's name, GSTIN and
+  address (optional). The app checks the GSTIN (a mistyped one is refused) and re-issues the bill with "Bill to:
+  company, GSTIN" printed on it; the old number stays in the register as cancelled. More food later keeps the company
+  on the new bill. A company bill cannot be split by items. GSTINs from **another state are refused for now** (those
+  bills may need IGST; to be confirmed with your CA). In Reports > GST, company bills are listed one per line (for
+  the B2B part of GSTR-1) and the rest is B2C.
 - **Discount** (in the bill window, before or after printing): percent or amount, with a reason. Each role has a
   maximum (owner: any; Manager 20%, Cashier 10%, others none, until the owner changes them in Team > Roles). Tax is
   recalculated on the discounted amount, as GST requires. The bill shows Subtotal, Discount (and reason), Taxable
@@ -304,7 +310,7 @@ rupees).
   moving it to another category later does not change past reports. Older bills that could not be matched show as
   "Not recorded". Download it as CSV like the other reports.
   Cancelled bills are left out.
-- **GST summary**: taxable value, CGST and SGST per GST rate for the period (B2C, intra-state), SAC 996331, and
+- **GST summary**: taxable value, CGST and SGST per GST rate for the period (intra-state), SAC 996331, company (B2B) bills one per line, and
   the documents issued (first and last invoice number, how many, how many cancelled) as GSTR-1 asks. The tax per rate
   is exactly what was printed on each bill, so it always matches the bills.
 - **Staff** (Pro plan): for each person: bills raised and their value, discounts given, money received by method,
@@ -402,6 +408,7 @@ nothing already created is removed.
 
 | Date | Change |
 |---|---|
+| 2026-11-20 | Company GST (B2B) bills; B2B list in the GST report (sections 10, 13) |
 | 2026-11-20 | Target time per dish, "Delayed" on the kitchen screen, on time % (sections 7, 13) |
 | 2026-11-20 | Hold / resume an order (section 6, 13) |
 | 2026-11-20 | Reports: sales by category (section 13) |

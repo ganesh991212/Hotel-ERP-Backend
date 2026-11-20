@@ -8833,6 +8833,16 @@
         "type": "null"
        }
       ]
+     },
+     "buyer": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/BuyerIn"
+       },
+       {
+        "type": "null"
+       }
+      ]
      }
     },
     "type": "object",
@@ -8951,6 +8961,41 @@
     },
     "type": "object",
     "title": "BrandingIn"
+   },
+   "BuyerIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 2,
+      "title": "Name"
+     },
+     "gstin": {
+      "type": "string",
+      "maxLength": 15,
+      "minLength": 15,
+      "title": "Gstin"
+     },
+     "address": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "gstin"
+    ],
+    "title": "BuyerIn",
+    "description": "A GST-registered buyer (B2B). Checked on the server; an issued bill is never edited, so adding one re-issues."
    },
    "CategoryOut": {
     "properties": {

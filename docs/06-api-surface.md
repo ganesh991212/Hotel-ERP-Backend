@@ -126,6 +126,9 @@ response; design in docs/14 "Reports"):
 ## Takeaway (added 2026-11-20)
 - `POST /orders {takeaway: true, customer_name?, customer_phone?, items, note?}`: no table (exactly one of
   `table_id` or `takeaway`). Channel `TAKEAWAY`; order JSON carries `customer_name`, `customer_phone`.
+- `POST /bills {table_id | order_id, buyer: {name, gstin, address?}}`: a B2B tax invoice; with an unpaid bill open
+  it is re-issued with the buyer. Errors `not_tax_invoice`, `bad_gstin`, `interstate_b2b`. Bills return `buyer`
+  (or null) and `order_ids`. `GET /reports/gst` adds `b2b[]` and `b2c_by_rate[]` (also in `gst.csv`).
 - `POST /bills {order_id}`: bill one takeaway order (`table_order` for table orders, `already_billed`).
 - `GET /orders?q=` also matches the takeaway customer's name or phone.
 

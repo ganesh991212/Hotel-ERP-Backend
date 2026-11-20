@@ -238,6 +238,17 @@ Order states gain one edge: `CONFIRMED -> PREPARING` directly when a KOT is prin
   only its dishes and the order number and table) when an order spans several stations; `blocks` is the full ticket.
 - Display and print only: assignment, the strict queue and "ready" stay per order (docs/04).
 
+## B2B invoices (added 2026-11-20; prior art in docs/14)
+
+- `bills.buyer_name`, `buyer_gstin`, `buyer_address` (name and GSTIN together or neither): the registered buyer on a
+  tax invoice. Set when the bill is issued; adding it to an unpaid bill re-issues the bill (old number cancelled,
+  reason "Buyer's GST details added"). Re-billing for more food carries the buyer over; a split by items is refused
+  (`bill_has_buyer`).
+- Checks: hotel `gst_registration = REGULAR` (`not_tax_invoice`); GSTIN format and check digit, not the hotel's own
+  (`bad_gstin`); same state as the hotel (`interstate_b2b`): other-state buyers may need IGST, which we do not issue
+  yet (to be confirmed with the owner's CA).
+- GST report: `b2b[]` one row per invoice and rate (GSTR-1 B2B); `b2c_by_rate[]` the rest.
+
 ## Target times (added 2026-11-20; prior art in docs/14)
 
 - `order_items.due_at` = placed + the outlet's chef pick-up time (`pickup_alert_minutes`, 0 if off) + that dish's

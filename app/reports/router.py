@@ -8,8 +8,9 @@ Dates are the hotel's own calendar days (its timezone). All sums are integer pai
 import csv
 import io
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
@@ -40,6 +41,10 @@ class Period:
 
     def day(self, column):
         return cast(func.timezone(self.tz, column), Date)
+
+    def local_date(self, ts: datetime) -> date:
+        """A timestamp's hotel-local calendar date (same day boundary as `on`)."""
+        return ts.astimezone(ZoneInfo(self.tz)).date()
 
     def head(self, title: str) -> dict:
         return {"report": title, "from": self.start.isoformat(), "to": self.end.isoformat(), "timezone": self.tz}
@@ -254,18 +259,37 @@ async def gst_data(ctx: Ctx, p: Period) -> dict:
             lines_by_bill[ln.bill_id].append(ln)
 
     rates: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    b2c: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    b2b: list[dict] = []  # GSTR-1 B2B: one row per invoice and rate
     service = 0
     for b in bills:
         if b.status not in LIVE:
             continue
         lines = lines_by_bill[b.id]
+        taxable: dict[int, int] = defaultdict(int)
         for ln in lines:
-            rates[ln.tax_rate_bp]["taxable_minor"] += ln.line_total_minor - ln.discount_minor
-        for rate, tax in tax_by_rate(b.tax_minor, lines).items():
+            taxable[ln.tax_rate_bp] += ln.line_total_minor - ln.discount_minor
+        tax_rates = tax_by_rate(b.tax_minor, lines)
+        for rate in sorted(set(taxable) | set(tax_rates)):
+            tax = tax_rates.get(rate, 0)
             c, s = split_gst(tax)  # per bill, exactly as printed, then summed
-            rates[rate]["tax_minor"] += tax
-            rates[rate]["cgst_minor"] += c
-            rates[rate]["sgst_minor"] += s
+            row = {"taxable_minor": taxable.get(rate, 0), "tax_minor": tax, "cgst_minor": c, "sgst_minor": s}
+            for k, v in row.items():
+                rates[rate][k] += v
+                if not b.buyer_gstin:
+                    b2c[rate][k] += v
+            if b.buyer_gstin:
+                b2b.append(
+                    {
+                        "invoice_no": b.invoice_no,
+                        "date": p.local_date(b.created_at).isoformat(),
+                        "buyer_gstin": b.buyer_gstin,
+                        "buyer_name": b.buyer_name,
+                        "invoice_total_minor": b.total_minor,
+                        "rate_bp": rate,
+                        **row,
+                    }
+                )
         service += b.service_charge_minor
 
     by_rate = [
@@ -289,7 +313,12 @@ async def gst_data(ctx: Ctx, p: Period) -> dict:
         **p.head("gst"),
         "basis": BASIS + "; tax per rate exactly as printed on each bill",
         "sac": SAC_RESTAURANT,
-        "supply": "B2C, intra-state (CGST + SGST)",
+        "supply": "Intra-state (CGST + SGST); B2B invoices listed one by one, the rest is B2C",
+        "b2b": b2b,
+        "b2c_by_rate": [
+            {"rate_bp": r, **{k: v[k] for k in ("taxable_minor", "cgst_minor", "sgst_minor", "tax_minor")}}
+            for r, v in sorted(b2c.items())
+        ],
         "by_rate": by_rate,
         "totals": {k: sum(r[k] for r in by_rate) for k in ("taxable_minor", "cgst_minor", "sgst_minor", "tax_minor")},
         "service_charge_minor": service,
@@ -514,6 +543,23 @@ async def csv_text(ctx: Ctx, kind: str, p: Period) -> str:
         keys = ("taxable_minor", "cgst_minor", "sgst_minor", "tax_minor")
         rows = [[f"{r['rate_bp'] / 100:g}%", d["sac"], *(rupees(r[k]) for k in keys)] for r in d["by_rate"]]
         rows.append(["Total", "", *(rupees(d["totals"][k]) for k in keys)])
+        if d["b2b"]:  # GSTR-1 B2B: one row per invoice and rate; B2C below is the rest
+            money = ["Taxable", "CGST", "SGST", "Total tax"]
+            rows += [[], ["B2B invoices", "Date", "Buyer GSTIN", "Buyer", "Invoice value", "Rate", *money]]
+            rows += [
+                [
+                    x["invoice_no"],
+                    x["date"],
+                    x["buyer_gstin"],
+                    x["buyer_name"],
+                    rupees(x["invoice_total_minor"]),
+                    f"{x['rate_bp'] / 100:g}%",
+                    *(rupees(x[k]) for k in keys),
+                ]
+                for x in d["b2b"]
+            ]
+            rows += [[], ["B2C by rate", "SAC", *money]]
+            rows += [[f"{r['rate_bp'] / 100:g}%", d["sac"], *(rupees(r[k]) for k in keys)] for r in d["b2c_by_rate"]]
         rows += [[], ["Documents", "FY", "From", "To", "Total", "Cancelled", "Net"]]
         rows += [
             [x["doc_type"], x["fy"], x["from_no"], x["to_no"], x["count"], x["cancelled"], x["net"]]

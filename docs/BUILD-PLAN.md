@@ -173,7 +173,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 5 | Menu and pricing | 7 | 100% | 7.0 | Done |
 | 6 | Live dashboard | 6 | 90% | 5.4 | Mostly done (profit needs inventory) |
 | 7 | Reports | 7 | 90% | 6.3 | Mostly done (PDF left) |
-| 8 | Finance and GST | 7 | 70% | 4.9 | Mostly done |
+| 8 | Finance and GST | 7 | 80% | 5.6 | Mostly done |
 | 9 | Inventory | 7 | 0% | 0 | Missing |
 | 10 | Recipes and food cost | 5 | 0% | 0 | Missing |
 | 11 | Purchases and suppliers | 4 | 0% | 0 | Missing |
@@ -185,7 +185,7 @@ Pick from the top of "Next up"; tick sub-items as they ship and update the modul
 | 17 | Branches (multi-outlet) | 3 | 10% | 0.3 | Missing most |
 | 18 | AI insights | 1 | 0% | 0 | Missing |
 | 19 | Settings, roles, permissions | 4 | 95% | 3.8 | Done |
-| | **Total** | **100** | | **61.5** | |
+| | **Total** | **100** | | **62.2** | |
 
 Ours but not in the demo (keep, they are selling points): QR table ordering with live diner tracking; SaaS plans,
 subscriptions and feature gating; chef strict queue and auto-assign; no-pickup alerts; loud push alerts; Telugu and
@@ -247,7 +247,8 @@ Hindi; branded table QR cards; "My work" per role; one bill per table visit with
 ### 8. Finance and GST (7)
 - [x] GST invoices; expenses with global and hotel categories; month revenue minus expenses
 - [x] GST summary for filing (GSTR-1 style: B2C totals by rate, SAC 996331, documents issued/cancelled)
-- [ ] B2B invoices (customer GSTIN on the bill)
+- [x] B2B invoices (buyer GSTIN on the tax invoice, checked; B2B listed per invoice in the GST report)
+- [ ] Inter-state B2B (IGST): other-state GSTINs are refused today; confirm the place-of-supply rule with the owner's CA
 - [x] Day close / cash drawer reconciliation (expected vs counted; float carries over; over/short history)
 - [ ] Profit and loss by month
 

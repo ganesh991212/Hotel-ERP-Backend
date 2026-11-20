@@ -661,6 +661,10 @@ class Bill(Base):
     discount_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     payment_method: Mapped[str | None] = mapped_column(String(8))  # CASH | UPI | CARD | MIXED (several parts)
     guests: Mapped[int | None] = mapped_column(SmallInteger)  # covers: the visit's guests (first guest bill if split)
+    # B2B: the registered buyer (docs/14). Set when the bill is issued; never edited afterwards.
+    buyer_name: Mapped[str | None] = mapped_column(String(120))
+    buyer_gstin: Mapped[str | None] = mapped_column(String(15))
+    buyer_address: Mapped[str | None] = mapped_column(String(300))
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     print_count: Mapped[int] = mapped_column(Integer, server_default="0")
     void_reason: Mapped[str | None] = mapped_column(Text)

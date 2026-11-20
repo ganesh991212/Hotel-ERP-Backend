@@ -154,6 +154,13 @@ def bill_blocks(
             + (f" - Guest {bill['split']['guest_no']} of {bill['split']['guest_count']}" if bill.get("split") else ""),
         ),
         ("row", _local(created_at, tz), bill.get("customer_name") or ""),
+    ]
+    if bill.get("buyer"):  # B2B: the recipient's details, as a tax invoice requires
+        b = bill["buyer"]
+        blocks += [("divider",), ("text", f"Bill to: {b['name']}"), ("text", f"GSTIN: {b['gstin']}")]
+        if b.get("address"):
+            blocks.append(("small", b["address"]))
+    blocks += [
         ("divider",),
         ("row", "Item", "Amount"),
         ("divider",),
